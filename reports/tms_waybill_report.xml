@@ -20,54 +20,123 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
                     <div class="page">
+                        <!-- HEADER: TÍTULO Y ESTADO -->
                         <div class="row mb-4">
                             <div class="col-8">
-                                <h2>Cotización <span t-field="o.name"/></h2>
+                                <h2>
+                                    <span t-if="o.state == 'draft'">Solicitud de Cotización</span>
+                                    <span t-else="">Carta Porte / Viaje</span>
+                                    <span class="text-muted" t-field="o.name"/>
+                                </h2>
+                                <p class="text-muted"><span t-field="o.date_created"/></p>
                             </div>
                             <div class="col-4 text-end">
-                                <span class="badge rounded-pill text-bg-primary" t-field="o.state"/>
+                                <span class="badge rounded-pill text-bg-primary" style="font-size: 14px;" t-field="o.state"/>
                             </div>
                         </div>
 
-                        <!-- Bloque de Actores -->
-                        <div class="row mb-4 border-bottom pb-3">
+                        <!-- BLOQUE 1: ACTORES (3 columnas) -->
+                        <div class="row mb-4 pb-3" style="border-bottom: 2px solid #eee;">
+                            <!-- Facturación -->
                             <div class="col-4">
-                                <strong>Facturación:</strong><br/>
+                                <strong style="color: #212529; font-size: 1.1em;">Cliente Facturación</strong><br/>
                                 <span t-field="o.partner_invoice_id.name"/><br/>
-                                <span t-field="o.invoice_rfc"/>
+                                <span t-if="o.invoice_rfc">RFC: <span t-field="o.invoice_rfc"/><br/></span>
+                                <small t-field="o.invoice_address"/>
                             </div>
+                            <!-- Origen -->
                             <div class="col-4">
-                                <strong>Origen:</strong><br/>
-                                <span t-field="o.origin_city_id.name"/><br/>
+                                <strong style="color: #212529; font-size: 1.1em;">Origen</strong><br/>
+                                <span t-field="o.partner_origin_id.name"/><br/>
+                                <span t-field="o.origin_city_id.name"/>, <span t-field="o.partner_origin_id.state_id.name"/><br/>
                                 <small t-field="o.origin_address"/>
                             </div>
+                            <!-- Destino -->
                             <div class="col-4">
-                                <strong>Destino:</strong><br/>
-                                <span t-field="o.dest_city_id.name"/><br/>
+                                <strong style="color: #212529; font-size: 1.1em;">Destino</strong><br/>
+                                <span t-field="o.partner_dest_id.name"/><br/>
+                                <span t-field="o.dest_city_id.name"/>, <span t-field="o.partner_dest_id.state_id.name"/><br/>
                                 <small t-field="o.dest_address"/>
                             </div>
                         </div>
 
-                        <!-- Mercancías -->
-                        <table class="table table-sm table-striped">
-                            <thead>
-                                <tr><th>Cant</th><th>Descripción</th><th>Peso</th></tr>
+                        <!-- BLOQUE 2: DETALLES DEL VIAJE (2 columnas) -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <div class="card p-3" style="background-color: #f8f9fa; border: none;">
+                                    <strong><i class="fa fa-map-signs"/> Ruta:</strong> <span t-field="o.route_name"/><br/>
+                                    <strong><i class="fa fa-road"/> Distancia:</strong> <span t-field="o.distance_km"/> km<br/>
+                                    <strong><i class="fa fa-clock-o"/> Duración:</strong> <span t-field="o.duration_hours"/> hrs
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card p-3" style="background-color: #f8f9fa; border: none;">
+                                    <strong><i class="fa fa-truck"/> Vehículo:</strong> <span t-field="o.vehicle_id.license_plate"/> <small>(<span t-field="o.vehicle_id.model_id.name"/>)</small><br/>
+                                    <strong><i class="fa fa-user"/> Chofer:</strong> <span t-field="o.driver_id.name"/><br/>
+                                    <span t-if="o.trailer1_id"><strong>Remolque 1:</strong> <span t-field="o.trailer1_id.license_plate"/></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BLOQUE 3: MERCANCÍAS -->
+                        <h5 class="mb-3 border-bottom pb-2">Mercancías</h5>
+                        <table class="table table-sm table-striped mb-5">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th>Unidad</th>
+                                    <th class="text-end">Peso (Kg)</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="o.line_ids" t-as="l">
-                                    <td><span t-field="l.quantity"/></td>
-                                    <td><span t-field="l.description"/></td>
-                                    <td><span t-field="l.weight_kg"/> kg</td>
+                                    <td>
+                                        <span t-field="l.description"/>
+                                        <br/><small class="text-muted" t-field="l.product_sat_id.name"/>
+                                    </td>
+                                    <td class="text-end"><span t-field="l.quantity"/></td>
+                                    <td><span t-field="l.uom_sat_id.name"/></td>
+                                    <td class="text-end"><span t-field="l.weight_kg"/></td>
                                 </tr>
                             </tbody>
                         </table>
 
-                        <!-- Totales -->
+                        <!-- BLOQUE 4: TOTALES (Derecha) -->
                         <div class="row justify-content-end">
-                            <div class="col-4 text-end">
-                                <h3>Total: <span t-field="o.amount_total"/></h3>
+                            <div class="col-5">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td><strong>Subtotal:</strong></td>
+                                        <td class="text-end"><span t-field="o.amount_untaxed"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td>IVA (16%):</td>
+                                        <td class="text-end"><span t-field="o.amount_tax"/></td>
+                                    </tr>
+                                    <tr class="text-danger">
+                                        <td>Retención (4%):</td>
+                                        <td class="text-end">- <span t-field="o.amount_retention"/></td>
+                                    </tr>
+                                    <tr class="border-top">
+                                        <td><h4 class="mt-2">Total:</h4></td>
+                                        <td class="text-end"><h4 class="mt-2 text-primary" t-field="o.amount_total"/></td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
+
+                        <!-- FIRMAS (si está firmado) -->
+                        <div class="row mt-5" t-if="o.signature">
+                             <div class="col-6 offset-6 text-center">
+                                <img t-att-src="image_data_uri(o.signature)" style="max-height: 100px;"/><br/>
+                                <div class="border-top pt-2">
+                                    <strong>Aceptado por:</strong> <span t-field="o.signed_by"/><br/>
+                                    <small><span t-field="o.signed_on"/></small>
+                                </div>
+                             </div>
+                        </div>
+
                     </div>
                 </t>
             </t>

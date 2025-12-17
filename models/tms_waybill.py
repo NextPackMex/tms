@@ -3,7 +3,7 @@ import logging
 import requests
 import json
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError, AccessError, MissingError
+from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -107,6 +107,34 @@ class TmsWaybill(models.Model):
     )
 
     # ============================================================
+    # ACCIONES DE LIMPIEZA (CLEAR BUTTONS)
+    # ============================================================
+    # ACCIONES DE LIMPIEZA (TRIGGERS CLIENT-SIDE)
+    # ============================================================
+    # Se usan campos booleanos con onchange para limpiar datos
+    # sin disparar el "Save" (validador) que provocan los botones type="object".
+
+    # ============================================================
+    # ACCIONES: Clear (Limpieza de Campos)
+    # ============================================================
+
+    def action_clear_facturacion(self):
+        """ Limpia campos de Facturación """
+        self.partner_invoice_id = False
+
+    def action_clear_origen(self):
+        """ Limpia campos de Origen """
+        self.partner_origin_id = False
+        self.origin_address = False
+        self.origin_zip = False
+
+    def action_clear_destino(self):
+        """ Limpia campos de Destino """
+        self.partner_dest_id = False
+        self.dest_address = False
+        self.dest_zip = False
+
+    # ============================================================
     # CONFIGURACIÓN FISCAL (Carta Porte)
     # ============================================================
 
@@ -135,11 +163,10 @@ class TmsWaybill(models.Model):
     # ACTORES: CLIENTE DE FACTURACIÓN (Quién Paga)
     # ============================================================
 
-    # Many2one: cliente que paga el flete
+    # Many2one: cliente que paga    # Cliente Facturación
     partner_invoice_id = fields.Many2one(
-        'res.partner',
-        string='Cliente Facturación',
-        domain="[('company_id', '=', company_id)]",  # Solo partners de la misma empresa
+        'res.partner', string='Cliente Facturación',
+        domain="[('type', 'in', ['invoice', 'contact'])]",
         check_company=True,
         tracking=True,
         help='Cliente al que se le facturará el servicio'
@@ -166,9 +193,8 @@ class TmsWaybill(models.Model):
 
     # Many2one: contacto en el origen
     partner_origin_id = fields.Many2one(
-        'res.partner',
-        string='Remitente (Origen)',
-        domain="[('company_id', '=', company_id)]",  # Solo partners de la misma empresa
+        'res.partner', string='Remitente (Origen)',
+        domain="[('type', '!=', 'private')]",
         check_company=True,
         help='Contacto que entrega la mercancía'
     )
@@ -206,9 +232,8 @@ class TmsWaybill(models.Model):
 
     # Many2one: contacto en el destino
     partner_dest_id = fields.Many2one(
-        'res.partner',
-        string='Destinatario',
-        domain="[('company_id', '=', company_id)]",  # Solo partners de la misma empresa
+        'res.partner', string='Destinatario',
+        domain="[('type', '!=', 'private')]",
         check_company=True,
         help='Contacto que recibe la mercancía'
     )
@@ -292,6 +317,83 @@ class TmsWaybill(models.Model):
     # ============================================================
 
 
+    @api.constrains('partner_origin_id', 'partner_dest_id', 'state')
+    def _check_fiscal_rfc(self):
+        """ Valida RFC en partners (Solo si no es borrador/cancelado) """
+        for record in self:
+             if record.state in ['draft', 'cancel', 'rejected']:
+                 continue
+             if record.partner_origin_id and not record.partner_origin_id.vat:
+                raise ValidationError(_("El Remitente seleccionado no tiene RFC configurado."))
+             if record.partner_dest_id and not record.partner_dest_id.vat:
+                raise ValidationError(_("El Destinatario seleccionado no tiene RFC configurado."))
+
+    @api.constrains('amount_total', 'line_ids', 'partner_invoice_id', 'partner_origin_id', 'partner_dest_id', 'vehicle_id', 'distance_km', 'duration_hours', 'cost_tolls', 'state')
+    def _check_waybill_constraints(self):
+        """Validación estricta al guardar, EXCEPTO para borradores (Draft/Request)."""
+        for record in self:
+            # Si sigue en solicitud, permitir guardar incompleto
+            if record.state == 'draft': # Corrección: 'request' en el prompt original era 'draft' en el modelo
+                continue
+            record._check_waybill_validity()
+
+    def _check_waybill_validity(self):
+        """Lógica central de validaciones. Se llama manualmente en acciones o desde constraints."""
+        self.ensure_one()
+
+        # 1. Precio final (Solo si es Ingreso)
+        if self.waybill_type == 'income' and self.amount_total <= 0:
+            raise ValidationError(_("El precio final del viaje debe ser mayor a 0."))
+
+        # 2. Mercancías
+        if not self.line_ids:
+            raise ValidationError(_("Debe haber al menos un registro en la lista de mercancías."))
+
+        # 3. Cliente Facturación
+        if not self.partner_invoice_id:
+            raise ValidationError(_("El Cliente de Facturación es obligatorio."))
+        # Validar dirección mínima (Calle o CP)
+        if not self.partner_invoice_id.street and not self.partner_invoice_id.zip:
+             raise ValidationError(_("El Cliente de Facturación (%s) debe tener una dirección válida (Calle o CP).") % self.partner_invoice_id.name)
+
+        # 4. Origen
+        if not self.partner_origin_id:
+            raise ValidationError(_("El Remitente (Origen) es obligatorio."))
+        # Validar que tenga dirección en el partner o sobreescrita manual
+        has_origin_address = self.partner_origin_id.street or self.partner_origin_id.zip or self.origin_address
+        if not has_origin_address:
+             raise ValidationError(_("El Remitente debe tener dirección configurada o capturada manualmente."))
+
+        # 5. Destino
+        if not self.partner_dest_id:
+            raise ValidationError(_("El Destinatario es obligatorio."))
+        has_dest_address = self.partner_dest_id.street or self.partner_dest_id.zip or self.dest_address
+        if not has_dest_address:
+             raise ValidationError(_("El Destinatario debe tener dirección configurada o capturada manualmente."))
+
+        # 6. Unidad
+        if not self.vehicle_id:
+            raise ValidationError(_("Debe asignar una Unidad (Vehículo) al viaje."))
+
+        # 7. Ruta y Costos lógicos
+        if self.distance_km <= 0:
+            raise ValidationError(_("La distancia de la ruta debe ser mayor a 0 km."))
+        if self.duration_hours < 0:
+            raise ValidationError(_("La duración estimada no puede ser negativa."))
+        if self.cost_tolls < 0:
+             raise ValidationError(_("El costo de casetas no puede ser negativo."))
+
+
+
+    @api.constrains('amount_total', 'state')
+    def _check_financials(self):
+        """ Valida precio final (Solo si no es borrador/cancelado) """
+        for record in self:
+            if record.state in ['draft', 'cancel', 'rejected']:
+                 continue
+            if record.amount_total <= 0:
+                raise ValidationError(_("El Precio Final (Total) debe ser mayor a $0.00."))
+
     @api.onchange('route_id')
     def _onchange_route_id(self):
         """
@@ -328,6 +430,7 @@ class TmsWaybill(models.Model):
         string='Vehículo (Tractor)',
         domain="[('is_trailer', '=', False), ('company_id', '=', company_id)]",
         check_company=True,
+        required=True,
         tracking=True,
         help='Tractocamión asignado al viaje'
     )
@@ -460,10 +563,36 @@ class TmsWaybill(models.Model):
 
     # Monetary: valor del viaje (monto a cobrar)
     amount_total = fields.Monetary(
-        string='Valor del Viaje',
+        string='Total',
         currency_field='currency_id',
         tracking=True,
-        help='Monto total a cobrar por el servicio'
+        compute='_compute_amount_all',
+        store=True,
+        help='Monto total a cobrar (Subtotal + Impuestos - Retenciones)'
+    )
+
+    amount_untaxed = fields.Monetary(
+        string='Subtotal',
+        currency_field='currency_id',
+        store=True,
+        tracking=True,
+        help='Base imponible antes de impuestos'
+    )
+
+    amount_tax = fields.Monetary(
+        string='IVA (16%)',
+        currency_field='currency_id',
+        store=True,
+        compute='_compute_amount_all',
+        help='Impuesto al Valor Agregado (16%)'
+    )
+
+    amount_retention = fields.Monetary(
+        string='Retención (4%)',
+        currency_field='currency_id',
+        store=True,
+        compute='_compute_amount_all',
+        help='Retención de IVA (4%)'
     )
 
     # ==========================================
@@ -485,7 +614,7 @@ class TmsWaybill(models.Model):
 
         origin_zip = self.partner_origin_id.zip
         dest_zip = self.partner_dest_id.zip
-        vehicle_type = self.vehicle_id.vehicle_type_id # Asumiendo que fleet.vehicle tiene vehicle_type_id relacionado a tms.vehicle.type
+        vehicle_type = self.vehicle_id.tms_vehicle_type_id
 
         # 1. BUSCAR EN CACHÉ
         cached_route = self.env['tms.destination'].search([
@@ -655,6 +784,9 @@ class TmsWaybill(models.Model):
     def action_preview_waybill(self):
         """Abre la cotización en el portal en una NUEVA pestaña"""
         self.ensure_one()
+        # Validar antes de generar preview (si se requiere estricto)
+        self._check_waybill_validity()
+
         return {
             'type': 'ir.actions.act_url',
             'target': 'new',  # <--- 'new' fuerza la nueva pestaña
@@ -725,6 +857,21 @@ class TmsWaybill(models.Model):
         help='Mercancías transportadas en el viaje'
     )
 
+    @api.depends('amount_untaxed')
+    def _compute_amount_all(self):
+        """
+        Calcula impuestos y total final.
+        Asume IVA 16% y Retención 4%.
+        """
+        for record in self:
+            base = record.amount_untaxed
+            iva = base * 0.16
+            ret = base * 0.04
+
+            record.amount_tax = iva
+            record.amount_retention = ret
+            record.amount_total = base + iva - ret
+
     # ============================================================
     # MÉTODOS COMPUTADOS
     # ============================================================
@@ -778,7 +925,6 @@ class TmsWaybill(models.Model):
             # Total = Distancia Total * Precio por KM
             total_distance = record.distance_km + record.extra_distance_km
             record.proposal_km_total = total_distance * record.price_per_km
-
             # 2. Calcular Propuesta Viaje
             # Costo Total = Diesel + Casetas + Chofer + Maniobras + Otros
             total_costs = record.cost_diesel_total + record.cost_tolls + record.cost_driver + record.cost_maneuver + record.cost_other
@@ -789,23 +935,100 @@ class TmsWaybill(models.Model):
             else:
                 record.proposal_trip_total = total_costs
 
-            # 3. Actualizar Monto Final (Amount Total) basado en selección
+            # 3. Actualizar Monto Final (SUBTOTAL / Untaxed) basado en selección
+            # Los impuestos se calculan automáticamente en _compute_amount_all
             if record.selected_proposal == 'km':
-                record.amount_total = record.proposal_km_total
+                record.amount_untaxed = record.proposal_km_total
             elif record.selected_proposal == 'trip':
-                record.amount_total = record.proposal_trip_total
+                record.amount_untaxed = record.proposal_trip_total
             else:
-                record.amount_total = record.proposal_direct_amount
+                record.amount_untaxed = record.proposal_direct_amount
+
+    def action_send_email(self):
+        """ Abre el wizard de correo con la plantilla pre-cargada """
+        self.ensure_one()
+        # Validar antes de enviar
+        self._check_waybill_validity()
+
+        # Referencia a la plantilla creada en data/mail_template_data.xml
+        template = self.env.ref('tms.email_template_tms_waybill')
+
+        ctx = {
+            'default_model': 'tms.waybill',
+            'default_res_ids': self.ids,
+            'default_use_template': bool(template),
+            'default_template_id': template.id,
+            'default_composition_mode': 'comment',
+            'force_email': True,
+        }
+
+        return {
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'mail.compose.message',
+            'views': [(False, 'form')],
+            'view_id': False,
+            'target': 'new',
+            'context': ctx,
+        }
+
+    @api.constrains('amount_total', 'line_ids', 'partner_invoice_id', 'partner_origin_id', 'partner_dest_id', 'vehicle_id', 'distance_km', 'duration_hours', 'cost_tolls')
+    def _check_waybill_constraints(self):
+        """Validación estricta al guardar, EXCEPTO para borradores (Draft)."""
+        for record in self:
+            if record.state == 'draft':
+                continue
+            record._check_waybill_validity()
+
+    def _check_waybill_validity(self):
+        """Lógica central de validaciones. Se llama manualmente en acciones o desde constraints."""
+        self.ensure_one()
+        # 1. Precio final debe ser mayor a 0
+        if self.amount_total <= 0:
+            raise ValidationError(_("El precio final del viaje debe ser mayor a 0."))
+
+        # 2. Debe tener al menos un registro en mercancías
+        if not self.line_ids:
+            raise ValidationError(_("Debe haber al menos un registro en la lista de mercancías."))
+
+        # 3. Validar Cliente de Facturación y Domicilio
+        if not self.partner_invoice_id:
+            raise ValidationError(_("El Cliente de Facturación es obligatorio."))
+        if not self.partner_invoice_id.street and not self.partner_invoice_id.zip:
+                raise ValidationError(_("El Cliente de Facturación (%s) debe tener una dirección válida (Calle o CP configurado).") % self.partner_invoice_id.name)
+
+        # 4. Validar Origen y Remitente
+        if not self.partner_origin_id:
+            raise ValidationError(_("El Remitente (Origen) es obligatorio."))
+        # Usamos origin_address porque se auto-copia a un campo Char, pero validamos el partner base también por consistencia
+        if not self.partner_origin_id.street and not self.partner_origin_id.zip and not self.origin_address:
+                raise ValidationError(_("El Remitente debe tener dirección configuración o haberse capturado manualmente."))
+
+        # 5. Validar Destino y Destinatario
+        if not self.partner_dest_id:
+            raise ValidationError(_("El Destinatario es obligatorio."))
+            # Usamos dest_address porque se auto-copia a un campo Char
+        if not self.partner_dest_id.street and not self.partner_dest_id.zip and not self.dest_address:
+                raise ValidationError(_("El Destinatario debe tener dirección configuración o haberse capturado manualmente."))
+
+        # 6. Unidad Asignada
+        if not self.vehicle_id:
+            raise ValidationError(_("Debe asignar una Unidad (Vehículo) al viaje."))
+
+        # 7. Distancia, Hora y Costos (Deben ser positivos o al menos estar definidos)
+        # Nota: duration_hours puede ser 0 si es muy corto, pero distance_km debería ser algo.
+        if self.distance_km <= 0:
+            raise ValidationError(_("La distancia de la ruta debe ser mayor a 0 km."))
+        if self.duration_hours < 0:
+            raise ValidationError(_("La duración estimada no puede ser negativa."))
+        if self.cost_tolls < 0:
+                raise ValidationError(_("El costo de casetas no puede ser negativo."))
 
     def _compute_access_url(self):
         """
         Sobrescribe el método de portal.mixin para generar la URL del portal.
 
         ¿QUÉ HACE?
-        - Llama primero a super() para mantener la lógica base de portal.mixin
-        - Luego asigna una URL personalizada para cada waybill: /my/waybills/<id>
-
-        ¿POR QUÉ SOBRESCRIBIR?
         - portal.mixin genera URLs genéricas por defecto
         - Necesitamos URLs específicas para el controlador /my/waybills/<waybill>
 
@@ -836,10 +1059,21 @@ class TmsWaybill(models.Model):
                     parts.append(record.partner_invoice_id.city)
                 if record.partner_invoice_id.state_id:
                     parts.append(record.partner_invoice_id.state_id.name)
-                if record.partner_invoice_id.zip:
-                    parts.append(record.partner_invoice_id.zip)
 
-                record.invoice_address = ', '.join(parts) if parts else ''
+                # Obtener CP: Si zip está vacío, usar tms_cp_id
+                zip_code = record.partner_invoice_id.zip
+                if not zip_code and record.partner_invoice_id.tms_cp_id:
+                    zip_code = record.partner_invoice_id.tms_cp_id.code
+
+                # CP siempre visible si existe
+                address_str = ', '.join(parts) if parts else ''
+                if zip_code:
+                    if address_str:
+                         address_str += f", {zip_code}"
+                    else:
+                         address_str = zip_code
+
+                record.invoice_address = address_str
             else:
                 record.invoice_address = ''
 
@@ -852,10 +1086,35 @@ class TmsWaybill(models.Model):
         """
         AUTOCOMPLETADO DE DATOS DEL REMITENTE.
         Copia dirección, CP y busca municipio SAT.
+        Construye dirección completa si falta la calle.
         """
         if self.partner_origin_id:
-            self.origin_address = self.partner_origin_id.street or ''
-            self.origin_zip = self.partner_origin_id.zip or ''
+            # Construir dirección
+            parts = []
+            if self.partner_origin_id.street:
+                parts.append(self.partner_origin_id.street)
+            if self.partner_origin_id.street2:
+                parts.append(self.partner_origin_id.street2)
+            if self.partner_origin_id.city:
+                parts.append(self.partner_origin_id.city)
+            if self.partner_origin_id.state_id:
+                parts.append(self.partner_origin_id.state_id.name)
+
+            # Obtener CP: Si zip está vacío, usar tms_cp_id
+            zip_code = self.partner_origin_id.zip
+            if not zip_code and self.partner_origin_id.tms_cp_id:
+                zip_code = self.partner_origin_id.tms_cp_id.code
+
+            # CP siempre visible si existe
+            address_str = ', '.join(parts)
+            if zip_code:
+                if address_str:
+                     address_str += f", {zip_code}"
+                else:
+                     address_str = zip_code
+
+            self.origin_address = address_str
+            self.origin_zip = zip_code or ''
 
             # Buscar municipio SAT por nombre de ciudad
             if self.partner_origin_id.city:
@@ -865,15 +1124,41 @@ class TmsWaybill(models.Model):
                 if municipio:
                     self.origin_city_id = municipio
 
+
     @api.onchange('partner_dest_id')
     def _onchange_partner_dest(self):
         """
         AUTOCOMPLETADO DE DATOS DEL DESTINATARIO.
         Copia dirección, CP y busca municipio SAT.
+        Construye dirección completa si falta la calle.
         """
         if self.partner_dest_id:
-            self.dest_address = self.partner_dest_id.street or ''
-            self.dest_zip = self.partner_dest_id.zip or ''
+            # Construir dirección
+            parts = []
+            if self.partner_dest_id.street:
+                parts.append(self.partner_dest_id.street)
+            if self.partner_dest_id.street2:
+                parts.append(self.partner_dest_id.street2)
+            if self.partner_dest_id.city:
+                parts.append(self.partner_dest_id.city)
+            if self.partner_dest_id.state_id:
+                parts.append(self.partner_dest_id.state_id.name)
+
+            # Obtener CP: Si zip está vacío, usar tms_cp_id
+            zip_code = self.partner_dest_id.zip
+            if not zip_code and self.partner_dest_id.tms_cp_id:
+                zip_code = self.partner_dest_id.tms_cp_id.code
+
+            # CP siempre visible si existe
+            address_str = ', '.join(parts)
+            if zip_code:
+                 if address_str:
+                      address_str += f", {zip_code}"
+                 else:
+                      address_str = zip_code
+
+            self.dest_address = address_str
+            self.dest_zip = zip_code or ''
 
             # Buscar municipio SAT por nombre de ciudad
             if self.partner_dest_id.city:
@@ -908,42 +1193,7 @@ class TmsWaybill(models.Model):
             self.cost_tolls = self.route_id.toll_cost or 0.0
             self.toll_cost = self.route_id.toll_cost or 0.0
 
-    @api.onchange('origin_state_id', 'dest_state_id')
-    def _onchange_route_autocomplete(self):
-        """
-        AUTOCOMPLETADO INTELIGENTE DE RUTA (Búsqueda inversa).
 
-        Busca en tms.destination si existe la ruta basándose en Estados
-        y pre-llena datos. También actualiza route_id si encuentra una coincidencia.
-        """
-        if self.origin_state_id and self.dest_state_id:
-            route = self.env['tms.destination'].search([
-                ('state_origin_id', '=', self.origin_state_id.id),
-                ('state_dest_id', '=', self.dest_state_id.id),
-                ('company_id', '=', self.company_id.id),
-                ('active', '=', True),
-            ], limit=1)
-
-            if route:
-                # Actualizar route_id si se encuentra una ruta
-                self.route_id = route
-                self.distance_km = route.distance_km or 0.0
-                self.duration_hours = route.duration_hours or 0.0
-                self.cost_tolls = route.toll_cost or 0.0
-                self.toll_cost = route.toll_cost or 0.0
-
-                return {
-                    'warning': {
-                        'title': _('✅ Ruta Encontrada'),
-                        'message': _('Distancia: %s km | Duración: %s hrs') % (
-                            route.distance_km,
-                            route.duration_hours
-                        )
-                    }
-                }
-            else:
-                # Si no se encuentra ruta, limpiar route_id
-                self.route_id = False
 
     # ============================================================
     # MÉTODO: Group Expand (CRÍTICO para Kanban)

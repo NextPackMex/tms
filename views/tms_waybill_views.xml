@@ -140,6 +140,7 @@
                             <h1>
                                 <field name="company_name" readonly="1" class="text-danger"/>
                             </h1>
+
                         </div>
                     </div>
 
@@ -153,20 +154,26 @@
                              <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
                                 <group string="Facturación" class="mb-0">
                                     <field name="date_created" string="Fecha del Pedido"/>
-                                    <field name="partner_invoice_id"/>
+                                    <field name="partner_invoice_id" required="state != 'draft'"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
                                 </group>
+                                <div class="text-end mt-2">
+                                    <button name="action_clear_facturacion" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                </div>
                              </div>
                         </div>
                         <div class="col-lg-4">
                             <!-- PRECIO CARD -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group class="mb-0">
+                                    <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger"/>
                                     <label for="amount_total" string="Precio Final"/>
                                     <h2>
-                                        <field name="amount_total" widget="monetary"/>
+                                        <field name="amount_total" widget="monetary" decoration-danger="amount_total == 0"/>
                                     </h2>
                                     <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted"/>
                                     <field name="currency_id" invisible="1"/>
@@ -180,22 +187,28 @@
                             <!-- ORIGEN CARD -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group string="Origen" class="mb-0">
-                                    <field name="partner_origin_id"/>
-                                    <field name="origin_address"/>
-                                    <field name="origin_zip"/>
+                                    <field name="partner_origin_id" required="state != 'draft'"/>
+                                    <field name="origin_address" required="state != 'draft'"/>
+                                    <field name="origin_zip" required="state != 'draft'"/>
                                     <field name="origin_rfc"/>
                                 </group>
+                                <div class="text-end mt-2">
+                                    <button name="action_clear_origen" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <!-- DESTINO CARD -->
                              <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group string="Destino" class="mb-0">
-                                    <field name="partner_dest_id"/>
-                                    <field name="dest_address"/>
-                                    <field name="dest_zip"/>
+                                    <field name="partner_dest_id" required="state != 'draft'"/>
+                                    <field name="dest_address" required="state != 'draft'"/>
+                                    <field name="dest_zip" required="state != 'draft'"/>
                                     <field name="dest_rfc"/>
                                 </group>
+                                <div class="text-end mt-2">
+                                    <button name="action_clear_destino" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                </div>
                              </div>
                         </div>
                     </div>
@@ -210,14 +223,15 @@
                         <page string="Información de Ruta">
                             <group>
                                 <group invisible="state in ['draft','en_pedido']">
-                                    <field name="cp_type"/>
+                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}" class="oe_edit_only"/>
+                                    <field name="waybill_type" widget="badge" class="oe_read_only" decoration-info="waybill_type == 'income'" decoration-muted="waybill_type == 'transfer'"/>
                                 </group>
                             </group>
 
                             <!-- UNIDAD ASIGNADA -->
                             <group string="Unidad Asignada">
                                 <group>
-                                    <field name="vehicle_id"/>
+                                    <field name="vehicle_id" required="state != 'draft'"/>
                                     <field name="trailer1_id"/>
                                 </group>
                                 <group>
@@ -229,9 +243,9 @@
                             <!-- DETALLES DE RUTA -->
                             <group string="Detalles de Ruta">
                                 <group>
-                                    <field name="distance_km"/>
-                                    <field name="duration_hours" widget="float_time"/>
-                                    <field name="cost_tolls" widget="monetary"/>
+                                    <field name="distance_km" required="state != 'draft'"/>
+                                    <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
+                                    <field name="cost_tolls" widget="monetary" required="state != 'draft'"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo"/>

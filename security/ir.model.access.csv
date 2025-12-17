@@ -1,9 +1,3 @@
-# ACL - Grupos TMS:
-# - tms.group_tms_user: Usuario TMS (lectura/escritura limitada, sin eliminación en modelos críticos)
-# - tms.group_tms_manager: Manager TMS (CRUD completo en todos los modelos TMS)
-# - tms.group_tms_driver: Chofer TMS (solo lectura + escritura limitada en waybills/líneas, sin crear)
-# - base.group_portal: Solo lectura para acceso al portal web (waybills visibles para el cliente)
-# - base.group_public: Solo lectura pública (sin autenticación)
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sat_clave_prod_user,tms.sat.clave.prod.user,model_tms_sat_clave_prod,tms.group_tms_user,1,1,1,1
 access_sat_clave_unidad_user,tms.sat.clave.unidad.user,model_tms_sat_clave_unidad,tms.group_tms_user,1,1,1,1

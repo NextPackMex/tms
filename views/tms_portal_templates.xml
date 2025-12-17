@@ -95,6 +95,39 @@
 
                             <!--
                                 ================================================================
+                                SECCIÓN: DATOS DE FACTURACIÓN
+                                ================================================================
+                            -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fa fa-file-text-o"/> Datos de Facturación</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <strong>Cliente:</strong><br/>
+                                            <span t-esc="waybill.partner_invoice_id.name"/>
+                                        </div>
+                                        <t t-if="waybill.invoice_rfc">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>RFC:</strong><br/>
+                                                <span t-esc="waybill.invoice_rfc"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <t t-if="waybill.invoice_address">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <strong>Dirección:</strong><br/>
+                                                <span t-esc="waybill.invoice_address"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!--
+                                ================================================================
                                 SECCIÓN: ORIGEN Y DESTINO (CARDS)
                                 ================================================================
                             -->
@@ -118,10 +151,10 @@
                                                     <span t-esc="waybill.origin_city_id.name"/>
                                                 </p>
                                             </t>
-                                            <t t-if="waybill.origin_state_id">
+                                            <t t-if="waybill.partner_origin_id.state_id">
                                                 <p class="mb-2">
                                                     <strong>Estado:</strong><br/>
-                                                    <span t-esc="waybill.origin_state_id.name"/>
+                                                    <span t-esc="waybill.partner_origin_id.state_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_address">
@@ -154,10 +187,10 @@
                                                     <span t-esc="waybill.dest_city_id.name"/>
                                                 </p>
                                             </t>
-                                            <t t-if="waybill.dest_state_id">
+                                            <t t-if="waybill.partner_dest_id.state_id">
                                                 <p class="mb-2">
                                                     <strong>Estado:</strong><br/>
-                                                    <span t-esc="waybill.dest_state_id.name"/>
+                                                    <span t-esc="waybill.partner_dest_id.state_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_address">
@@ -259,6 +292,49 @@
 
                             <!--
                                 ================================================================
+                                SECCIÓN: UNIDAD Y CHOFER
+                                ================================================================
+                            -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fa fa-truck"/> Unidad Asignada</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <t t-if="waybill.vehicle_id">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>Vehículo (Tractor):</strong><br/>
+                                                <span t-esc="waybill.vehicle_id.license_plate"/> - <span t-esc="waybill.vehicle_id.model_id.name"/>
+                                            </div>
+                                        </t>
+                                        <t t-if="waybill.driver_id">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>Chofer:</strong><br/>
+                                                <span t-esc="waybill.driver_id.name"/>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <div class="row">
+                                         <t t-if="waybill.trailer1_id">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>Remolque 1:</strong><br/>
+                                                <span t-esc="waybill.trailer1_id.license_plate"/>
+                                                <t t-if="waybill.trailer1_id.model_id"> - <span t-esc="waybill.trailer1_id.model_id.name"/></t>
+                                            </div>
+                                        </t>
+                                         <t t-if="waybill.trailer2_id">
+                                            <div class="col-md-6 mb-3">
+                                                <strong>Remolque 2:</strong><br/>
+                                                <span t-esc="waybill.trailer2_id.license_plate"/>
+                                                 <t t-if="waybill.trailer2_id.model_id"> - <span t-esc="waybill.trailer2_id.model_id.name"/></t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!--
+                                ================================================================
                                 SECCIÓN: FIRMA EXISTENTE (Si ya fue firmada)
                                 ================================================================
                             -->
@@ -324,12 +400,39 @@
                                         <!--
                                             Total grande con moneda
                                         -->
+                                        <!--
+                                            Desglose de Totales
+                                        -->
                                         <div class="mb-4">
-                                            <h3 class="mb-0">
-                                                <span t-esc="waybill.currency_id.symbol or waybill.currency_id.name or ''"/>
-                                                <span t-esc="waybill.amount_total or 0"/>
-                                            </h3>
-                                            <small class="text-muted">Monto Total</small>
+                                            <!-- Subtotal -->
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="text-muted">Subtotal:</span>
+                                                <strong>
+                                                    <span t-esc="waybill.amount_untaxed" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                </strong>
+                                            </div>
+                                            <!-- IVA -->
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="text-muted">IVA (16%):</span>
+                                                <strong>
+                                                    <span t-esc="waybill.amount_tax" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                </strong>
+                                            </div>
+                                            <!-- Retención -->
+                                             <div class="d-flex justify-content-between mb-2 text-danger">
+                                                <span>Retención (4%):</span>
+                                                <strong>
+                                                    - <span t-esc="waybill.amount_retention" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                </strong>
+                                            </div>
+                                            <hr/>
+                                            <!-- Total -->
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="h5 mb-0">Total:</span>
+                                                <h3 class="mb-0 text-primary">
+                                                    <span t-esc="waybill.amount_total" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                </h3>
+                                            </div>
                                         </div>
 
                                         <!--
