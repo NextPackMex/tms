@@ -52,25 +52,23 @@ class TmsSatColonia(models.Model):
     # REGLA DE UNICIDAD COMPUESTA: Clave + CP
     # CRÍTICO: Permite que el mismo código exista en diferentes CPs
     # Ejemplo: código '0001' puede existir en CP '20000' y en CP '45000' simultáneamente
-    _sql_constraints = [
-        ('code_zip_uniq', 'unique(code, zip_code)',
-         'La combinación de Clave Colonia y CP debe ser única.')
-    ]
+    _code_zip_uniq = models.Constraint(
+        'unique(code, zip_code)',
+        'La combinación de Clave Colonia y CP debe ser única.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'name', 'zip_code')
+    def _compute_display_name(self):
         """
         Muestra: "[Código] Nombre (CP XXXXX)"
         Ejemplo: "[0001] Centro (CP 64000)"
         """
-        result = []
         for rec in self:
-            name = f"[{rec.code}] {rec.name} (CP {rec.zip_code})"
-            result.append((rec.id, name))
-        return result
+            rec.display_name = f"[{rec.code}] {rec.name} (CP {rec.zip_code})"
 
     @api.model
     def get_colonias_by_cp(self, zip_code):

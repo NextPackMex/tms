@@ -58,46 +58,26 @@ class TmsSatMaterialPeligroso(models.Model):
     # CONSTRAINTS
     # ============================================================
 
-    _sql_constraints = [
-        ('code_uniq', 'UNIQUE(code)',
-         'El código de material peligroso SAT ya existe.')
-    ]
+    _code_uniq = models.Constraint(
+        'UNIQUE(code)',
+        'El código de material peligroso SAT ya existe.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'name', 'clase')
+    def _compute_display_name(self):
         """
         Muestra: "Código - Descripción (Clase X)"
         Ejemplo: "1203 - Gasolina (Clase 3)"
         """
-        result = []
         for record in self:
-            # Si tiene clase, la incluimos en el nombre
             if record.clase:
-                name = f"{record.code} - {record.name} (Clase {record.clase})"
+                record.display_name = f"{record.code} - {record.name} (Clase {record.clase})"
             else:
-                name = f"{record.code} - {record.name}"
-            result.append((record.id, name))
-        return result
+                record.display_name = f"{record.code} - {record.name}"
 
-    @api.model
-    def _name_search(self, name='', domain=None, operator='ilike', limit=None, order=None):
-        """
-        Permite buscar por código, descripción o clase.
-        """
-        domain = domain or []
-
-        if name:
-            # Buscar en código, descripción o clase
-            domain = ['|', '|',
-                     ('code', operator, name),
-                     ('name', operator, name),
-                     ('clase', operator, name)
-                     ] + domain
-
-        return super()._name_search(
-            name='', domain=domain, operator=operator,
-            limit=limit, order=order
-        )
+    # Odoo 19: Búsqueda flexible en múltiples campos
+    _rec_names_search = ['code', 'name', 'clase']

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_employee_form_tms_inherit" model="ir.ui.view">
+        <field name="name">hr.employee.form.tms.inherit</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <!-- Agregar pestaña de Carta Porte / Transporte -->
+            <xpath expr="//page[@name='personal_information']" position="after">
+                <page string="Transporte (Carta Porte)" name="tms_info" invisible="not tms_is_driver">
+                    <group>
+                        <group string="Licencia Federal">
+                            <field name="tms_driver_license_type"/>
+                            <field name="tms_driver_license"/>
+                            <field name="tms_driver_license_expiration"/>
+                            <!-- Widget para mostrar alerta si vence pronto (opcional, odoo nativo lo maneja con colores en list) -->
+                        </group>
+                        <group string="Datos Fiscales (Desde Contacto)">
+                            <!-- Estos campos vienen del Partner (work_contact_id), vitales para CP -->
+                            <field name="work_contact_id" required="tms_is_driver" string="Contacto (Partner)"/>
+                            <field name="tms_driver_rfc"/>
+                            <field name="l10n_mx_edi_fiscal_regime" required="tms_is_driver"/>
+                            <field name="tms_driver_address"/>
+                            <div class="alert alert-warning" role="alert" invisible="tms_driver_rfc and tms_driver_address">
+                                <icon name="fa-exclamation-triangle"/>
+                                <strong>¡Atención!</strong> El Operador debe tener RFC y Domicilio configurados en su Contacto para timbrar Carta Porte.
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+            <!-- Agregar Checkbox de "Es Chofer" en el encabezado o sección principal -->
+            <xpath expr="//field[@name='parent_id']" position="after">
+                <field name="tms_is_driver" widget="boolean_toggle"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tms_fuel_history_tree" model="ir.ui.view">
+        <field name="name">tms.fuel.history.tree</field>
+        <field name="model">tms.fuel.history</field>
+        <field name="arch" type="xml">
+            <list string="Historial Diesel" editable="bottom">
+                <field name="date"/>
+                <field name="price" widget="monetary"/>
+                <field name="notes"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_tms_fuel_history" model="ir.actions.act_window">
+        <field name="name">Historial Diesel</field>
+        <field name="res_model">tms.fuel.history</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+          <p class="o_view_nocontent_smiling_face">
+            Registra el primer precio de diesel.
+          </p><p>
+            El precio más reciente será utilizado por defecto en los nuevos Viajes.
+          </p>
+        </field>
+    </record>
+</odoo>

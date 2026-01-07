@@ -60,11 +60,11 @@
     'category': 'Logistics',
 
     # Versión
-    'version': '18.0.1.0.0',
+    'version': '19.0.1.0.0',
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)
-    'depends': ['base', 'fleet', 'account', 'contacts', 'board', 'mail', 'portal', 'web', 'website', 'sale_management'],
+    'depends': ['base', 'fleet', 'account', 'contacts', 'board', 'mail', 'portal', 'web', 'website', 'sale_management', 'hr'],
     # NOTA: Los catálogos SAT están en este mismo módulo, no necesitamos dependencia externa
 
     # Archivos de datos (orden estricto de carga)
@@ -100,6 +100,7 @@
         # 3.1 Extensiones de modelos base SAT
         'views/res_partner_tms_view.xml',
         'views/res_partner_tms_modals_view.xml',
+        'views/hr_employee_views.xml',
 
         # 4. Vistas de Flota (extensión de módulo nativo)
         'views/tms_vehicle_type_view.xml',
@@ -110,6 +111,7 @@
 
         # 6. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',
+        'views/tms_fuel_history_views.xml',
 
         # 7. Dashboard
         'views/tms_dashboard_views.xml',

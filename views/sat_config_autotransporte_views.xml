@@ -7,8 +7,37 @@
             <list string="Configuración Autotransporte SAT">
                 <field name="code"/>
                 <field name="name"/>
-                <field name="numero_ejes_remolque"/>
+                <field name="total_axles"/>
+                <field name="total_tires"/>
+                <field name="remolque"/>
+                <field name="vigencia_inicio"/>
+                <field name="vigencia_fin"/>
             </list>
+        </field>
+    </record>
+
+    <record id="view_sat_config_autotransporte_form" model="ir.ui.view">
+        <field name="name">tms.sat.config.autotransporte.form</field>
+        <field name="model">tms.sat.config.autotransporte</field>
+        <field name="arch" type="xml">
+            <form string="Configuración Autotransporte SAT">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="total_axles"/>
+                            <field name="total_tires"/>
+                        </group>
+                        <group>
+                            <field name="remolque"/>
+                            <field name="numero_ejes_remolque"/>
+                            <field name="vigencia_inicio"/>
+                            <field name="vigencia_fin"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
 

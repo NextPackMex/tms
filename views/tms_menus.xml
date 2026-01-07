@@ -74,11 +74,17 @@
               sequence="20"/>
 
     <!-- Destinos/Rutas -->
-    <menuitem id="menu_tms_destinations"
+    <menuitem id="tms_menu_destinations"
               name="Destinos"
               parent="menu_tms_operations"
               action="action_tms_destination"
-              sequence="30"/>
+              sequence="40"/>
+
+    <menuitem id="tms_menu_fuel_history"
+              name="Historial Diesel"
+              parent="menu_tms_operations"
+              action="action_tms_fuel_history"
+              sequence="50"/>
 
     <!-- ==================================================== -->
     <!-- 4. SUBMENÚS DE CONFIGURACIÓN -->

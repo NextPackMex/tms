@@ -54,20 +54,18 @@ class TmsSatFiguraTransporte(models.Model):
     # CONSTRAINTS
     # ============================================================
 
-    _sql_constraints = [
-        ('code_uniq', 'UNIQUE(code)',
-         'El código de figura de transporte ya existe.')
-    ]
+    _code_uniq = models.Constraint(
+        'UNIQUE(code)',
+        'El código de figura de transporte ya existe.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'name')
+    def _compute_display_name(self):
         """Muestra: "Código - Descripción" """
-        result = []
         for record in self:
-            name = f"{record.code} - {record.name}"
-            result.append((record.id, name))
-        return result
+            record.display_name = f"{record.code} - {record.name}"
 

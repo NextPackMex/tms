@@ -73,72 +73,23 @@ class TmsSatClaveProd(models.Model):
     # ============================================================
 
     # Constraint: el código debe ser único
-    _sql_constraints = [
-        ('code_uniq', 'UNIQUE(code)',
-         'El código de producto SAT ya existe. No se pueden duplicar claves.')
-    ]
+    _code_uniq = models.Constraint(
+        'UNIQUE(code)',
+        'El código de producto SAT ya existe. No se pueden duplicar claves.',
+    )
 
     # ============================================================
     # MÉTODOS OVERRIDE
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'name')
+    def _compute_display_name(self):
         """
-        Sobrescribe cómo se muestra el nombre del registro en listas desplegables.
-
-        Por defecto mostraría solo el código (porque _rec_name='code').
-        Con este override, mostrará: "Código - Descripción"
+        Sobrescribe cómo se muestra el nombre del registro.
         Ejemplo: "01010101 - Animales vivos de granja"
-
-        :return: lista de tuplas (id, nombre_completo)
         """
-        # Lista vacía para almacenar los resultados
-        result = []
-
-        # Iteramos sobre cada registro
         for record in self:
-            # Creamos el nombre combinado: Código - Descripción
-            # Usamos slicing [:100] para limitar a 100 caracteres
-            name = f"{record.code} - {record.name[:100]}"
+            record.display_name = f"{record.code} - {record.name[:100]}"
 
-            # Agregamos la tupla (id, nombre) a la lista de resultados
-            result.append((record.id, name))
-
-        return result
-
-    @api.model
-    def _name_search(self, name='', domain=None, operator='ilike', limit=None, order=None):
-        """
-        Sobrescribe el método de búsqueda para mejorar las capacidades de búsqueda.
-
-        Permite buscar por:
-        - Código (ej: "01010101")
-        - Descripción (ej: "animales")
-        - Palabras clave (ej: "granja")
-
-        :param name: texto a buscar
-        :param domain: dominio adicional de filtros
-        :param operator: operador de comparación (ilike = insensible a mayúsculas)
-        :param limit: cantidad máxima de resultados
-        :param order: orden de los resultados
-        :return: lista de IDs que coinciden con la búsqueda
-        """
-        # domain es la condición SQL para filtrar
-        domain = domain or []
-
-        # Si hay un nombre/texto para buscar
-        if name:
-            # Agregamos condiciones OR para buscar en varios campos
-            # '|' = operador OR
-            # Se agregan 2 OR porque buscamos en 3 campos (OR entre pares)
-            domain = ['|', '|',
-                     ('code', operator, name),              # Buscar por código
-                     ('name', operator, name),              # Buscar por descripción
-                     ('palabras_clave', operator, name)     # Buscar por palabras clave
-                     ] + domain
-
-        # Llamamos al método padre con el dominio modificado
-        return super()._name_search(
-            name='', domain=domain, operator=operator,
-            limit=limit, order=order
-        )
+    # Odoo 19: Búsqueda flexible en múltiples campos
+    _rec_names_search = ['code', 'name', 'palabras_clave']

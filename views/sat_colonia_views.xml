@@ -20,29 +20,19 @@
     </record>
 
     <!-- Vista Search: Colonias -->
+    <!--
     <record id="view_sat_colonia_search" model="ir.ui.view">
         <field name="name">tms.sat.colonia.search</field>
         <field name="model">tms.sat.colonia</field>
         <field name="arch" type="xml">
             <search string="Buscar Colonia">
-                <!-- Búsqueda por código postal -->
-                <field name="zip_code" string="CP"/>
-
-                <!-- Búsqueda por nombre de colonia -->
-                <field name="name" string="Colonia"/>
-
-                <!-- Búsqueda por código SAT -->
-                <field name="code" string="Clave SAT"/>
-
-                <!-- Filtro: Agrupar por código postal -->
-                <group expand="0" string="Agrupar Por">
-                    <filter name="group_cp"
-                            string="Código Postal"
-                            context="{'group_by': 'zip_code'}"/>
-                </group>
+                <field name="zip_code"/>
+                <field name="name"/>
+                <field name="code"/>
             </search>
         </field>
     </record>
+    -->
 
     <!-- Action: Colonias -->
     <record id="action_sat_colonia" model="ir.actions.act_window">

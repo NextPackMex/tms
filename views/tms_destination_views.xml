@@ -67,7 +67,7 @@
                         <group string="Ubicación">
                             <field name="origin_zip" placeholder="Ej. 45000"/>
                             <field name="dest_zip" placeholder="Ej. 11000"/>
-                             <field name="vehicle_type_id"/>
+                            <field name="vehicle_type_id"/>
                         </group>
 
                         <!-- Segunda columna: Métricas -->
@@ -78,7 +78,7 @@
                             <field name="last_update" readonly="1"/>
                             <field name="active"/>
                             <field name="company_id" groups="base.group_multi_company"/>
-                             <field name="currency_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
                         </group>
                     </group>
 
@@ -103,18 +103,17 @@
                 <field name="vehicle_type_id"/>
 
                 <!-- Filtro: Solo rutas activas -->
-                <filter name="filter_active" string="Activas"
-                        domain="[('active', '=', True)]"/>
+                <filter name="filter_active" string="Activas" domain="[('active', '=', True)]"/>
 
                 <!-- Agrupación -->
+                <!-- Agrupación -->
+                <!--
                 <group expand="0" string="Agrupar Por">
-                    <filter name="group_origin" string="CP Origen"
-                            context="{'group_by': 'origin_zip'}"/>
-                    <filter name="group_dest" string="CP Destino"
-                            context="{'group_by': 'dest_zip'}"/>
-                    <filter name="group_vehicle" string="Tipo Vehículo"
-                            context="{'group_by': 'vehicle_type_id'}"/>
+                    <filter name="group_origin" string="CP Origen" context="{'group_by': 'origin_zip'}"/>
+                    <filter name="group_dest" string="CP Destino" context="{'group_by': 'dest_zip'}"/>
+                    <filter name="group_vehicle" string="Tipo Vehículo" context="{'group_by': 'vehicle_type_id'}"/>
                 </group>
+                -->
             </search>
         </field>
     </record>

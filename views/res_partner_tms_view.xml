@@ -15,10 +15,7 @@
             <!-- Usamos xpath genérico para encontrar el zip dentro del bloque de dirección -->
             <xpath expr="//div[hasclass('o_address_format')]//field[@name='zip']" position="replace">
                 <!-- Campo SAT Seleccionable -->
-                <field name="tms_cp_id"
-                       placeholder="Código Postal"
-                       class="o_address_zip"
-                       options="{'no_create': True, 'no_open': True}"/>
+                <field name="tms_cp_id" placeholder="Código Postal" class="o_address_zip" options="{'no_create': True, 'no_open': True}"/>
                 <!-- Campo Nativo Oculto (para compatibilidad) -->
                 <field name="zip" invisible="1"/>
             </xpath>
@@ -29,26 +26,14 @@
 
                 <!-- Municipio y Localidad en una línea -->
                 <div class="d-flex w-100 gap-1">
-                    <field name="l10n_mx_edi_municipio_sat_id"
-                           placeholder="Municipio"
-                           class="o_address_city"
-                           options="{'no_create': True, 'no_open': True}"
-                           domain="[('estado', '=', tms_sat_state_code)]"/>
+                    <field name="l10n_mx_edi_municipio_sat_id" placeholder="Municipio" class="o_address_city" options="{'no_create': True, 'no_open': True}" domain="[('estado', '=', tms_sat_state_code)]"/>
 
-                    <field name="l10n_mx_edi_localidad_sat_id"
-                           placeholder="Localidad"
-                           class="o_address_city"
-                           options="{'no_create': True, 'no_open': True}"
-                           domain="[('estado', '=', tms_sat_state_code)]"/>
+                    <field name="l10n_mx_edi_localidad_sat_id" placeholder="Localidad" class="o_address_city" options="{'no_create': True, 'no_open': True}" domain="[('estado', '=', tms_sat_state_code)]"/>
                 </div>
 
                 <!-- Colonia en su propia línea -->
                 <div class="w-100">
-                    <field name="l10n_mx_edi_colonia_sat_id"
-                           placeholder="Colonia"
-                           class="o_address_street"
-                           options="{'no_create': True, 'no_open': True}"
-                           domain="[('zip_code', '=', zip)]"/>
+                    <field name="l10n_mx_edi_colonia_sat_id" placeholder="Colonia" class="o_address_street" options="{'no_create': True, 'no_open': True}" domain="[('zip_code', '=', zip)]"/>
                 </div>
 
             </xpath>
@@ -57,6 +42,28 @@
             <xpath expr="//div[hasclass('o_address_format')]" position="after">
                 <field name="company_id" groups="base.group_multi_company" invisible="1"/>
             </xpath>
+
+            <!-- 5. DATOS FISCALES SAT (CFDI 4.0) -->
+            <xpath expr="//notebook" position="inside">
+                <page name="sat_fiscal_data" string="Datos Fiscales SAT" invisible="not is_company and parent_id">
+                    <group>
+                        <group string="Configuración CFDI 4.0">
+                            <field name="l10n_mx_edi_fiscal_regime" required="1"/>
+                            <field name="l10n_mx_edi_usage" required="1"/>
+                        </group>
+                        <group string="Validación de Datos">
+                            <label for="action_tms_normalize_name_40"/>
+                            <div class="d-flex flex-column">
+                                <button name="action_tms_normalize_name_40" type="object" string="Normalizar Nombre para SAT 4.0" class="btn-primary" help="Convierte a MAYÚSCULAS y elimina regímenes societarios (S.A. de C.V., etc.)"/>
+                                <p class="text-muted small mt-2">
+                                    Requerido por el SAT: El nombre debe coincidir exactamente con la Constancia de Situación Fiscal (sin S.A. de C.V., etc).
+                                </p>
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
 
         </field>
     </record>

@@ -59,27 +59,47 @@ class TmsSatConfigAutotransporte(models.Model):
         help='Cantidad de ejes del remolque o semirremolque (0 si no lleva)'
     )
 
+    # NUEVO: Número de llantas
+    total_tires = fields.Char(
+        string='Número de Llantas',
+        help='Número de llantas (ej. 04, 06, 18)'
+    )
+
+    # NUEVO: Indicador de Remolque (Char para soportar "0, 1")
+    remolque = fields.Char(
+        string='Remolque',
+        help='Aplica remolque (0=No, 1=Si, 0,1=Opcional)'
+    )
+
+    # NUEVO: Vigencia Inicio
+    vigencia_inicio = fields.Date(string='Fecha Inicio Vigencia')
+
+    # NUEVO: Vigencia Fin
+    vigencia_fin = fields.Date(string='Fecha Fin Vigencia')
+
+    # Integer: Total de ejes de la configuración (Tractor + Remolque)
+    # Se usa para cálculo de casetas en Google Maps API
+    total_axles = fields.Integer(
+        string='Total de Ejes',
+        default=2,
+        help='Número total de ejes de la configuración (incluyendo tractor y remolques). Usado para API de Mapas.'
+    )
+
     # ============================================================
     # CONSTRAINTS
     # ============================================================
 
-    _sql_constraints = [
-        ('code_uniq', 'UNIQUE(code)',
-         'El código de configuración ya existe.')
-    ]
+    _code_uniq = models.Constraint(
+        'UNIQUE(code)',
+        'El código de configuración ya existe.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
-        """
-        Muestra: "Código - Descripción"
-        Ejemplo: "T3S2 - Tractocamión-Semirremolque"
-        """
-        result = []
+    @api.depends('code', 'name')
+    def _compute_display_name(self):
         for record in self:
-            name = f"{record.code} - {record.name}"
-            result.append((record.id, name))
-        return result
+            record.display_name = f"{record.code} - {record.name}"
 

@@ -9,30 +9,43 @@
         -->
 
         <!-- Categoría del módulo TMS -->
+        <!-- Categoría del módulo TMS -->
         <record id="module_category_tms" model="ir.module.category">
             <field name="name">TMS - Transporte</field>
             <field name="description">Permisos para gestión de transporte y flota</field>
             <field name="sequence">10</field>
         </record>
 
+        <!-- Privilegio: TMS (Rol Principal) -->
+        <record id="privilege_tms_standard" model="res.groups.privilege">
+            <field name="name">TMS</field>
+            <field name="category_id" ref="module_category_tms"/>
+        </record>
+
+        <!-- Privilegio: TMS Chofer (Rol Adicional) -->
+        <record id="privilege_tms_driver" model="res.groups.privilege">
+            <field name="name">Chofer</field>
+            <field name="category_id" ref="module_category_tms"/>
+        </record>
+
         <!-- Grupo: Usuario TMS -->
         <record id="group_tms_user" model="res.groups">
             <field name="name">Usuario TMS</field>
-            <field name="category_id" ref="module_category_tms"/>
+            <field name="privilege_id" ref="privilege_tms_standard"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
         </record>
 
         <!-- Grupo: Manager TMS -->
         <record id="group_tms_manager" model="res.groups">
             <field name="name">Manager TMS</field>
-            <field name="category_id" ref="module_category_tms"/>
+            <field name="privilege_id" ref="privilege_tms_standard"/>
             <field name="implied_ids" eval="[(4, ref('group_tms_user'))]"/>
         </record>
 
         <!-- Grupo: Chofer TMS -->
         <record id="group_tms_driver" model="res.groups">
             <field name="name">Chofer TMS</field>
-            <field name="category_id" ref="module_category_tms"/>
+            <field name="privilege_id" ref="privilege_tms_driver"/>
             <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
         </record>
 

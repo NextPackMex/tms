@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, fields
+from odoo import models, fields, api
 
 
 class TmsSatCodigoPostal(models.Model):
@@ -53,22 +53,20 @@ class TmsSatCodigoPostal(models.Model):
     # REGLA: La combinación CP + Estado + Municipio debe ser única
     # Esto previene el error si el mismo CP existe para diferentes zonas
     # (raro, pero posible en datos sucios o archivos con inconsistencias)
-    _sql_constraints = [
-        ('code_estado_muni_uniq', 'unique(code, estado, municipio)',
-         'El Código Postal ya existe para este Estado/Municipio.')
-    ]
+    _code_estado_muni_uniq = models.Constraint(
+        'unique(code, estado, municipio)',
+        'El Código Postal ya existe para este Estado/Municipio.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'municipio', 'estado')
+    def _compute_display_name(self):
         """
         Muestra: "CP - Municipio (Estado)"
         Ejemplo: "64000 - Aguascalientes (AGU)"
         """
-        result = []
         for rec in self:
-            name = f"{rec.code} - {rec.municipio or ''} ({rec.estado or ''})"
-            result.append((rec.id, name))
-        return result
+            rec.display_name = f"{rec.code} - {rec.municipio or ''} ({rec.estado or ''})"

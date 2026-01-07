@@ -99,7 +99,7 @@ class TmsDestination(models.Model):
 
     last_update = fields.Date(string="Última Actualización", default=fields.Date.context_today)
 
-    _sql_constraints = [
-        ('unique_route', 'unique(company_id, origin_zip, dest_zip, vehicle_type_id)',
-         'Ya existe una ruta guardada para este origen, destino y tipo de vehículo.')
-    ]
+    _unique_route = models.Constraint(
+        'unique(company_id, origin_zip, dest_zip, vehicle_type_id)',
+        'Ya existe una ruta guardada para este origen, destino y tipo de vehículo.',
+    )

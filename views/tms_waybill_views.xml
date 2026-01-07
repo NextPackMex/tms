@@ -8,9 +8,7 @@
         <field name="name">tms.waybill.kanban</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state"
-                    class="o_kanban_small_column"
-                    records_draggable="true">
+            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="true">
                 <field name="name"/>
                 <field name="state"/>
                 <field name="currency_id"/>
@@ -77,9 +75,7 @@
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>
                 <field name="amount_total" widget="monetary"/>
-                <field name="state" widget="badge"
-                       decoration-info="state == 'request'"
-                       decoration-success="state == 'invoiced'"/>
+                <field name="state" widget="badge" decoration-info="state == 'request'" decoration-success="state == 'invoiced'"/>
                 <field name="company_id" column_invisible="True"/>
                 <field name="currency_id" column_invisible="True"/>
             </list>
@@ -96,38 +92,23 @@
             <form string="Viaje">
                 <header>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
-                    <button name="action_set_en_pedido"
-                            string="Confirmar Pedido"
-                            type="object"
-                            class="btn-primary"
-                            invisible="state != 'draft'"/>
-                    <button name="action_send_email"
-                            string="Enviar Cotización"
-                            type="object"
-                            class="btn-primary"
-                            icon="fa-envelope"
-                            invisible="state != 'draft'"/>
-                    <button name="action_approve_cp" string="Generar Carta Porte"
-                            type="object" class="oe_highlight"
-                            invisible="state != 'assigned'"/>
-                    <button name="action_start_route_manual" string="Iniciar Ruta"
-                            type="object" class="oe_highlight"
-                            invisible="state != 'carta_porte'"/>
-                    <button name="action_arrived_dest_manual" string="Registrar Llegada"
-                            type="object" class="oe_highlight"
-                            invisible="state != 'transit'"/>
-                    <button name="action_create_invoice" string="Facturar"
-                            type="object" class="oe_highlight"
-                            invisible="state != 'destination'"/>
+                    <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
+                    <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state != 'draft'"/>
+                    <button name="action_approve_cp" string="Generar Carta Porte" type="object" class="oe_highlight" invisible="state != 'assigned'"/>
+                    <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'carta_porte'"/>
+                    <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'transit'"/>
+                    <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'destination'"/>
 
-                    <field name="state"
-                           widget="statusbar"
-                           statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed"
-                           statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
 
                 <sheet>
                     <field name="company_id" invisible="1"/>
+                    <field name="is_fuel_price_outdated" invisible="1"/>
+                    <div class="alert alert-warning" role="alert" invisible="not is_fuel_price_outdated">
+                        <strong>AVISO:</strong> No hay precio de diesel reciente (más de 7 días) o no existe historial. Se utiliza el último registro disponible.
+                    </div>
                     <div class="d-flex justify-content-between">
                         <div class="oe_title">
                             <label for="name" string="Folio"/>
@@ -135,6 +116,24 @@
                                 <field name="name" readonly="1"/>
                             </h1>
                         </div>
+
+                        <div class="text-center">
+                            <div class="d-flex gap-3">
+                                <div>
+                                    <label for="date_started_route" string="Fecha Y hora Embarque" class="text-danger fw-bold"/>
+                                    <h3 class="m-0">
+                                        <field name="date_started_route" widget="datetime" class="text-danger" nolabel="1"/>
+                                    </h3>
+                                </div>
+                                <div>
+                                    <label for="date_arrived_dest" string="Fecha y hora de Entrega" class="text-danger fw-bold"/>
+                                    <h3 class="m-0">
+                                        <field name="date_arrived_dest" widget="datetime" class="text-danger" nolabel="1"/>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="oe_title text-end">
                             <label for="company_name" string="Empresa"/>
                             <h1>
@@ -150,8 +149,8 @@
                     <!-- ACTORES DEL VIAJE (HEADER) -->
                     <div class="row mb-3">
                         <div class="col-lg-8">
-                             <!-- FACTURACIÓN CARD -->
-                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
+                            <!-- FACTURACIÓN CARD -->
+                            <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
                                 <group string="Facturación" class="mb-0">
                                     <field name="date_created" string="Fecha del Pedido"/>
                                     <field name="partner_invoice_id" required="state != 'draft'"/>
@@ -160,9 +159,9 @@
                                     <field name="company_id" groups="base.group_multi_company"/>
                                 </group>
                                 <div class="text-end mt-2">
-                                    <button name="action_clear_facturacion" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                    <button name="action_clear_facturacion" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                         <div class="col-lg-4">
                             <!-- PRECIO CARD -->
@@ -193,13 +192,13 @@
                                     <field name="origin_rfc"/>
                                 </group>
                                 <div class="text-end mt-2">
-                                    <button name="action_clear_origen" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                    <button name="action_clear_origen" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
                             <!-- DESTINO CARD -->
-                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
+                            <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group string="Destino" class="mb-0">
                                     <field name="partner_dest_id" required="state != 'draft'"/>
                                     <field name="dest_address" required="state != 'draft'"/>
@@ -207,9 +206,9 @@
                                     <field name="dest_rfc"/>
                                 </group>
                                 <div class="text-end mt-2">
-                                    <button name="action_clear_destino" type="object" icon="fa-trash" class="btn btn-link text-danger"/>
+                                    <button name="action_clear_destino" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </div>
 
@@ -232,11 +231,13 @@
                             <group string="Unidad Asignada">
                                 <group>
                                     <field name="vehicle_id" required="state != 'draft'"/>
-                                    <field name="trailer1_id"/>
+                                    <field name="require_trailer" widget="boolean_toggle"/>
+                                    <field name="trailer1_id" invisible="not require_trailer"/>
                                 </group>
                                 <group>
                                     <field name="driver_id"/>
-                                    <field name="trailer2_id"/>
+                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)"/>
+                                    <field name="total_axles"/>
                                 </group>
                             </group>
 
@@ -250,13 +251,10 @@
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo"/>
                                     <div class="o_row">
-                                        <button name="action_compute_route_smart"
-                                                type="object"
-                                                string=" Calcular Ruta (Smart)"
-                                                icon="fa-magic"
-                                                class="btn btn-primary"/>
+                                        <button name="action_compute_route_smart" type="object" string=" Calcular Ruta (Smart)" icon="fa-magic" class="btn btn-primary"/>
                                         <div class="text-muted ms-2">
-                                            <i class="fa fa-info-circle"/> Calcula distancia y casetas basado en Origen/Destino y Vehículo.
+                                            <i class="fa fa-info-circle"/>
+ Calcula distancia y casetas basado en Origen/Destino y Vehículo.
                                         </div>
                                     </div>
                                 </group>
@@ -275,13 +273,13 @@
                                     <field name="cost_driver"/>
                                     <field name="cost_maneuver"/>
                                     <field name="cost_other"/>
+                                    <field name="cost_commission"/>
                                     <field name="cost_diesel_total" readonly="1"/>
+                                    <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
                                 <group string="Selección de Propuesta">
                                     <!-- label con 'for' para Odoo 18 -->
-                                    <label for="selected_proposal"
-                                           string="Selecciona la propuesta que se aplicará al cliente."
-                                           class="o_form_label text-muted"/>
+                                    <label for="selected_proposal" string="Selecciona la propuesta que se aplicará al cliente." class="o_form_label text-muted"/>
                                     <field name="selected_proposal" widget="radio"/>
                                 </group>
                             </group>
@@ -294,11 +292,14 @@
                                     <field name="price_per_km"/>
                                     <label for="distance_km" string="Distancia Total"/>
                                     <div class="o_row">
-                                        <field name="distance_km" class="oe_inline" readonly="1"/> km base +
-                                        <field name="extra_distance_km" class="oe_inline"/> km extras
+                                        <field name="distance_km" class="oe_inline" readonly="1"/>
+ km base +
+                                        <field name="extra_distance_km" class="oe_inline"/>
+ km extras
                                     </div>
                                     <p class="text-muted small" style="margin-top: 5px;">
-                                        <i class="fa fa-info-circle"/> Los km extras se suman a la distancia base para el cobro
+                                        <i class="fa fa-info-circle"/>
+ Los km extras se suman a la distancia base para el cobro
                                     </p>
                                     <field name="proposal_km_total" widget="monetary" readonly="1" decoration-bf="1"/>
                                 </group>
@@ -317,6 +318,34 @@
                         </page>
 
                         <!-- ======================= -->
+                        <!-- CARTA PORTE 3.1 -->
+                        <!-- ======================= -->
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31">
+                            <group>
+                                <group string="Identificación">
+                                    <label for="tms_id_ccp"/>
+                                    <div class="d-flex gap-2">
+                                        <field name="tms_id_ccp" placeholder="Automático al timbrar"/>
+                                        <button name="action_generate_id_ccp" type="object" string="Generar ID" class="btn-secondary" invisible="tms_id_ccp" help="Genera el UUID requerido para el IdCCP"/>
+                                    </div>
+                                    <field name="l10n_mx_edi_is_international" widget="boolean_toggle"/>
+                                    <field name="l10n_mx_edi_logistica_inversa" widget="boolean_toggle"/>
+                                </group>
+                                <group string="Autotransporte">
+                                    <field name="tms_gross_vehicle_weight" string="Peso Bruto (Ton)"/>
+                                </group>
+                            </group>
+
+                            <group string="Regímenes Aduaneros (Hasta 10)" invisible="not l10n_mx_edi_is_international">
+                                <field name="l10n_mx_edi_customs_regime_ids" nolabel="1">
+                                    <list editable="bottom">
+                                        <field name="regimen_aduanero"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+
+                        <!-- ======================= -->
                         <!-- MERCANCÍAS             -->
                         <!-- ======================= -->
                         <page string="Mercancías">
@@ -329,6 +358,10 @@
                                     <field name="weight_kg"/>
                                     <field name="dimensions"/>
                                     <field name="is_dangerous"/>
+                                    <field name="l10n_mx_edi_tax_object"/>
+                                    <field name="l10n_mx_edi_sector_cofepris" optional="hide"/>
+                                    <field name="l10n_mx_edi_active_ingredient" optional="hide"/>
+                                    <field name="l10n_mx_edi_nominal_purity" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -337,28 +370,34 @@
                         <!-- BITÁCORA GPS           -->
                         <!-- ======================= -->
                         <page string="Bitácora GPS">
-                            <group col="3">
-                                <group string="Origen">
-                                    <field name="date_arrived_origin"/>
-                                    <field name="lat_arrived_origin"/>
-                                    <field name="long_arrived_origin"/>
-                                </group>
-                                <group string="Ruta">
-                                    <field name="date_started_route"/>
-                                    <field name="lat_started_route"/>
-                                    <field name="long_started_route"/>
-                                </group>
-                                <group string="Destino">
-                                    <field name="date_arrived_dest"/>
-                                    <field name="lat_arrived_dest"/>
-                                    <field name="long_arrived_dest"/>
-                                </group>
-                            </group>
-                            <group string="Tracking en Vivo">
-                                <field name="last_report_date"/>
-                                <field name="last_app_lat"/>
-                                <field name="last_app_long"/>
-                            </group>
+                            <field name="tracking_event_ids">
+                                <list string="Eventos de Rastreo" editable="bottom">
+                                    <field name="date"/>
+                                    <field name="name"/>
+                                    <field name="location_description"/>
+                                    <field name="latitude"/>
+                                    <field name="longitude"/>
+                                    <field name="source" widget="badge" decoration-info="source == 'app'" decoration-muted="source == 'manual'"/>
+                                    <field name="notes" optional="hide"/>
+                                </list>
+                                <form string="Evento de Rastreo">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="date"/>
+                                                <field name="name"/>
+                                                <field name="source"/>
+                                            </group>
+                                            <group>
+                                                <field name="latitude"/>
+                                                <field name="longitude"/>
+                                                <field name="location_description"/>
+                                            </group>
+                                        </group>
+                                        <field name="notes" placeholder="Notas adicionales..."/>
+                                    </sheet>
+                                </form>
+                            </field>
                         </page>
 
                         <!-- ======================= -->
@@ -372,15 +411,12 @@
                                     <field name="signed_ip" readonly="1"/>
                                     <label for="signed_latitude" string="Ubicación Firma"/>
                                     <div class="o_row">
-                                        <field name="signed_latitude" readonly="1" class="oe_inline"/> /
+                                        <field name="signed_latitude" readonly="1" class="oe_inline"/>
+ /
                                         <field name="signed_longitude" readonly="1" class="oe_inline"/>
-                                        <a type="action"
-                                           class="btn btn-sm btn-link"
-                                           role="button"
-                                           target="_blank"
-                                           href="https://www.google.com/maps/search/?api=1&amp;query={{signed_latitude}},{{signed_longitude}}"
-                                           invisible="not signed_latitude">
-                                            <i class="fa fa-map-marker"/> Ver en Mapa
+                                        <a type="action" class="btn btn-sm btn-link" role="button" target="_blank" href="https://www.google.com/maps/search/?api=1&amp;query={{signed_latitude}},{{signed_longitude}}" invisible="not signed_latitude">
+                                            <i class="fa fa-map-marker"/>
+ Ver en Mapa
                                         </a>
                                     </div>
                                 </group>
@@ -410,12 +446,12 @@
             <search>
                 <field name="name"/>
                 <field name="partner_invoice_id"/>
-                <filter name="filter_request" string="Solicitudes"
-                        domain="[('state', '=', 'request')]"/>
+                <filter name="filter_request" string="Solicitudes" domain="[('state', '=', 'request')]"/>
+                <!--
                 <group expand="0" string="Agrupar Por">
-                    <filter string="Estado" name="group_by_state"
-                            context="{'group_by': 'state'}"/>
+                    <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
                 </group>
+                -->
             </search>
         </field>
     </record>

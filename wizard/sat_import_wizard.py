@@ -73,7 +73,15 @@ CATALOG_MAP = {
     },
     'config_auto': {
         'model': 'tms.sat.config.autotransporte',
-        'cols': {'code': 0, 'name': 1, 'numero_ejes_remolque': 4},
+        'cols': {
+            'code': 0,
+            'name': 1,
+            'total_axles': 2,
+            'total_tires': 3,
+            'remolque': 4,
+            'vigencia_inicio': 5,
+            'vigencia_fin': 6
+        },
         'keys': ['code']
     },
     'permiso': {
@@ -247,12 +255,25 @@ class SatImportWizard(models.TransientModel):
 
                         if field == 'material_peligroso':
                             vals[field] = self._clean_hazardous(raw)
-                        elif field == 'numero_ejes_remolque':
+                        elif field in ['numero_ejes_remolque', 'total_axles']:
                             # Campo numérico
                             try:
                                 vals[field] = int(float(str(raw).replace(',', ''))) if raw else 0
                             except (ValueError, TypeError):
                                 vals[field] = 0
+                        elif field in ['vigencia_inicio', 'vigencia_fin']:
+                            # Parsing de fecha (DD/MM/YYYY)
+                            s = self._clean_str(raw)
+                            if s:
+                                try:
+                                    # Convertir DD/MM/YYYY a YYYY-MM-DD (Formato Odoo)
+                                    from datetime import datetime
+                                    dt = datetime.strptime(s, '%d/%m/%Y')
+                                    vals[field] = dt.strftime('%Y-%m-%d')
+                                except ValueError:
+                                    vals[field] = False
+                            else:
+                                vals[field] = False
                         else:
                             # APLICAR LIMPIEZA A TODOS LOS CAMPOS
                             vals[field] = self._clean_str(raw)
@@ -260,10 +281,10 @@ class SatImportWizard(models.TransientModel):
                         # Campo opcional, usar valor por defecto
                         if field == 'material_peligroso':
                             vals[field] = '0'
-                        elif field == 'numero_ejes_remolque':
+                        elif field in ['numero_ejes_remolque', 'total_axles']:
                             vals[field] = 0
                         else:
-                            vals[field] = ''
+                            vals[field] = False
 
                 # Validar que la llave primaria tenga dato
                 if not vals.get(primary_key):

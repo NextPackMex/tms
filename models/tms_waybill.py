@@ -2,8 +2,10 @@
 import logging
 import requests
 import json
+import uuid
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
+from datetime import timedelta
 
 _logger = logging.getLogger(__name__)
 
@@ -52,7 +54,6 @@ class TmsWaybill(models.Model):
 
     company_name = fields.Char(related='company_id.name', string="Nombre Empresa", store=True, readonly=True)
 
-    # Many2one: moneda (relacionada a la compañía)
     currency_id = fields.Many2one(
         'res.currency',
         string='Moneda',
@@ -60,6 +61,10 @@ class TmsWaybill(models.Model):
         readonly=True,
         store=True,
     )
+
+    # 🚀 OPTIMIZACIÓN ODOO 19
+    _main_search_idx = models.Index("(company_id, state, date_created)")
+    _folio_idx = models.Index("(company_id, name)")
 
     # ============================================================
     # CONTROL DE WORKFLOW
@@ -113,6 +118,80 @@ class TmsWaybill(models.Model):
     # ============================================================
     # Se usan campos booleanos con onchange para limpiar datos
     # sin disparar el "Save" (validador) que provocan los botones type="object".
+
+    # ============================================================
+    # CARTA PORTE 3.1 - CAMPOS ESPECÍFICOS
+    # ============================================================
+
+    tms_id_ccp = fields.Char(
+        string='IdCCP',
+        copy=False,
+        readonly=True,
+        help='Identificador único del Complemento Carta Porte (especificación 3.1).'
+    )
+
+    l10n_mx_edi_is_international = fields.Boolean(
+        string='Transporte Internacional',
+        help='Indica si el transporte es internacional.'
+    )
+
+    l10n_mx_edi_logistica_inversa = fields.Boolean(
+        string='Logística Inversa',
+        help='Marcar si el movimiento corresponde a logística inversa (Retorno de mercancía/envases).'
+    )
+
+    l10n_mx_edi_customs_regime_ids = fields.One2many(
+        'tms.waybill.customs.regime',
+        'waybill_id',
+        string='Regímenes Aduaneros (CCP 3.1)',
+        help='Hasta 10 regímenes aduaneros aplicables a este viaje.'
+    )
+
+    tms_gross_vehicle_weight = fields.Float(
+        string='Peso Bruto Vehicular',
+        compute='_compute_gross_weight',
+        store=True,
+        help='Peso total estimado (Vehículo + Remolques + Mercancía) para CCP 3.1.'
+    )
+
+    @api.depends('vehicle_id', 'trailer1_id', 'trailer2_id', 'line_ids.weight_kg')
+    def _compute_gross_weight(self):
+        """
+        Calcula el Peso Bruto Vehicular (Suma de vehículo + remolques + carga).
+        En CCP 3.1, este valor es requerido para el transporte federal.
+        """
+        for rec in self:
+            total = 0.0
+            if rec.vehicle_id:
+                total += rec.vehicle_id.tms_gross_vehicle_weight
+            if rec.trailer1_id:
+                total += rec.trailer1_id.tms_gross_vehicle_weight
+            if rec.trailer2_id:
+                total += rec.trailer2_id.tms_gross_vehicle_weight
+            
+            # Sumar peso de las mercancías (convertido a ton si el campo está en kg)
+            total_merchandise = sum(rec.line_ids.mapped('weight_kg')) / 1000.0
+            rec.tms_gross_vehicle_weight = total + total_merchandise
+
+    def action_generate_id_ccp(self):
+        """
+        Genera un identificador único IdCCP para Carta Porte 3.1.
+        """
+        for rec in self:
+            if not rec.tms_id_ccp:
+                rec.tms_id_ccp = str(uuid.uuid4()).upper()
+
+    @api.constrains('tms_id_ccp')
+    def _check_id_ccp_format(self):
+        """
+        Valida el formato del IdCCP (UUID v4) según el estándar SAT para 3.1:
+        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        """
+        import re
+        regex = r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$'
+        for rec in self:
+            if rec.tms_id_ccp and not re.match(regex, rec.tms_id_ccp, re.IGNORECASE):
+                raise ValidationError(_("El IdCCP no tiene un formato UUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)."))
 
     # ============================================================
     # ACCIONES: Clear (Limpieza de Campos)
@@ -371,6 +450,10 @@ class TmsWaybill(models.Model):
         if not has_dest_address:
              raise ValidationError(_("El Destinatario debe tener dirección configurada o capturada manualmente."))
 
+        # 5b. Validación de Caja/Remolque (Si se requiere)
+        if self.require_trailer and not self.trailer1_id:
+             raise ValidationError(_("Este viaje requiere forzosamente una Caja/Remolque."))
+
         # 6. Unidad
         if not self.vehicle_id:
             raise ValidationError(_("Debe asignar una Unidad (Vehículo) al viaje."))
@@ -425,31 +508,58 @@ class TmsWaybill(models.Model):
     # ============================================================
 
     # Many2one: vehículo asignado (tractor)
+    # Many2one: vehículo asignado (tractor)
     vehicle_id = fields.Many2one(
         'fleet.vehicle',
         string='Vehículo (Tractor)',
-        domain="[('is_trailer', '=', False), ('company_id', '=', company_id)]",
+        domain="[('is_trailer', '=', True), ('company_id', '=', company_id)]",
         check_company=True,
         required=True,
         tracking=True,
         help='Tractocamión asignado al viaje'
     )
 
-    # Many2one: chofer asignado
+    @api.onchange('vehicle_id')
+    def _onchange_vehicle_id(self):
+        """
+        Al seleccionar vehículo, traer su rendimiento.
+        """
+        if self.vehicle_id:
+            self.fuel_performance = self.vehicle_id.performance_km_l
+
+
+    # Many2one: chofer asignado (Empleados)
     driver_id = fields.Many2one(
-        'res.partner',
+        'hr.employee',
         string='Chofer',
-        domain="[('company_id', '=', company_id)]",  # Solo partners de la misma empresa
+        domain="[('tms_is_driver', '=', True)]",  # Solo empleados marcados como Chofer
         check_company=True,
         tracking=True,
-        help='Conductor asignado al viaje'
+        help='Conductor asignado al viaje (debe estar registrado como Empleado y ser Chofer)'
     )
+
+    # Boolean: Indica si el viaje REQUIERE remolque forzosamente
+    # Si es True, no se permite avanzar a Carta Porte sin trailer1_id
+    require_trailer = fields.Boolean(
+        string='Lleva Caja/Remolque',
+        default=False,
+        help='Si se marca, es obligatorio asignar un remolque antes de generar la Carta Porte.'
+    )
+
+    @api.onchange('require_trailer')
+    def _onchange_require_trailer(self):
+        """
+        Si se desmarca 'Lleva Caja/Remolque', se limpian los campos de remolque.
+        """
+        if not self.require_trailer:
+            self.trailer1_id = False
+            self.trailer2_id = False
 
     # Many2one: remolque 1
     trailer1_id = fields.Many2one(
         'fleet.vehicle',
         string='Remolque 1',
-        domain="[('is_trailer', '=', True), ('company_id', '=', company_id)]",
+        domain="[('tms_is_trailer', '=', True), ('company_id', '=', company_id)]",
         check_company=True,
         help='Primer remolque asignado'
     )
@@ -458,10 +568,31 @@ class TmsWaybill(models.Model):
     trailer2_id = fields.Many2one(
         'fleet.vehicle',
         string='Remolque 2',
-        domain="[('is_trailer', '=', True), ('company_id', '=', company_id)]",
+        domain="[('tms_is_trailer', '=', True), ('company_id', '=', company_id)]",
         check_company=True,
         help='Segundo remolque asignado (opcional)'
     )
+
+    # Integer: Total de ejes (Tractor + Remolques)
+    # Importante para el cálculo de costos de casetas (Google Maps API)
+    total_axles = fields.Integer(
+        string='Total Ejes',
+        compute='_compute_total_axles',
+        store=True,
+        help='Suma de ejes del Tractor + Remolque 1 + Remolque 2'
+    )
+
+    @api.depends('vehicle_id', 'vehicle_id.num_axles', 'trailer1_id', 'trailer1_id.num_axles', 'trailer2_id', 'trailer2_id.num_axles')
+    def _compute_total_axles(self):
+        for record in self:
+            count = 0
+            if record.vehicle_id:
+                count += record.vehicle_id.num_axles
+            if record.trailer1_id:
+                count += record.trailer1_id.num_axles
+            if record.trailer2_id:
+                count += record.trailer2_id.num_axles
+            record.total_axles = count
 
     # ============================================================
     # BITÁCORA DE TIEMPOS Y GPS (HÍBRIDO: App + Manual)
@@ -632,13 +763,25 @@ class TmsWaybill(models.Model):
              self.write({
                 'distance_km': cached_route.distance_km,
                 'duration_hours': cached_route.duration_hours,
-                'cost_tolls': cached_route.toll_cost, # Costo de casetas guardado
+                'cost_tolls': cached_route.cost_tolls, # Costo de casetas guardado
                 'extra_distance_km': 0.0,
             })
-             return self._notify_success("Datos obtenidos de Caché interno.", cached_route.distance_km, cached_route.duration_hours, cached_route.toll_cost)
+             return self._notify_success("Datos obtenidos de Caché interno.", cached_route.distance_km, cached_route.duration_hours, cached_route.cost_tolls)
 
-        # 2. SI NO EXISTE -> API
-        return self._fetch_google_routes_api(origin_zip, dest_zip, vehicle_type)
+        # 2. SELECCIONAR PROVEEDOR
+        ICPSudo = self.env['ir.config_parameter'].sudo()
+        provider = ICPSudo.get_param('tms.route_provider', 'std')
+
+        _logger.info(f"TMS Route Calc: Provider selected = {provider}")
+        _logger.info(f"TMS Route Calc: Origin={origin_zip}, Dest={dest_zip}, VehicleType={vehicle_type.name if vehicle_type else 'None'}, TotalAxles={self.total_axles}")
+
+        if provider == 'google':
+             return self._fetch_google_routes_api(origin_zip, dest_zip, vehicle_type)
+        elif provider == 'tollguru':
+             return self._fetch_tollguru_api(origin_zip, dest_zip, vehicle_type)
+        else:
+             # Standard handling or legacy Google Maps fallback if desired (but now we have specific provider)
+             raise UserError(_("Seleccione un proveedor de rutas válido en Ajustes (Google o TollGuru). Valor actual: %s") % provider)
 
     def _fetch_google_routes_api(self, origin_zip, dest_zip, vehicle_type):
         """Consumo directo de Routes API (v1:computeRoutes) para Distancia, Tiempo y PEAJES"""
@@ -665,8 +808,11 @@ class TmsWaybill(models.Model):
             "travelMode": "DRIVE",
             "routingPreference": "TRAFFIC_AWARE",
             "extraComputations": ["TOLLS"],
-            # TODO: Agregar routeModifiers para vehicle info si Google lo soporta en Mexico (emissionType, etc)
-            # Por ahora básico.
+            "routeModifiers": {
+                "vehicleInfo": {
+                    "emissionType": "DIESEL"
+                }
+            }
         }
 
         try:
@@ -710,7 +856,7 @@ class TmsWaybill(models.Model):
             'vehicle_type_id': vehicle_type.id if vehicle_type else False,
             'distance_km': distance_km,
             'duration_hours': duration_hours,
-            'toll_cost': toll_cost,
+            'cost_tolls': toll_cost,
             'last_update': fields.Date.today()
         })
 
@@ -724,15 +870,117 @@ class TmsWaybill(models.Model):
 
         return self._notify_success("Calculado vía Google API (y guardado)", distance_km, duration_hours, toll_cost)
 
+
+
+    def _fetch_tollguru_api(self, origin_zip, dest_zip, vehicle_type):
+        """Consume TollGuru API v2 para Distancia, Tiempo y PEAJES (Ejes Configurable)"""
+        ICPSudo = self.env['ir.config_parameter'].sudo()
+        api_key = ICPSudo.get_param('tms.tollguru_api_key')
+
+        if not api_key:
+            raise UserError(_("Falta API Key de TollGuru en Ajustes."))
+
+        url = "https://apis.tollguru.com/toll/v2/origin-destination-waypoints"
+        headers = {
+            'x-api-key': api_key,
+            'Content-Type': 'application/json'
+        }
+
+        # Calcular ejes (default 2 si no hay info, o 5 si es un tráiler típico)
+        # TollGuru usa 'axles' en el objeto vehicle
+        axles = self.total_axles if self.total_axles > 0 else 5
+
+        payload = {
+            "from": {"address": f"{origin_zip}, Mexico"},
+            "to": {"address": f"{dest_zip}, Mexico"},
+            "vehicle": {
+                "type": "2AxlesTruck" if axles <= 2 else f"{axles}AxlesTruck", # Mapeo básico, TollGuru soporta N-AxlesTruck
+                # Ajuste heurístico: TollGuru suele usar "{N}AxlesTruck" para camiones
+                # Si es auto, seria '2AxlesTx' pero estamos en TMS.
+                # Mejor intentamos pasar solo axles si el endpoint lo soporta, o el string type.
+                # Documentación sugiere: "5AxlesTruck" etc.
+            }
+        }
+
+        # Sobrescribir type para asegurar coincidencia exacta
+        if axles == 2:
+            payload['vehicle']['type'] = "2AxlesTruck"
+        elif axles == 3:
+            payload['vehicle']['type'] = "3AxlesTruck"
+        elif axles == 4:
+            payload['vehicle']['type'] = "4AxlesTruck"
+        elif axles >= 5:
+             # TollGuru suele agrupar 5+, pero probemos específico
+            payload['vehicle']['type'] = f"{axles}AxlesTruck"
+
+
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=20)
+            data = response.json()
+        except Exception as e:
+            raise UserError(_("Error conexión TollGuru: %s") % str(e))
+
+        if response.status_code != 200 or 'routes' not in data:
+            error_msg = data.get('message') or data.get('error') or 'Error desconocido'
+            raise UserError(_("TollGuru Error: %s") % error_msg)
+
+        # TollGuru devuelve rutas, tomamos la primera (normalmente la óptima/rápida)
+        route = data['routes'][0]
+        summary = route.get('summary', {})
+
+        # Distancia (metros -> km)
+        distance_meters = summary.get('distance', {}).get('value', 0)
+        distance_km = distance_meters / 1000.0
+
+        # Duración (segundos -> horas)
+        duration_seconds = summary.get('duration', {}).get('value', 0)
+        duration_hours = duration_seconds / 3600.0
+
+        # Costos (Tolls) en moneda local (MXN normalmente si es en México)
+        # TollGuru devuelve costs por tag/cash. Usamos 'cash' o el mayor?
+        # Normalmente 'minimumTollCost' o checkear 'costs' específico.
+        toll_cost = 0.0
+        # Buscar costo en 'costs' si existe
+        if 'costs' in route:
+             # costs suele tener tag, cash, licensePlate.
+             # Prioridad: Tag (generalmente más barato/común en flotillas) o Cash.
+             # Si tiene tag, usamos tag.
+             costs = route['costs']
+             toll_cost = costs.get('tag', costs.get('cash', 0.0))
+
+        # 3. GUARDAR EN CACHÉ (tms.destination)
+        self.env['tms.destination'].create({
+            'company_id': self.company_id.id,
+            'origin_zip': origin_zip,
+            'dest_zip': dest_zip,
+            'vehicle_type_id': vehicle_type.id if vehicle_type else False,
+            'distance_km': distance_km,
+            'duration_hours': duration_hours,
+            'cost_tolls': toll_cost,
+            'last_update': fields.Date.today()
+        })
+
+        # 4. ACTUALIZAR WAYBILL
+        self.write({
+            'distance_km': distance_km,
+            'duration_hours': duration_hours,
+            'cost_tolls': toll_cost,
+            'extra_distance_km': 0.0,
+        })
+
+        return self._notify_success("Calculado vía TollGuru (y guardado)", distance_km, duration_hours, toll_cost)
+
     def _notify_success(self, source, dist, dur, tolls):
         return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Ruta Actualizada (%s)') % source,
-                'message': _('Dist: %.2f km, Tiempo: %.2f hrs, Casetas: $%.2f') % (dist, dur, tolls),
-                'sticky': False,
-                'type': 'success',
+            'type': 'ir.actions.act_window',
+            'res_model': 'tms.waybill',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'current',
+            'effect': {
+                'fadeout': 'slow',
+                'message': _('%s\nRuta Actualizada: %.2f km, %.2f hrs, $%s') % (source, dist, dur, tolls),
+                'type': 'rainbow_man',
             }
         }
 
@@ -769,6 +1017,15 @@ class TmsWaybill(models.Model):
     signed_latitude = fields.Float(string='Latitud Firma', digits=(10, 7), copy=False)
     signed_longitude = fields.Float(string='Longitud Firma', digits=(10, 7), copy=False)
 
+    # ============================================================
+    # TRACKING (Bitácora de Eventos)
+    # ============================================================
+    tracking_event_ids = fields.One2many(
+        'tms.tracking.event',
+        'waybill_id',
+        string='Bitácora de Eventos'
+    )
+
     # Text: motivo de rechazo desde el portal
     # Se captura cuando el cliente rechaza la cotización desde el portal
     rejection_reason = fields.Text(
@@ -793,17 +1050,59 @@ class TmsWaybill(models.Model):
             'url': self.get_portal_url(),
         }
 
+    def action_assign(self):
+        """
+        Transición: De Solicitud (draft) -> Por Asignar (assigned)
+        Valida que haya cliente facturación, origen y destino.
+        """
+        self.ensure_one()
+        if not self.partner_invoice_id:
+            raise UserError(_("Debe indicar el Cliente de Facturación antes de confirmar."))
+        if not self.partner_origin_id or not self.partner_dest_id:
+             raise UserError(_("Debe indicar Origen y Destino antes de confirmar."))
+
+        self.write({'state': 'assigned'})
+        return True
+
     # ============================================================
     # MOTOR DE COTIZACIÓN (Costos y Propuestas)
     # ============================================================
 
+    def _get_default_fuel_price(self):
+        """Obtiene el último precio de diesel registrado"""
+        last_price = self.env['tms.fuel.history'].search([], limit=1, order='date desc, id desc')
+        return last_price.price if last_price else 24.00
+
     # --- INPUTS DE COSTOS ---
-    fuel_price_liter = fields.Float(string='Precio Diesel (L)', default=24.00, digits=(10,2))
+    fuel_price_liter = fields.Float(string='Precio Diesel (L)', default=_get_default_fuel_price, digits=(10,2))
+
+    is_fuel_price_outdated = fields.Boolean(
+        string='Precio Diesel Desactualizado',
+        compute='_compute_is_fuel_price_outdated',
+        help='Indica si el último precio registrado tiene más de una semana.'
+    )
+
+    @api.depends('fuel_price_liter', 'company_id')
+    def _compute_is_fuel_price_outdated(self):
+        """
+        Valida si el último precio de diesel tiene más de 7 días.
+        También marca como desactualizado si NO existe historial.
+        """
+        for record in self:
+            last_price = self.env['tms.fuel.history'].search([], limit=1, order='date desc, id desc')
+            if last_price and last_price.date:
+                deadline = fields.Date.today() - timedelta(days=7)
+                record.is_fuel_price_outdated = last_price.date < deadline
+            else:
+                # Si no hay historial, también advertimos
+                record.is_fuel_price_outdated = True
+
     fuel_performance = fields.Float(string='Rendimiento (Km/L)', default=2.5, digits=(10,2), help="Kms por Litro")
     cost_tolls = fields.Float(string='Costo Casetas', digits=(10,2))
     cost_driver = fields.Float(string='Sueldo Chofer', digits=(10,2))
     cost_maneuver = fields.Float(string='Maniobras', digits=(10,2))
     cost_other = fields.Float(string='Otros Gastos', digits=(10,2))
+    cost_commission = fields.Float(string='Comisión', digits=(10,2))
 
     # Costo Diesel Estimado (Calculado y Almacenado)
     # IMPORTANTE: Este campo tiene store=True, por lo que necesita su propio método compute
@@ -812,6 +1111,14 @@ class TmsWaybill(models.Model):
         string='Costo Diesel Est.',
         compute='_compute_cost_diesel_total',
         store=True
+    )
+
+    cost_total_estimated = fields.Monetary(
+        string='Costo Total Estimado',
+        currency_field='currency_id',
+        compute='_compute_cost_total_estimated',
+        store=True,
+        help='Suma de todos los costos estimados (Diesel + Casetas + Chofer + Maniobras + Otros + Comisión)'
     )
 
     # --- PROPUESTA 1: POR KILÓMETRO ---
@@ -900,8 +1207,23 @@ class TmsWaybill(models.Model):
             else:
                 record.cost_diesel_total = 0.0
 
+    @api.depends('cost_diesel_total', 'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other', 'cost_commission')
+    def _compute_cost_total_estimated(self):
+        """
+        Calcula la suma total de los costos estimados.
+        """
+        for record in self:
+            record.cost_total_estimated = (
+                record.cost_diesel_total +
+                record.cost_tolls +
+                record.cost_driver +
+                record.cost_maneuver +
+                record.cost_other +
+                record.cost_commission
+            )
+
     @api.depends('distance_km', 'extra_distance_km', 'price_per_km', 'cost_diesel_total',
-                 'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other',
+                 'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other', 'cost_commission',
                  'profit_margin_percent', 'proposal_direct_amount', 'selected_proposal')
     def _compute_proposal_values(self):
         """
@@ -926,8 +1248,8 @@ class TmsWaybill(models.Model):
             total_distance = record.distance_km + record.extra_distance_km
             record.proposal_km_total = total_distance * record.price_per_km
             # 2. Calcular Propuesta Viaje
-            # Costo Total = Diesel + Casetas + Chofer + Maniobras + Otros
-            total_costs = record.cost_diesel_total + record.cost_tolls + record.cost_driver + record.cost_maneuver + record.cost_other
+            # Costo Total = Diesel + Casetas + Chofer + Maniobras + Otros + Comisión
+            total_costs = record.cost_diesel_total + record.cost_tolls + record.cost_driver + record.cost_maneuver + record.cost_other + record.cost_commission
             # Precio Venta = Costo Total / (1 - Margen%)
             margin_factor = 1 - (record.profit_margin_percent / 100)
             if margin_factor > 0:
@@ -1251,14 +1573,105 @@ class TmsWaybill(models.Model):
         """
         MANUAL: Aprobar Carta Porte → Carta Porte Lista.
         Se ejecuta cuando el vehículo y chofer están asignados.
+        Realizó validación exhustiva para CP 3.1 y CFDI 4.0.
         """
         self.ensure_one()
 
-        # Validar que tenga vehículo y chofer
+        # Validaciones de integridad operativa básica
         if not self.vehicle_id:
             raise UserError(_('Debe asignar un vehículo antes de aprobar la CP.'))
         if not self.driver_id:
             raise UserError(_('Debe asignar un chofer antes de aprobar la CP.'))
+
+        # =========================================================
+        # VALIDACIÓN OFICIAL CARTA PORTE 3.1 / CFDI 4.0
+        # =========================================================
+        errors = []
+
+        # 1. EMISOR (Tu Empresa) - res.company
+        company = self.company_id
+        if not company.zip:
+            errors.append("- Emisor: Falta el Código Postal (Lugar de Expedición) en la configuración de la empresa.")
+        if not company.vat:
+            errors.append("- Emisor: Falta el RFC de tu empresa.")
+        if not company.l10n_mx_edi_fiscal_regime:
+            errors.append("- Emisor: Falta el Régimen Fiscal de tu empresa.")
+
+        # 2. RECEPTOR (Cliente Facturación) - res.partner
+        client = self.partner_invoice_id
+        if not client.vat:
+            errors.append(f"- Cliente ({client.name}): Falta el RFC.")
+        if not client.zip:
+             errors.append(f"- Cliente ({client.name}): Falta el Código Postal (Domicilio Fiscal Receptor).")
+        if not client.l10n_mx_edi_fiscal_regime: # Nota: Campo estándar en Odoo l10n_mx
+             errors.append(f"- Cliente ({client.name}): Falta el Régimen Fiscal.")
+        if not client.l10n_mx_edi_usage: # Nota: Campo estándar en Odoo l10n_mx
+             errors.append(f"- Cliente ({client.name}): Falta el Uso de CFDI.")
+        
+        # 3. UBICACIONES (Origen y Destino)
+        # Origen
+        origin = self.partner_origin_id
+        if not origin.vat:
+             errors.append("- Origen: El remitente no tiene RFC.")
+        if not self.origin_zip:
+             errors.append("- Origen: Falta el Código Postal.")
+        # Opcional: Validar calle, estado, pais si fuera estricto, pero CP es lo mínimo vital para timbre
+
+        # Destino
+        dest = self.partner_dest_id
+        if not dest.vat:
+             errors.append("- Destino: El destinatario no tiene RFC.")
+        if not self.dest_zip:
+             errors.append("- Destino: Falta el Código Postal.")
+
+        # Distancia
+        if self.distance_km <= 0:
+            errors.append("- Ruta: La distancia recorrida debe ser mayor a 0 km.")
+        
+        # 4. MERCANCÍAS
+        if not self.line_ids:
+             errors.append("- Mercancías: No hay mercancías registradas.")
+        else:
+            for idx, line in enumerate(self.line_ids, start=1):
+                prefix = f"- Mercancía #{idx} ({line.description or 'Sin desc'}):"
+                if not line.product_sat_id:
+                    errors.append(f"{prefix} Falta Clave Producto SAT (c_ClaveProdServCP).")
+                if not line.weight_kg or line.weight_kg <= 0:
+                    errors.append(f"{prefix} El peso en Kg es obligatorio y debe ser > 0.")
+                if not line.uom_sat_id:
+                    errors.append(f"{prefix} Falta Clave Unidad SAT.")
+                if not line.quantity or line.quantity <= 0:
+                     errors.append(f"{prefix} La cantidad debe ser mayor a 0.")
+                
+                # Material Peligroso
+                if line.is_dangerous:
+                    if not line.material_peligroso_id:
+                         errors.append(f"{prefix} Marcado como peligroso pero falta especificar la Clave Material Peligroso.")
+                    if not line.embalaje_id:
+                         errors.append(f"{prefix} Marcado como peligroso pero falta especificar el Tipo de Embalaje.")
+
+        # 5. AUTOTRANSPORTE (Vehículo) - Delegación a fleet.vehicle
+        if self.vehicle_id:
+             errors.extend(self.vehicle_id.validate_carta_porte_compliance())
+        
+        # 5b. REMOLQUES (Delegación a fleet.vehicle)
+        if self.trailer1_id:
+             errors.extend(self.trailer1_id.validate_carta_porte_compliance())
+        if self.trailer2_id:
+             errors.extend(self.trailer2_id.validate_carta_porte_compliance())
+
+        # 6. FIGURA TRANSPORTE (Chofer) - Delegación a hr.employee
+        if self.driver_id:
+             errors.extend(self.driver_id.validate_carta_porte_compliance())
+        else:
+             errors.append("- Chofer: No hay chofer asignado.")
+
+        # LANZAR ERRORES ACUMULADOS
+        if errors:
+            msg = "No se puede generar la Carta Porte porque faltan datos obligatorios para CP 3.1 / CFDI 4.0:\n\n"
+            msg += "\n".join(errors)
+            msg += "\n\nPor favor complete la información faltante en los registros correspondientes (Empresa, Cliente, Vehículo, Chofer o Mercancías)."
+            raise ValidationError(msg)
 
         self.write({'state': 'carta_porte'})
 
@@ -1595,6 +2008,54 @@ class TmsWaybillLine(models.Model):
         help='Indica si la mercancía es material peligroso'
     )
 
+    # Objeto de Impuesto (CFDI 4.0)
+    l10n_mx_edi_tax_object = fields.Selection(
+        selection=[
+            ('01', 'No objeto de impuesto'),
+            ('02', 'Sí objeto de impuesto'),
+            ('03', 'Sí objeto de impuesto y no obligado al desglose'),
+            ('04', 'Sí objeto de impuesto y no causa impuesto'),
+        ],
+        string='Objeto de Impuesto',
+        default=lambda self: self.env.company.tms_def_l10n_mx_edi_tax_object or '02',
+        help='Indica si la partida es objeto de impuesto para CFDI 4.0.'
+    )
+
+    # ============================================================
+    # CARTA PORTE 3.1 - SECTOR COFEPRIS
+    # ============================================================
+    l10n_mx_edi_sector_cofepris = fields.Selection(
+        selection=[
+            ('01', 'Fármacos y sustancias farmacéuticas'),
+            ('02', 'Dispositivos médicos'),
+            ('03', 'Fórmulas para lactantes'),
+            ('04', 'Suplementos alimenticios'),
+            ('05', 'Plaguicidas y nutrientes vegetales'),
+            ('06', 'Sustancias tóxicas'),
+            ('07', 'Productos de aseo y limpieza'),
+            ('08', 'Cosméticos'),
+            ('09', 'Alcohol etílico'),
+        ],
+        string='Sector COFEPRIS',
+        help='Requerido para el nodo SectorCOFEPRIS en Carta Porte 3.1'
+    )
+
+    l10n_mx_edi_active_ingredient = fields.Char(
+        string='Ingrediente Activo',
+        help='Nombre del ingrediente activo (requerido para COFEPRIS).'
+    )
+
+    l10n_mx_edi_nominal_purity = fields.Float(
+        string='Pureza Nominal',
+        digits=(10, 6),
+        help='Pureza nominal del producto (COFEPRIS).'
+    )
+
+    l10n_mx_edi_unit_purity = fields.Char(
+        string='Unidad Pureza',
+        help='Unidad de medida de la pureza.'
+    )
+
     def action_send_email(self):
         """ Abre el wizard de correo con la plantilla pre-cargada """
         self.ensure_one()
@@ -1619,3 +2080,22 @@ class TmsWaybillLine(models.Model):
             'target': 'new',
             'context': ctx,
         }
+
+class TmsWaybillCustomsRegime(models.Model):
+    _name = 'tms.waybill.customs.regime'
+    _description = 'Régimen Aduanero Carta Porte 3.1'
+
+    waybill_id = fields.Many2one('tms.waybill', ondelete='cascade')
+    regimen_aduanero = fields.Selection([
+        ('IMD', 'IMD - Definitivo de importación'),
+        ('EXD', 'EXD - Definitivo de exportación'),
+        ('ITR', 'ITR - Temporal de importación para retornar al extranjero en el mismo estado'),
+        ('ITE', 'ITE - Temporal de importación para elaboración, transformación o reparación en programas de maquila o de exportación'),
+        ('ETR', 'ETR - Temporal de exportación para retornar al país en el mismo estado'),
+        ('ETE', 'ETE - Temporal de exportación para elaboración, transformación o reparación'),
+        ('DFE', 'DFE - Depósito fiscal'),
+        ('TRA', 'TRA - Tránsito de mercancías'),
+        ('EFE', 'EFE - Elaboración, transformación o reparación en recinto fiscalizado'),
+        ('RFE', 'RFE - Recinto fiscalizado estratégico'),
+    ], string='Régimen Aduanero', required=True)
+

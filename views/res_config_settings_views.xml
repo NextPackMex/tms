@@ -10,19 +10,63 @@
                 <app data-string="TMS" string="TMS" name="tms">
                     <block title="Cálculo de Rutas" name="tms_routes_setting_container">
                         <setting string="Integración con Mapas" help="Use una API externa para calcular distancias y tiempos automáticamente.">
-                            <field name="module_tms_google_maps"/>
-                            <div class="content-group" invisible="not module_tms_google_maps">
-                                <div class="row mt16">
-                                    <label for="tms_google_maps_api_key" class="col-lg-3 o_light_label"/>
-                                    <field name="tms_google_maps_api_key"/>
-                                </div>
+                            <field name="tms_use_google_maps"/>
+                            <div class="content-group" invisible="not tms_use_google_maps">
                                 <div class="row mt16">
                                     <label for="tms_route_provider" class="col-lg-3 o_light_label"/>
                                     <field name="tms_route_provider"/>
                                 </div>
+                                <div class="row mt16">
+                                    <label for="tms_google_maps_api_key" class="col-lg-3 o_light_label" invisible="tms_route_provider != 'google'"/>
+                                    <field name="tms_google_maps_api_key" invisible="tms_route_provider != 'google'"/>
+                                    <label for="tms_tollguru_api_key" class="col-lg-3 o_light_label" invisible="tms_route_provider != 'tollguru'"/>
+                                    <field name="tms_tollguru_api_key" invisible="tms_route_provider != 'tollguru'"/>
+                                </div>
                                 <div class="text-muted small mt8">
                                     Nota: El uso de la API de Google Maps puede generar costos. Asegúrese de tener una cuenta de facturación activa en Google Cloud Platform.
                                 </div>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="Seguros (Carta Porte)" name="tms_insurance_setting_container">
+                        <setting string="Responsabilidad Civil" help="Póliza y Aseguradora de Responsabilidad Civil (Obligatorio)">
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_civil_liability_mx" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_civil_liability_mx"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_civil_liability" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_civil_liability"/>
+                            </div>
+                        </setting>
+
+                        <setting string="Medio Ambiente" help="Póliza y Aseguradora de Medio Ambiente (Material Peligroso)">
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_environmental_mx" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_environmental_mx"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_environmental" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_environmental"/>
+                            </div>
+                        </setting>
+
+                        <setting string="Carga" help="Póliza y Aseguradora de Carga (Mercancía)">
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_cargo_mx" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_cargo_mx"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="tms_def_insurance_cargo" class="col-lg-3 o_light_label"/>
+                                <field name="tms_def_insurance_cargo"/>
+                            </div>
+                        </setting>
+                    </block>
+                    <block title="CFDI 4.0 / Carta Porte" name="tms_cfdi_40_setting_container">
+                        <setting string="Configuracion XML" help="Valores predeterminados para el timbrado de facturas y viajes.">
+                            <div class="row mt16">
+                                <label for="tms_def_l10n_mx_edi_tax_object" class="col-lg-5 o_light_label"/>
+                                <field name="tms_def_l10n_mx_edi_tax_object"/>
                             </div>
                         </setting>
                     </block>
@@ -35,14 +79,9 @@
         <field name="name">Ajustes TMS</field>
         <field name="res_model">res.config.settings</field>
         <field name="view_mode">form</field>
-        <field name="target">inline</field>
+        <field name="target">current</field>
         <field name="context">{'module' : 'tms'}</field>
     </record>
 
-    <menuitem id="menu_tms_config_settings"
-              name="Ajustes"
-              parent="menu_tms_config"
-              sequence="0"
-              action="action_tms_config_settings"
-              groups="base.group_system"/>
+    <menuitem id="menu_tms_config_settings" name="Ajustes" parent="menu_tms_config" sequence="0" action="action_tms_config_settings" groups="base.group_system"/>
 </odoo>

@@ -49,40 +49,23 @@ class TmsSatEmbalaje(models.Model):
     # CONSTRAINTS
     # ============================================================
 
-    _sql_constraints = [
-        ('code_uniq', 'UNIQUE(code)',
-         'El código de embalaje SAT ya existe.')
-    ]
+    _code_uniq = models.Constraint(
+        'UNIQUE(code)',
+        'El código de embalaje SAT ya existe.',
+    )
 
     # ============================================================
     # MÉTODOS
     # ============================================================
 
-    def name_get(self):
+    @api.depends('code', 'name')
+    def _compute_display_name(self):
         """
         Muestra: "Código - Descripción"
         Ejemplo: "4A - Caja de madera"
         """
-        result = []
         for record in self:
-            name = f"{record.code} - {record.name}"
-            result.append((record.id, name))
-        return result
+            record.display_name = f"{record.code} - {record.name}"
 
-    @api.model
-    def _name_search(self, name='', domain=None, operator='ilike', limit=None, order=None):
-        """
-        Permite buscar por código o descripción.
-        """
-        domain = domain or []
-
-        if name:
-            domain = ['|',
-                     ('code', operator, name),
-                     ('name', operator, name)
-                     ] + domain
-
-        return super()._name_search(
-            name='', domain=domain, operator=operator,
-            limit=limit, order=order
-        )
+    # Odoo 19: Búsqueda flexible en múltiples campos
+    _rec_names_search = ['code', 'name']
