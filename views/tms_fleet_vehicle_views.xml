@@ -20,126 +20,131 @@
 
     <!--
         ================================================================
-        EXTENSIÓN DE FORM VIEW - Agregar pestaña "Configuración TMS"
+        EXTENSIÓN DE FORM VIEW - Agregar pestaña "Configuración TMS" ================================================================
+    -->
+    <!--
+        ================================================================
+        VISTA FORM SIMPLIFICADA PARA TRACTORES (TMS)
         ================================================================
     -->
-    <record id="view_fleet_vehicle_form_tms" model="ir.ui.view">
-        <field name="name">fleet.vehicle.form.tms</field>
+    <record id="view_tms_vehicle_tractor_form" model="ir.ui.view">
+        <field name="name">tms.fleet.vehicle.tractor.form</field>
         <field name="model">fleet.vehicle</field>
-        <!-- inherit_id: Vista que estamos extendiendo (la vista form nativa de fleet) -->
-        <field name="inherit_id" ref="fleet.fleet_vehicle_view_form"/>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
-
-            <!--
-                Insertar campo is_trailer al inicio del formulario
-                Lo colocamos después del campo 'active' usando xpath
-            -->
-            <xpath expr="//field[@name='active']" position="after">
-                <!--
-                    Campo: Tipo de Vehículo TMS (Catálogo Dinámico)
-                    Determina si es Remolque, Motorizado, etc.
-                -->
-                <field name="tms_vehicle_type_id" options="{'no_create': True}"/>
-
-                <!--
-                    Campo checkbox: Es Remolque
-                    Calculado desde el tipo, pero editable
-                -->
-                <!--
-                    Campo checkbox: Es Remolque (Nuevo Concepto)
-                -->
-                <field name="tms_is_trailer" widget="boolean_toggle"/>
-                <!--
-                    Campo checkbox: Lleva Remolque (Original is_trailer, reusado)
-                -->
-                <field name="is_trailer" widget="boolean_toggle"/>
-            </xpath>
-
-            <!--
-                Agregar pestaña "Configuración TMS" dentro del notebook
-                xpath: busca el elemento <notebook> y agrega dentro (inside)
-            -->
-            <xpath expr="//notebook" position="inside">
-                <!--
-                    Nueva pestaña: Configuración TMS
-                    Contiene todos los campos específicos para transporte
-                -->
-                <page string="Configuración TMS" name="page_tms_config">
-
-                    <!-- Sección: Identificación -->
-                    <group string="Identificación">
-                        <field name="no_economico"/>
-                    </group>
-
-                    <!-- Sección: Configuración SAT -->
-                    <group string="Configuración SAT (Carta Porte 3.1)">
-                        <group>
-                            <!-- Configuración vehicular SAT -->
-                            <field name="sat_config_id"/>
-                            <field name="num_axles"/>
+            <form string="Tractocamión">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="model_id"/>
+                        <h1>
+                            <field name="model_id" placeholder="Ej. Volvo FH16"/>
+                        </h1>
+                        <label for="license_plate"/>
+                        <h2>
+                            <field name="license_plate" class="oe_inline" placeholder="ABC-123-A"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group string="Identificación TMS">
+                            <field name="no_economico" placeholder="ECO-001"/>
+                            <field name="tms_vehicle_type_id" options="{'no_create': True}"/>
+                            <field name="model_year"/>
                         </group>
-
-                        <group>
-                            <!--
-                                Campos específicos para TRACTORES
-                                invisible: solo visible si is_trailer es False
-                            -->
-                            <field name="sat_permiso_sct_id"
-                                   invisible="tms_is_trailer == True"/>
-
-                            <field name="permiso_sct_number"
-                                   invisible="tms_is_trailer == True"/>
+                        <group string="Configuración SAT (Carta Porte)">
+                            <field name="sat_config_id" required="1"/>
+                            <field name="sat_permiso_sct_id" required="1"/>
+                            <field name="permiso_sct_number" required="1"/>
                         </group>
                     </group>
+                    <notebook>
+                        <page string="Seguros y Pesos" name="insurance">
+                            <group>
+                                <group string="Seguro Civil (Obligatorio)">
+                                    <field name="tms_insurance_civil_liability_mx" required="1"/>
+                                    <field name="tms_insurance_civil_liability" required="1"/>
+                                </group>
+                                <group string="Pesos y Casetas">
+                                    <field name="tms_gross_vehicle_weight" string="Peso Bruto (Ton)"/>
+                                    <field name="num_axles"/>
+                                    <field name="performance_km_l"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Remolques por Defecto" name="trailers">
+                            <group>
+                                <field name="trailer1_id"/>
+                                <field name="trailer2_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
 
-                    <!-- Sección: Seguros (para Carta Porte) -->
-                    <group string="Seguros (Carta Porte)">
-                        <group string="Responsabilidad Civil (Obligatorio)">
-                            <field name="tms_insurance_civil_liability_mx"/>
-                            <field name="tms_insurance_civil_liability"/>
+    <!--
+        ================================================================
+        VISTA FORM SIMPLIFICADA PARA REMOLQUES (TMS)
+        ================================================================
+    -->
+    <record id="view_tms_vehicle_trailer_form" model="ir.ui.view">
+        <field name="name">tms.fleet.vehicle.trailer.form</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form string="Remolque">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="model_id" string="Tipo de Remolque"/>
+                        <h1>
+                            <field name="model_id" placeholder="Ej. Caja Seca 53ft"/>
+                        </h1>
+                        <label for="license_plate"/>
+                        <h2>
+                            <field name="license_plate" class="oe_inline" placeholder="ABC-123-A"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group string="Identificación">
+                            <field name="no_economico"/>
+                            <field name="tms_vehicle_type_id" options="{'no_create': True}"/>
+                            <field name="model_year"/>
                         </group>
-                        <group string="Medio Ambiente (Mat. Peligroso)">
-                            <field name="tms_insurance_environmental_mx"/>
-                            <field name="tms_insurance_environmental"/>
-                        </group>
-                        <group string="Carga (Mercancía)">
-                            <field name="tms_insurance_cargo_mx"/>
-                            <field name="tms_insurance_cargo"/>
-                        </group>
-                        <group string="Peso Vehicular">
-                            <field name="tms_gross_vehicle_weight"/>
+                        <group string="Configuración SAT">
+                            <field name="sat_config_id" string="SubTipo Remolque SAT" required="1"/>
+                            <field name="tms_gross_vehicle_weight" string="Peso (Ton)"/>
                         </group>
                     </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
 
-                    <!--
-                        Sección: Remolques Asignados
-                        Solo visible para TRACTORES (is_trailer=False)
-                    -->
-                    <group string="Remolques Asignados"
-                           invisible="is_trailer == False">
-                        <group>
-                            <!-- Many2one: Remolque 1 -->
-                            <!-- Domain asegura que solo muestre remolques de la misma empresa -->
-                            <field name="trailer1_id"/>
-                        </group>
-                        <group>
-                            <!-- Many2one: Remolque 2 -->
-                            <field name="trailer2_id"/>
-                        </group>
-                    </group>
+    <!-- VISTAS LIST (TREE) SIMPLIFICADAS -->
+    <record id="view_tms_vehicle_tractor_list" model="ir.ui.view">
+        <field name="name">tms.fleet.vehicle.tractor.list</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="arch" type="xml">
+            <list string="Tractocamiones">
+                <field name="no_economico"/>
+                <field name="model_id"/>
+                <field name="license_plate"/>
+                <field name="sat_config_id"/>
+                <field name="tms_insurance_civil_liability_mx"/>
+            </list>
+        </field>
+    </record>
 
-                    <!--
-                        Sección: Rendimiento
-                        Solo para TRACTORES (tienen motor)
-                    -->
-                    <group string="Rendimiento"
-                           invisible="tms_is_trailer == True">
-                        <field name="performance_km_l"/>
-                    </group>
-
-                </page>
-            </xpath>
-
+    <record id="view_tms_vehicle_trailer_list" model="ir.ui.view">
+        <field name="name">tms.fleet.vehicle.trailer.list</field>
+        <field name="model">fleet.vehicle</field>
+        <field name="arch" type="xml">
+            <list string="Remolques">
+                <field name="no_economico"/>
+                <field name="model_id"/>
+                <field name="license_plate"/>
+                <field name="sat_config_id" string="SubTipo SAT"/>
+            </list>
         </field>
     </record>
 
@@ -152,15 +157,11 @@
         <field name="name">Vehículos (Tractores)</field>
         <field name="res_model">fleet.vehicle</field>
         <field name="view_mode">list,form</field>
-        <!--
-            Domain: Solo muestra vehículos que NO son remolques
-            Esto filtra automáticamente para mostrar solo tractocamiones
-        -->
         <field name="domain">[('tms_is_trailer', '=', False)]</field>
-        <!--
-            Context: Al crear un nuevo registro, tms_is_trailer será False por defecto
-        -->
         <field name="context">{'default_tms_is_trailer': False, 'default_is_trailer': True}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_tms_vehicle_tractor_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_tms_vehicle_tractor_form')})]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Agregar un vehículo
@@ -180,15 +181,11 @@
         <field name="name">Remolques</field>
         <field name="res_model">fleet.vehicle</field>
         <field name="view_mode">list,form</field>
-        <!--
-            Domain: Solo muestra vehículos que SÍ son remolques
-        -->
         <field name="domain">[('tms_is_trailer', '=', True)]</field>
-        <!--
-            Context: Al crear, tms_is_trailer será True por defecto
-            is_trailer (Lleva Remolque) será False
-        -->
         <field name="context">{'default_tms_is_trailer': True, 'default_is_trailer': False}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_tms_vehicle_trailer_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_tms_vehicle_trailer_form')})]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Agregar un remolque

@@ -64,7 +64,7 @@
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)
-    'depends': ['base', 'fleet', 'account', 'contacts', 'board', 'mail', 'portal', 'web', 'website', 'sale_management', 'hr'],
+    'depends': ['base', 'fleet', 'account', 'contacts', 'board', 'mail', 'portal', 'web', 'website', 'sale_management', 'hr', 'web_tour'],
     # NOTA: Los catálogos SAT están en este mismo módulo, no necesitamos dependencia externa
 
     # Archivos de datos (orden estricto de carga)
@@ -127,6 +127,7 @@
         # IMPORTANTE: tms_menus.xml ANTES de sat_menus.xml
         # porque sat_menus.xml usa action_tms_dashboard que se define en tms_menus.xml
         'views/tms_menus.xml',               # Define action_tms_dashboard y menús operativos
+        'wizard/tms_load_demo_wizard_view.xml', # Load after menus
         'views/res_config_settings_views.xml', # Depende de menu_tms_config
         'views/sat_menus.xml',               # Usa menu_tms_root y action_tms_dashboard
     ],
@@ -134,6 +135,8 @@
     'assets': {
         'web.assets_backend': [
             'tms/static/src/js/tms_portal_link_handler.js',
+            'tms/static/src/js/tms_tour.js',
+            'tms/static/src/js/tms_command.js',
         ],
         # Assets para portal: JS y CSS para vista moderna estilo Sales
         'web.assets_frontend': [
@@ -142,8 +145,12 @@
         ],
     },
 
-    # Datos demo (vacío por ahora)
-    'demo': [],
+    # Datos demo
+    'demo': [
+        'demo/tms_demo_data.xml',
+        'demo/tms_quickstart_demo.xml',
+        'demo/tms_expanded_demo.xml',
+    ],
 
     # Es una aplicación independiente
     'application': True,

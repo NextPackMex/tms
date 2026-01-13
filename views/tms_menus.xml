@@ -12,11 +12,7 @@
     <!-- ==================================================== -->
     <!-- 1. DEFINICIÓN DEL MENÚ RAÍZ (PRIMERO QUE NADA) -->
     <!-- ==================================================== -->
-    <menuitem id="menu_tms_root"
-              name="TMS"
-              web_icon="tms,static/description/icon.png"
-              action="action_tms_home"
-              sequence="5"/>
+    <menuitem id="menu_tms_root" name="TMS" web_icon="tms,static/description/icon.png" action="action_tms_home" sequence="5"/>
     <!--
         Este es el MENÚ RAÍZ de la aplicación
         - name="TMS": Nombre que aparece en la barra superior de Odoo
@@ -30,78 +26,63 @@
     <!-- ==================================================== -->
 
     <!-- Dashboard -->
-    <menuitem id="menu_tms_dashboard"
-              name="Dashboard"
-              parent="menu_tms_root"
-              action="action_tms_home"
-              sequence="1"/>
+    <menuitem id="menu_tms_dashboard" name="Dashboard" parent="menu_tms_root" action="action_tms_home" sequence="1"/>
 
     <!-- Operaciones -->
-    <menuitem id="menu_tms_operations"
-              name="Operaciones"
-              parent="menu_tms_root"
-              sequence="10"/>
+    <menuitem id="menu_tms_operations" name="Operaciones" parent="menu_tms_root" sequence="10"/>
 
     <!-- Configuración -->
-    <menuitem id="menu_tms_config"
-              name="Configuración"
-              parent="menu_tms_root"
-              sequence="99"/>
+    <menuitem id="menu_tms_config" name="Configuración" parent="menu_tms_root" sequence="99"/>
 
     <!-- ==================================================== -->
     <!-- 3. SUBMENÚS DE OPERACIONES -->
     <!-- ==================================================== -->
 
     <!-- Viajes / Tablero (Dashboard Principal) -->
-    <menuitem id="menu_tms_waybill"
-              name="Viajes / Tablero"
-              parent="menu_tms_operations"
-              action="action_tms_waybill"
-              sequence="5"/>
+    <menuitem id="menu_tms_waybill" name="Viajes / Tablero" parent="menu_tms_operations" action="action_tms_waybill" sequence="5"/>
 
     <!-- Vehículos (Tractores) -->
-    <menuitem id="menu_tms_vehicles"
-              name="Vehículos"
-              parent="menu_tms_operations"
-              action="action_tms_vehicles"
-              sequence="10"/>
+    <menuitem id="menu_tms_vehicles" name="Vehículos" parent="menu_tms_operations" action="action_tms_vehicles" sequence="10"/>
 
     <!-- Remolques -->
-    <menuitem id="menu_tms_trailers"
-              name="Remolques"
-              parent="menu_tms_operations"
-              action="action_tms_trailers"
-              sequence="20"/>
+    <menuitem id="menu_tms_trailers" name="Remolques" parent="menu_tms_operations" action="action_tms_trailers" sequence="20"/>
+
+    <!-- Choferes (Operadores) -->
+    <record id="action_tms_drivers" model="ir.actions.act_window">
+        <field name="name">Choferes</field>
+        <field name="res_model">hr.employee</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('tms_is_driver', '=', True)]</field>
+        <field name="context">{'default_tms_is_driver': True}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_tms_driver_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_tms_driver_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea tu primer chofer
+            </p>
+            <p>
+                Los choferes son empleados marcados con el atributo "Es Chofer".
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_tms_drivers" name="Operadores" parent="menu_tms_operations" action="action_tms_drivers" sequence="30"/>
 
     <!-- Destinos/Rutas -->
-    <menuitem id="tms_menu_destinations"
-              name="Destinos"
-              parent="menu_tms_operations"
-              action="action_tms_destination"
-              sequence="40"/>
+    <menuitem id="tms_menu_destinations" name="Destinos" parent="menu_tms_operations" action="action_tms_destination" sequence="40"/>
 
-    <menuitem id="tms_menu_fuel_history"
-              name="Historial Diesel"
-              parent="menu_tms_operations"
-              action="action_tms_fuel_history"
-              sequence="50"/>
+    <menuitem id="tms_menu_fuel_history" name="Historial Diesel" parent="menu_tms_operations" action="action_tms_fuel_history" sequence="50"/>
 
     <!-- ==================================================== -->
     <!-- 4. SUBMENÚS DE CONFIGURACIÓN -->
     <!-- ==================================================== -->
 
     <!-- Grupo: Flota -->
-    <menuitem id="menu_tms_config_fleet"
-              name="Flota"
-              parent="menu_tms_config"
-              sequence="10"/>
+    <menuitem id="menu_tms_config_fleet" name="Flota" parent="menu_tms_config" sequence="10"/>
 
     <!-- Tipos de Vehículo -->
-    <menuitem id="menu_tms_vehicle_type"
-              name="Tipos de Vehículo"
-              parent="menu_tms_config_fleet"
-              action="action_tms_vehicle_type"
-              sequence="10"/>
+    <menuitem id="menu_tms_vehicle_type" name="Tipos de Vehículo" parent="menu_tms_config_fleet" action="action_tms_vehicle_type" sequence="10"/>
 
     <!--
         NOTA: El menú "Configuración" y sus submenús de Catálogos SAT

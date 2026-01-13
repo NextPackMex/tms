@@ -1,11 +1,6 @@
 /** @odoo-module **/
 
-/*
- * TMS Portal Link Handler
- * Robustly intercepts clicks on chatter links to open in a new tab.
- * Uses capture phase and href content matching to survive Odoo sanitization.
- */
-
+// TMS Portal Link Handler: Intercepta clics en enlaces del chatter
 document.addEventListener('click', function(ev) {
     // 1. Find the closest anchor tag (in case click is on an icon/span inside a)
     const link = ev.target.closest('a');

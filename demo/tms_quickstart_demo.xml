@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- 1. TIPOS DE VEHÍCULO AMPLIADOS -->
+        <record id="tms_type_tractor" model="tms.vehicle.type">
+            <field name="name">Tractocamión</field>
+            <field name="is_motorized" eval="True"/>
+            <field name="is_trailer" eval="False"/>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="tms_type_trailer_dry" model="tms.vehicle.type">
+            <field name="name">Remolque (Caja Seca)</field>
+            <field name="is_motorized" eval="False"/>
+            <field name="is_trailer" eval="True"/>
+            <field name="sequence">20</field>
+        </record>
+
+        <record id="tms_type_trailer_ref" model="tms.vehicle.type">
+            <field name="name">Remolque (Refrigerado)</field>
+            <field name="is_motorized" eval="False"/>
+            <field name="is_trailer" eval="True"/>
+            <field name="sequence">21</field>
+        </record>
+
+        <!-- 2. CONFIGURACIONES SAT BÁSICAS -->
+        <record id="sat_config_t3s2" model="tms.sat.config.autotransporte">
+            <field name="code">T3S2</field>
+            <field name="name">Tractocamión de 3 ejes con semirremolque de 2 ejes</field>
+            <field name="total_axles">5</field>
+            <field name="numero_ejes_remolque">2</field>
+        </record>
+
+        <!-- 3. MODELOS DE VEHÍCULO -->
+        <record id="fleet_model_volvo" model="fleet.vehicle.model">
+            <field name="name">Volvo FH16</field>
+            <field name="brand_id" ref="fleet.brand_volvo"/>
+        </record>
+
+        <record id="fleet_model_kenworth" model="fleet.vehicle.model">
+            <field name="name">Kenworth T680</field>
+            <field name="brand_id" ref="fleet.brand_volvo"/>
+            <!-- Volvo como fallback si no hay KW -->
+        </record>
+
+        <!-- 4. VEHÍCULOS DUMMY (LISTOS PARA OPERAR) -->
+        <record id="tms_vehicle_tractor_1" model="fleet.vehicle">
+            <field name="model_id" ref="fleet_model_volvo"/>
+            <field name="license_plate">66-AA-1A</field>
+            <field name="no_economico">T-001</field>
+            <field name="tms_vehicle_type_id" ref="tms_type_tractor"/>
+            <field name="sat_config_id" ref="sat_config_t3s2"/>
+            <field name="model_year">2023</field>
+            <field name="tms_insurance_civil_liability">POL-12345</field>
+            <field name="tms_insurance_civil_liability_mx">Aseguradora Qualitas</field>
+            <field name="permiso_sct_number">SCT-TX-999</field>
+            <field name="tms_gross_vehicle_weight">15.5</field>
+        </record>
+
+        <record id="tms_vehicle_trailer_1" model="fleet.vehicle">
+            <field name="model_id" ref="fleet_model_volvo"/>
+            <field name="license_plate">RE-99-88</field>
+            <field name="no_economico">R-501</field>
+            <field name="tms_vehicle_type_id" ref="tms_type_trailer_dry"/>
+            <field name="sat_config_id" ref="sat_config_t3s2"/>
+            <field name="model_year">2022</field>
+            <field name="tms_gross_vehicle_weight">8.0</field>
+        </record>
+
+        <!-- 5. CHOFERES (EMPLEADOS CON DATOS FISCALES) -->
+        <record id="partner_driver_juan" model="res.partner">
+            <field name="name">Juan Chofer (Fiscal)</field>
+            <field name="vat">PERJ800101XYZ</field>
+            <field name="street">Calle de los Conductores 100</field>
+            <field name="city">Monterrey</field>
+            <field name="zip">64000</field>
+            <field name="country_id" ref="base.mx"/>
+            <field name="l10n_mx_edi_fiscal_regime">605</field>            <!-- Sueldos y Salarios -->
+        </record>
+
+        <record id="tms_driver_juan" model="hr.employee">
+            <field name="name">Juan Chofer de Pruebas</field>
+            <field name="work_contact_id" ref="partner_driver_juan"/>
+            <field name="tms_is_driver" eval="True"/>
+            <field name="tms_driver_license">LIC-FEDERAL-8822</field>
+            <field name="tms_driver_license_type">B</field>
+            <field name="work_phone">555-0101</field>
+        </record>
+
+        <!-- 6. CLIENTES Y DESTINOS -->
+        <record id="partner_cliente_demo" model="res.partner">
+            <field name="name">LOGISTICA INTEGRAL QA SA DE CV</field>
+            <field name="is_company" eval="True"/>
+            <field name="street">Parque Industrial Santa Catarina</field>
+            <field name="city">Santa Catarina</field>
+            <field name="zip">66350</field>
+            <field name="country_id" ref="base.mx"/>
+            <field name="vat">LIA121212ABC</field>
+            <field name="l10n_mx_edi_fiscal_regime">601</field>
+        </record>
+
+        <record id="tms_dest_monterrey" model="tms.destination">
+            <field name="name">CEDIS Monterrey</field>
+            <field name="city">Monterrey</field>
+            <field name="state_id" search="[('code', '=', 'NLE'), ('country_id.code', '=', 'MX')]" model="res.country.state"/>
+            <field name="distance_km">0.0</field>
+        </record>
+
+        <record id="tms_dest_mexico" model="tms.destination">
+            <field name="name">CEDIS Ciudad de México</field>
+            <field name="city">Iztapalapa</field>
+            <field name="state_id" search="[('code', '=', 'MEX'), ('country_id.code', '=', 'MX')]" model="res.country.state"/>
+            <field name="distance_km">920.0</field>
+            <field name="duration_hours">12.5</field>
+            <field name="cost_tolls">4500.00</field>
+        </record>
+
+        <!-- VIAJE DE EJEMPLO EN TABLERO -->
+        <record id="waybill_test_1" model="tms.waybill">
+            <field name="partner_invoice_id" ref="partner_cliente_demo"/>
+            <field name="partner_origin_id" ref="partner_cliente_demo"/>
+            <field name="partner_dest_id" ref="partner_driver_juan"/>
+            <!-- Usando chofer como destino dummy -->
+            <field name="date_created" eval="obj().fields.Date.today()"/>
+            <field name="state">draft</field>
+            <field name="waybill_type">income</field>
+            <field name="distance_km">920.0</field>
+            <field name="duration_hours">12.5</field>
+            <field name="cost_tolls">4500.0</field>
+        </record>
+
+    </data>
+</odoo>

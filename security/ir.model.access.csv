@@ -30,3 +30,4 @@ access_tms_fuel_history_manager,tms.fuel.history.manager,model_tms_fuel_history,
 access_tms_tracking_event_user,tms.tracking.event.user,model_tms_tracking_event,tms.group_tms_user,1,1,1,1
 access_tms_tracking_event_driver,tms.tracking.event.driver,model_tms_tracking_event,tms.group_tms_driver,1,1,1,1
 access_tms_tracking_event_manager,tms.tracking.event.manager,model_tms_tracking_event,tms.group_tms_manager,1,1,1,1
+access_tms_load_demo_wizard_manager,tms.load.demo.wizard.manager,model_tms_load_demo_wizard,tms.group_tms_manager,1,1,1,1

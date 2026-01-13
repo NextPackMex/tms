@@ -1,39 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <record id="view_employee_form_tms_inherit" model="ir.ui.view">
-        <field name="name">hr.employee.form.tms.inherit</field>
+    <!--
+        ================================================================
+        VISTA FORM SIMPLIFICADA PARA CHOFERES (TMS)
+        ================================================================
+    -->
+    <record id="view_tms_driver_form" model="ir.ui.view">
+        <field name="name">tms.hr.employee.driver.form</field>
         <field name="model">hr.employee</field>
-        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
-            <!-- Agregar pestaña de Carta Porte / Transporte -->
-            <xpath expr="//page[@name='personal_information']" position="after">
-                <page string="Transporte (Carta Porte)" name="tms_info" invisible="not tms_is_driver">
+            <form string="Chofer / Operador">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Nombre completo del Chofer"/>
+                        </h1>
+                    </div>
                     <group>
-                        <group string="Licencia Federal">
-                            <field name="tms_driver_license_type"/>
-                            <field name="tms_driver_license"/>
+                        <group string="Datos de Operación">
+                            <field name="tms_is_driver" invisible="1"/>
+                            <field name="work_contact_id" string="Contacto Fiscal" required="1"/>
+                            <field name="tms_driver_license_type" required="1"/>
+                            <field name="tms_driver_license" required="1"/>
                             <field name="tms_driver_license_expiration"/>
-                            <!-- Widget para mostrar alerta si vence pronto (opcional, odoo nativo lo maneja con colores en list) -->
                         </group>
-                        <group string="Datos Fiscales (Desde Contacto)">
-                            <!-- Estos campos vienen del Partner (work_contact_id), vitales para CP -->
-                            <field name="work_contact_id" required="tms_is_driver" string="Contacto (Partner)"/>
+                        <group string="Validación SAT (Carta Porte)">
                             <field name="tms_driver_rfc"/>
-                            <field name="l10n_mx_edi_fiscal_regime" required="tms_is_driver"/>
-                            <field name="tms_driver_address"/>
-                            <div class="alert alert-warning" role="alert" invisible="tms_driver_rfc and tms_driver_address">
-                                <icon name="fa-exclamation-triangle"/>
-                                <strong>¡Atención!</strong> El Operador debe tener RFC y Domicilio configurados en su Contacto para timbrar Carta Porte.
+                            <field name="l10n_mx_edi_fiscal_regime" required="1"/>
+                            <field name="tms_driver_address" string="Domicilio Fiscal"/>
+                            <div class="alert alert-info" role="alert" invisible="tms_driver_rfc and tms_driver_address">
+                                <strong>Nota:</strong> Los datos fiscales se sincronizan desde el <i>Contacto Fiscal</i> seleccionado a la izquierda.
                             </div>
                         </group>
                     </group>
-                </page>
-            </xpath>
+                </sheet>
+            </form>
+        </field>
+    </record>
 
-            <!-- Agregar Checkbox de "Es Chofer" en el encabezado o sección principal -->
-            <xpath expr="//field[@name='parent_id']" position="after">
-                <field name="tms_is_driver" widget="boolean_toggle"/>
-            </xpath>
+    <!-- VISTA LIST SIMPLIFICADA PARA CHOFERES -->
+    <record id="view_tms_driver_list" model="ir.ui.view">
+        <field name="name">tms.hr.employee.driver.list</field>
+        <field name="model">hr.employee</field>
+        <field name="arch" type="xml">
+            <list string="Choferes">
+                <field name="name"/>
+                <field name="tms_driver_license"/>
+                <field name="tms_driver_license_type"/>
+                <field name="tms_driver_rfc"/>
+                <field name="tms_driver_license_expiration" widget="remaining_days"/>
+            </list>
         </field>
     </record>
 </odoo>
