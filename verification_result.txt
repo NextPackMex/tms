@@ -1,0 +1,11 @@
+>>> INICIANDO VERIFICACIÓN DE FIXES TMS <<<
+Estado del módulo TMS: installed
+Modelo tms.waybill: OK
+Modelo tms.waybill.line: OK
+Intentando crear un Waybill de prueba...
+Waybill creado exitosamente: VJ/00006 (ID: 6)
+Estado inicial: draft
+Campo material_peligroso_id: OK
+Línea creada exitosamente.
+Rollback realizado. Test finalizado.
+>>> FIN DE VERIFICACIÓN <<<
