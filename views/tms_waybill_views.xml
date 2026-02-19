@@ -364,6 +364,8 @@
                                     <field name="weight_kg"/>
                                     <field name="dimensions"/>
                                     <field name="is_dangerous"/>
+                                    <field name="material_peligroso_id" invisible="not is_dangerous" required="is_dangerous"/>
+                                    <field name="embalaje_id" optional="show"/>
                                     <field name="l10n_mx_edi_tax_object"/>
                                     <field name="l10n_mx_edi_sector_cofepris" optional="hide"/>
                                     <field name="l10n_mx_edi_active_ingredient" optional="hide"/>
