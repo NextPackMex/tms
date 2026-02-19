@@ -53,13 +53,7 @@ class FleetVehicle(models.Model):
 
     # Sobrescribimos el campo company_id del módulo Fleet para hacerlo requerido
     # Si el módulo nativo no lo requiere, lo hacemos obligatorio aquí
-    company_id = fields.Many2one(
-        'res.company',
-        string='Compañía',
-        required=True,                                      # ← OBLIGATORIO para SaaS
-        default=lambda self: self.env.company,             # ← Por defecto, compañía actual
-        help='Compañía propietaria del vehículo (aislamiento multi-empresa)'
-    )
+
 
     # ============================================================
     # CAMPO PRINCIPAL: Diferenciador Tractor vs Remolque
@@ -95,6 +89,18 @@ class FleetVehicle(models.Model):
         store=True,
         readonly=False,
         help='Marcar si este vehículo es un Tractocamión (puede llevar remolques).'
+    )
+
+    tms_num_axles = fields.Integer(
+        string='Número de Ejes',
+        default=0,
+        help='Número de ejes de esta unidad (tracto o remolque)',
+    )
+
+    tms_fuel_performance = fields.Float(
+        string='Rendimiento (Km/L)',
+        default=2.5,
+        help='Km por litro del vehículo',
     )
 
 

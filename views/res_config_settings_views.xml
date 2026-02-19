@@ -22,6 +22,10 @@
                                     <label for="tms_tollguru_api_key" class="col-lg-3 o_light_label" invisible="tms_route_provider != 'tollguru'"/>
                                     <field name="tms_tollguru_api_key" invisible="tms_route_provider != 'tollguru'"/>
                                 </div>
+                                <div class="row mt8" invisible="tms_route_provider != 'tollguru'">
+                                    <label for="tms_tollguru_debug" class="col-lg-3 o_light_label"/>
+                                    <field name="tms_tollguru_debug"/>
+                                </div>
                                 <div class="text-muted small mt8">
                                     Nota: El uso de la API de Google Maps puede generar costos. Asegúrese de tener una cuenta de facturación activa en Google Cloud Platform.
                                 </div>

@@ -75,7 +75,8 @@
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>
                 <field name="amount_total" widget="monetary"/>
-                <field name="state" widget="badge" decoration-info="state == 'request'" decoration-success="state == 'invoiced'"/>
+                <!-- decoration-success: estado 'closed' (Facturado/Cerrado) resaltado en verde -->
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'closed'"/>
                 <field name="company_id" column_invisible="True"/>
                 <field name="currency_id" column_invisible="True"/>
             </list>
@@ -95,10 +96,14 @@
                     <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
                     <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state != 'draft'"/>
+                    <!-- Botón Generar Carta Porte: solo visible cuando estado es 'assigned' (Por Asignar) -->
                     <button name="action_approve_cp" string="Generar Carta Porte" type="object" class="oe_highlight" invisible="state != 'assigned'"/>
-                    <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'carta_porte'"/>
-                    <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'transit'"/>
-                    <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'destination'"/>
+                    <!-- Botón Iniciar Ruta: solo visible cuando estado es 'waybill' (Carta Porte Lista) -->
+                    <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'waybill'"/>
+                    <!-- Botón Registrar Llegada: solo visible cuando estado es 'in_transit' (En Trayecto) -->
+                    <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'in_transit'"/>
+                    <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
+                    <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
 
                     <field name="state" widget="statusbar" statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
@@ -233,6 +238,7 @@
                                     <field name="vehicle_id" required="state != 'draft'"/>
                                     <field name="require_trailer" widget="boolean_toggle"/>
                                     <field name="trailer1_id" invisible="not require_trailer"/>
+                                    <field name="dolly_id" invisible="not require_trailer"/>
                                 </group>
                                 <group>
                                     <field name="driver_id"/>
@@ -446,7 +452,8 @@
             <search>
                 <field name="name"/>
                 <field name="partner_invoice_id"/>
-                <filter name="filter_request" string="Solicitudes" domain="[('state', '=', 'request')]"/>
+                <!-- Filtro: muestra solo viajes en estado 'draft' (Solicitud/Borrador) -->
+                <filter name="filter_request" string="Solicitudes" domain="[('state', '=', 'draft')]"/>
                 <!--
                 <group expand="0" string="Agrupar Por">
                     <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>

@@ -193,7 +193,7 @@
         <record id="res_partner_company_rule_tms" model="ir.rule">
             <field name="name">TMS: Clientes Privados por Empresa</field>
             <field name="model_id" ref="base.model_res_partner"/>
-            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
             <field name="perm_create" eval="True"/>

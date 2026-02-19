@@ -11,9 +11,9 @@ class ResPartner(models.Model):
         'res.company',
         'Compañía',
         default=lambda self: self.env.company,
-        required=True,
+        required=False,
         index=True,
-        help="El contacto pertenece exclusivamente a esta empresa."
+        help="El contacto pertenece a esta empresa (Si vacío, es Global/Público)."
     )
 
     tms_cp_id = fields.Many2one('tms.sat.codigo.postal', string='Código Postal SAT')

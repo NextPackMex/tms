@@ -16,14 +16,16 @@ class TmsWaybill(models.Model):
 
     CONCEPTO: Fusiona Cotización + Operación + Carta Porte en un solo documento.
 
-    WORKFLOW (7 Etapas):
-    1. Solicitud (request)       → Cotización inicial
-    2. Por Asignar (confirmed)    → Confirmada, asignar vehículo/chofer
-    3. Carta Porte (carta_porte)  → CP lista para timbrar
-    4. En Trayecto (transit)      → Chofer en camino
-    5. En Destino (destination)   → Entregado
-    6. Facturado (invoiced)       → Cerrado
-    7. Cancelado (cancel)         → Anulado
+    WORKFLOW (8 Etapas Reales):
+    1. Solicitud (draft)          → Cotización inicial / borrador
+    2. En Pedido (en_pedido)      → Pedido confirmado por cliente
+    3. Por Asignar (assigned)     → Confirmada, asignar vehículo/chofer
+    4. Carta Porte (waybill)      → CP lista para timbrar
+    5. En Trayecto (in_transit)   → Chofer en camino
+    6. En Destino (arrived)       → Entregado
+    7. Facturado (closed)         → Cerrado/Facturado
+    8. Cancelado (cancel)         → Anulado
+    9. Rechazado (rejected)       → Rechazado desde portal
 
     ARQUITECTURA HÍBRIDA:
     - Plan A: App Móvil reporta GPS (action_driver_report API)
@@ -407,64 +409,7 @@ class TmsWaybill(models.Model):
              if record.partner_dest_id and not record.partner_dest_id.vat:
                 raise ValidationError(_("El Destinatario seleccionado no tiene RFC configurado."))
 
-    @api.constrains('amount_total', 'line_ids', 'partner_invoice_id', 'partner_origin_id', 'partner_dest_id', 'vehicle_id', 'distance_km', 'duration_hours', 'cost_tolls', 'state')
-    def _check_waybill_constraints(self):
-        """Validación estricta al guardar, EXCEPTO para borradores (Draft/Request)."""
-        for record in self:
-            # Si sigue en solicitud, permitir guardar incompleto
-            if record.state == 'draft': # Corrección: 'request' en el prompt original era 'draft' en el modelo
-                continue
-            record._check_waybill_validity()
 
-    def _check_waybill_validity(self):
-        """Lógica central de validaciones. Se llama manualmente en acciones o desde constraints."""
-        self.ensure_one()
-
-        # 1. Precio final (Solo si es Ingreso)
-        if self.waybill_type == 'income' and self.amount_total <= 0:
-            raise ValidationError(_("El precio final del viaje debe ser mayor a 0."))
-
-        # 2. Mercancías
-        if not self.line_ids:
-            raise ValidationError(_("Debe haber al menos un registro en la lista de mercancías."))
-
-        # 3. Cliente Facturación
-        if not self.partner_invoice_id:
-            raise ValidationError(_("El Cliente de Facturación es obligatorio."))
-        # Validar dirección mínima (Calle o CP)
-        if not self.partner_invoice_id.street and not self.partner_invoice_id.zip:
-             raise ValidationError(_("El Cliente de Facturación (%s) debe tener una dirección válida (Calle o CP).") % self.partner_invoice_id.name)
-
-        # 4. Origen
-        if not self.partner_origin_id:
-            raise ValidationError(_("El Remitente (Origen) es obligatorio."))
-        # Validar que tenga dirección en el partner o sobreescrita manual
-        has_origin_address = self.partner_origin_id.street or self.partner_origin_id.zip or self.origin_address
-        if not has_origin_address:
-             raise ValidationError(_("El Remitente debe tener dirección configurada o capturada manualmente."))
-
-        # 5. Destino
-        if not self.partner_dest_id:
-            raise ValidationError(_("El Destinatario es obligatorio."))
-        has_dest_address = self.partner_dest_id.street or self.partner_dest_id.zip or self.dest_address
-        if not has_dest_address:
-             raise ValidationError(_("El Destinatario debe tener dirección configurada o capturada manualmente."))
-
-        # 5b. Validación de Caja/Remolque (Si se requiere)
-        if self.require_trailer and not self.trailer1_id:
-             raise ValidationError(_("Este viaje requiere forzosamente una Caja/Remolque."))
-
-        # 6. Unidad
-        if not self.vehicle_id:
-            raise ValidationError(_("Debe asignar una Unidad (Vehículo) al viaje."))
-
-        # 7. Ruta y Costos lógicos
-        if self.distance_km <= 0:
-            raise ValidationError(_("La distancia de la ruta debe ser mayor a 0 km."))
-        if self.duration_hours < 0:
-            raise ValidationError(_("La duración estimada no puede ser negativa."))
-        if self.cost_tolls < 0:
-             raise ValidationError(_("El costo de casetas no puede ser negativo."))
 
 
 
@@ -512,7 +457,7 @@ class TmsWaybill(models.Model):
     vehicle_id = fields.Many2one(
         'fleet.vehicle',
         string='Vehículo (Tractor)',
-        domain="[('is_trailer', '=', True), ('company_id', '=', company_id)]",
+        domain="[('tms_is_trailer', '=', False), ('company_id', '=', company_id)]",
         check_company=True,
         required=True,
         tracking=True,
@@ -525,7 +470,11 @@ class TmsWaybill(models.Model):
         Al seleccionar vehículo, traer su rendimiento.
         """
         if self.vehicle_id:
-            self.fuel_performance = self.vehicle_id.performance_km_l
+            # Check if tms_fuel_performance is set, otherwise default to performance_km_l or fallback
+            if self.vehicle_id.tms_fuel_performance:
+                self.fuel_performance = self.vehicle_id.tms_fuel_performance
+            else:
+                self.fuel_performance = self.vehicle_id.performance_km_l
 
 
     # Many2one: chofer asignado (Empleados)
@@ -564,6 +513,15 @@ class TmsWaybill(models.Model):
         help='Primer remolque asignado'
     )
 
+    dolly_id = fields.Many2one(
+        'fleet.vehicle',
+        string='Dolly',
+        domain="[('tms_is_trailer', '=', True), ('company_id', '=', company_id)]",
+        check_company=True,
+        tracking=True,
+        help='Dolly: unidad de arrastre que conecta Remolque 1 y Remolque 2',
+    )
+
     # Many2one: remolque 2 (opcional)
     trailer2_id = fields.Many2one(
         'fleet.vehicle',
@@ -582,17 +540,22 @@ class TmsWaybill(models.Model):
         help='Suma de ejes del Tractor + Remolque 1 + Remolque 2'
     )
 
-    @api.depends('vehicle_id', 'vehicle_id.num_axles', 'trailer1_id', 'trailer1_id.num_axles', 'trailer2_id', 'trailer2_id.num_axles')
+    @api.depends('vehicle_id.tms_num_axles',
+                 'trailer1_id.tms_num_axles',
+                 'dolly_id.tms_num_axles',
+                 'trailer2_id.tms_num_axles')
     def _compute_total_axles(self):
         for record in self:
-            count = 0
+            total = 0
             if record.vehicle_id:
-                count += record.vehicle_id.num_axles
+                total += record.vehicle_id.tms_num_axles or 0
             if record.trailer1_id:
-                count += record.trailer1_id.num_axles
+                total += record.trailer1_id.tms_num_axles or 0
+            if record.dolly_id:
+                total += record.dolly_id.tms_num_axles or 0
             if record.trailer2_id:
-                count += record.trailer2_id.num_axles
-            record.total_axles = count
+                total += record.trailer2_id.tms_num_axles or 0
+            record.total_axles = total
 
     # ============================================================
     # BITÁCORA DE TIEMPOS Y GPS (HÍBRIDO: App + Manual)
@@ -778,7 +741,8 @@ class TmsWaybill(models.Model):
         if provider == 'google':
              return self._fetch_google_routes_api(origin_zip, dest_zip, vehicle_type)
         elif provider == 'tollguru':
-             return self._fetch_tollguru_api(origin_zip, dest_zip, vehicle_type)
+             return self._fetch_tollguru_api()
+
         else:
              # Standard handling or legacy Google Maps fallback if desired (but now we have specific provider)
              raise UserError(_("Seleccione un proveedor de rutas válido en Ajustes (Google o TollGuru). Valor actual: %s") % provider)
@@ -872,103 +836,7 @@ class TmsWaybill(models.Model):
 
 
 
-    def _fetch_tollguru_api(self, origin_zip, dest_zip, vehicle_type):
-        """Consume TollGuru API v2 para Distancia, Tiempo y PEAJES (Ejes Configurable)"""
-        ICPSudo = self.env['ir.config_parameter'].sudo()
-        api_key = ICPSudo.get_param('tms.tollguru_api_key')
 
-        if not api_key:
-            raise UserError(_("Falta API Key de TollGuru en Ajustes."))
-
-        url = "https://apis.tollguru.com/toll/v2/origin-destination-waypoints"
-        headers = {
-            'x-api-key': api_key,
-            'Content-Type': 'application/json'
-        }
-
-        # Calcular ejes (default 2 si no hay info, o 5 si es un tráiler típico)
-        # TollGuru usa 'axles' en el objeto vehicle
-        axles = self.total_axles if self.total_axles > 0 else 5
-
-        payload = {
-            "from": {"address": f"{origin_zip}, Mexico"},
-            "to": {"address": f"{dest_zip}, Mexico"},
-            "vehicle": {
-                "type": "2AxlesTruck" if axles <= 2 else f"{axles}AxlesTruck", # Mapeo básico, TollGuru soporta N-AxlesTruck
-                # Ajuste heurístico: TollGuru suele usar "{N}AxlesTruck" para camiones
-                # Si es auto, seria '2AxlesTx' pero estamos en TMS.
-                # Mejor intentamos pasar solo axles si el endpoint lo soporta, o el string type.
-                # Documentación sugiere: "5AxlesTruck" etc.
-            }
-        }
-
-        # Sobrescribir type para asegurar coincidencia exacta
-        if axles == 2:
-            payload['vehicle']['type'] = "2AxlesTruck"
-        elif axles == 3:
-            payload['vehicle']['type'] = "3AxlesTruck"
-        elif axles == 4:
-            payload['vehicle']['type'] = "4AxlesTruck"
-        elif axles >= 5:
-             # TollGuru suele agrupar 5+, pero probemos específico
-            payload['vehicle']['type'] = f"{axles}AxlesTruck"
-
-
-        try:
-            response = requests.post(url, json=payload, headers=headers, timeout=20)
-            data = response.json()
-        except Exception as e:
-            raise UserError(_("Error conexión TollGuru: %s") % str(e))
-
-        if response.status_code != 200 or 'routes' not in data:
-            error_msg = data.get('message') or data.get('error') or 'Error desconocido'
-            raise UserError(_("TollGuru Error: %s") % error_msg)
-
-        # TollGuru devuelve rutas, tomamos la primera (normalmente la óptima/rápida)
-        route = data['routes'][0]
-        summary = route.get('summary', {})
-
-        # Distancia (metros -> km)
-        distance_meters = summary.get('distance', {}).get('value', 0)
-        distance_km = distance_meters / 1000.0
-
-        # Duración (segundos -> horas)
-        duration_seconds = summary.get('duration', {}).get('value', 0)
-        duration_hours = duration_seconds / 3600.0
-
-        # Costos (Tolls) en moneda local (MXN normalmente si es en México)
-        # TollGuru devuelve costs por tag/cash. Usamos 'cash' o el mayor?
-        # Normalmente 'minimumTollCost' o checkear 'costs' específico.
-        toll_cost = 0.0
-        # Buscar costo en 'costs' si existe
-        if 'costs' in route:
-             # costs suele tener tag, cash, licensePlate.
-             # Prioridad: Tag (generalmente más barato/común en flotillas) o Cash.
-             # Si tiene tag, usamos tag.
-             costs = route['costs']
-             toll_cost = costs.get('tag', costs.get('cash', 0.0))
-
-        # 3. GUARDAR EN CACHÉ (tms.destination)
-        self.env['tms.destination'].create({
-            'company_id': self.company_id.id,
-            'origin_zip': origin_zip,
-            'dest_zip': dest_zip,
-            'vehicle_type_id': vehicle_type.id if vehicle_type else False,
-            'distance_km': distance_km,
-            'duration_hours': duration_hours,
-            'cost_tolls': toll_cost,
-            'last_update': fields.Date.today()
-        })
-
-        # 4. ACTUALIZAR WAYBILL
-        self.write({
-            'distance_km': distance_km,
-            'duration_hours': duration_hours,
-            'cost_tolls': toll_cost,
-            'extra_distance_km': 0.0,
-        })
-
-        return self._notify_success("Calculado vía TollGuru (y guardado)", distance_km, duration_hours, toll_cost)
 
     def _notify_success(self, source, dist, dur, tolls):
         return {
@@ -1266,85 +1134,8 @@ class TmsWaybill(models.Model):
             else:
                 record.amount_untaxed = record.proposal_direct_amount
 
-    def action_send_email(self):
-        """ Abre el wizard de correo con la plantilla pre-cargada """
-        self.ensure_one()
-        # Validar antes de enviar
-        self._check_waybill_validity()
 
-        # Referencia a la plantilla creada en data/mail_template_data.xml
-        template = self.env.ref('tms.email_template_tms_waybill')
 
-        ctx = {
-            'default_model': 'tms.waybill',
-            'default_res_ids': self.ids,
-            'default_use_template': bool(template),
-            'default_template_id': template.id,
-            'default_composition_mode': 'comment',
-            'force_email': True,
-        }
-
-        return {
-            'type': 'ir.actions.act_window',
-            'view_mode': 'form',
-            'res_model': 'mail.compose.message',
-            'views': [(False, 'form')],
-            'view_id': False,
-            'target': 'new',
-            'context': ctx,
-        }
-
-    @api.constrains('amount_total', 'line_ids', 'partner_invoice_id', 'partner_origin_id', 'partner_dest_id', 'vehicle_id', 'distance_km', 'duration_hours', 'cost_tolls')
-    def _check_waybill_constraints(self):
-        """Validación estricta al guardar, EXCEPTO para borradores (Draft)."""
-        for record in self:
-            if record.state == 'draft':
-                continue
-            record._check_waybill_validity()
-
-    def _check_waybill_validity(self):
-        """Lógica central de validaciones. Se llama manualmente en acciones o desde constraints."""
-        self.ensure_one()
-        # 1. Precio final debe ser mayor a 0
-        if self.amount_total <= 0:
-            raise ValidationError(_("El precio final del viaje debe ser mayor a 0."))
-
-        # 2. Debe tener al menos un registro en mercancías
-        if not self.line_ids:
-            raise ValidationError(_("Debe haber al menos un registro en la lista de mercancías."))
-
-        # 3. Validar Cliente de Facturación y Domicilio
-        if not self.partner_invoice_id:
-            raise ValidationError(_("El Cliente de Facturación es obligatorio."))
-        if not self.partner_invoice_id.street and not self.partner_invoice_id.zip:
-                raise ValidationError(_("El Cliente de Facturación (%s) debe tener una dirección válida (Calle o CP configurado).") % self.partner_invoice_id.name)
-
-        # 4. Validar Origen y Remitente
-        if not self.partner_origin_id:
-            raise ValidationError(_("El Remitente (Origen) es obligatorio."))
-        # Usamos origin_address porque se auto-copia a un campo Char, pero validamos el partner base también por consistencia
-        if not self.partner_origin_id.street and not self.partner_origin_id.zip and not self.origin_address:
-                raise ValidationError(_("El Remitente debe tener dirección configuración o haberse capturado manualmente."))
-
-        # 5. Validar Destino y Destinatario
-        if not self.partner_dest_id:
-            raise ValidationError(_("El Destinatario es obligatorio."))
-            # Usamos dest_address porque se auto-copia a un campo Char
-        if not self.partner_dest_id.street and not self.partner_dest_id.zip and not self.dest_address:
-                raise ValidationError(_("El Destinatario debe tener dirección configuración o haberse capturado manualmente."))
-
-        # 6. Unidad Asignada
-        if not self.vehicle_id:
-            raise ValidationError(_("Debe asignar una Unidad (Vehículo) al viaje."))
-
-        # 7. Distancia, Hora y Costos (Deben ser positivos o al menos estar definidos)
-        # Nota: duration_hours puede ser 0 si es muy corto, pero distance_km debería ser algo.
-        if self.distance_km <= 0:
-            raise ValidationError(_("La distancia de la ruta debe ser mayor a 0 km."))
-        if self.duration_hours < 0:
-            raise ValidationError(_("La duración estimada no puede ser negativa."))
-        if self.cost_tolls < 0:
-                raise ValidationError(_("El costo de casetas no puede ser negativo."))
 
     def _compute_access_url(self):
         """
@@ -1490,30 +1281,6 @@ class TmsWaybill(models.Model):
                 if municipio:
                     self.dest_city_id = municipio
 
-    @api.onchange('route_id')
-    def _onchange_route_id(self):
-        """
-        AUTOCOMPLETADO DE RUTA AL SELECCIONAR UNA RUTA FRECUENTE.
-
-        Cuando el usuario selecciona una ruta desde el campo route_id:
-        - Auto-llena origin_city_id con el municipio de origen de la ruta
-        - Auto-llena dest_city_id con el municipio de destino de la ruta
-        - Auto-llena distance_km con la distancia de la ruta
-        - Auto-llena duration_hours con la duración de la ruta
-        - Auto-llena cost_tolls con el costo de casetas de la ruta
-        """
-        if self.route_id:
-            # Auto-llenar estados de origen y destino (Sincronización requerida)
-            self.origin_state_id = self.route_id.state_origin_id
-            self.dest_state_id = self.route_id.state_dest_id
-
-            # Auto-llenar distancia y duración
-            self.distance_km = self.route_id.distance_km or 0.0
-            self.duration_hours = self.route_id.duration_hours or 0.0
-
-            # Auto-llenar costo de casetas
-            self.cost_tolls = self.route_id.toll_cost or 0.0
-            self.toll_cost = self.route_id.toll_cost or 0.0
 
 
 
@@ -1673,7 +1440,138 @@ class TmsWaybill(models.Model):
             msg += "\n\nPor favor complete la información faltante en los registros correspondientes (Empresa, Cliente, Vehículo, Chofer o Mercancías)."
             raise ValidationError(msg)
 
-        self.write({'state': 'carta_porte'})
+        self.write({'state': 'waybill'})
+
+    # ============================================================
+    # TOLLGURU API INTEGRATION (Smart Route)
+    # ============================================================
+
+
+
+    def _fetch_tollguru_api(self):
+        """
+        Conecta con TollGuru para obtener ruta y actualiza el record.
+        Usa mapeo dinámico de ejes para seleccionar el vehículo.
+        """
+        self.ensure_one()
+        # Mapeo ejes -> tipo vehículo TollGuru
+        # Tracto(3) + Rem1(2) + Dolly(2) + Rem2(2) = 9 ejes
+        TOLLGURU_AXLES_MAP = {
+            2: "2AxlesTruck",
+            3: "3AxlesTruck",
+            4: "4AxlesTruck",
+            5: "5AxlesTruck",
+            6: "6AxlesTruck",
+            7: "7AxlesTruck",
+            8: "8AxlesTruck",
+            9: "9AxlesTruck",
+        }
+
+        # Obtener tipo dinámico, default 5 ejes si no está
+        # Se usa total_axles calculado previamente (Tracto + Rem1 + Dolly + Rem2)
+        vehicle_type = TOLLGURU_AXLES_MAP.get(self.total_axles, "5AxlesTruck")
+
+        # Configuración
+        api_key = self.env['ir.config_parameter'].sudo().get_param('tms.tollguru_api_key')
+        if not api_key:
+             raise UserError(_("Falta configurar la TollGuru API Key en Ajustes."))
+
+        url = "https://apis.tollguru.com/toll/v2/origin-destination-waypoints"
+        
+        headers = {
+            'x-api-key': api_key,
+            'Content-Type': 'application/json'
+        }
+
+        # Payload correcto con ejes dinámicos
+        payload = {
+            "from": {"address": f"{self.partner_origin_id.zip}, Mexico"},
+            "to":   {"address": f"{self.partner_dest_id.zip}, Mexico"},
+            "vehicle": {
+                "type": vehicle_type,
+                "weight": {
+                    "value": self.vehicle_id.tms_gross_vehicle_weight or 15000,
+                    "unit": "kg"
+                },
+                "axles": self.total_axles,
+                "height": {
+                    "value": 4.5,
+                    "unit": "meter"
+                }
+            }
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+
+            # Log condicional — activar en Ajustes TMS → Debug TollGuru
+            debug_mode = self.env['ir.config_parameter'].sudo().get_param('tms.tollguru_debug', False)
+            if debug_mode:
+                _logger.info("TollGuru STATUS: %s", response.status_code)
+                _logger.info("TollGuru PAYLOAD: %s", payload)
+                _logger.info("TollGuru RESPONSE: %s", response.text[:2000])
+
+
+
+            if response.status_code == 200:
+                api_data = response.json()
+                
+                # TollGuru devuelve 'routes' como lista
+                routes = api_data.get('routes', [])
+                if not routes:
+                    raise UserError(_("TollGuru no devolvió rutas."))
+                
+                route = routes[0]
+                summary = route.get('summary', {})
+                costs = route.get('costs', {})
+                
+                # Distancia: viene en 'value' (metros)
+                distance_m = summary.get('distance', {}).get('value', 0)
+                distance_km = round(distance_m / 1000.0, 2)
+                
+                # Duración: viene en 'value' (segundos)
+                duration_s = summary.get('duration', {}).get('value', 0)
+                duration_hours = round(duration_s / 3600.0, 2)
+                
+                # Casetas: tag o cash (en MXN)
+                toll_cost = costs.get('tag', costs.get('cash', 0.0))
+                
+                # Guardar en waybill
+                self.write({
+                    'distance_km': distance_km,
+                    'duration_hours': duration_hours,
+                    'cost_tolls': toll_cost,
+                })
+                
+                # Log en chatter
+                self.message_post(body=_(
+                     "Ruta calculada con TollGuru (%s ejes): "
+                    "%s km, %s horas, $%s MXN casetas."
+                ) % (self.total_axles, distance_km, 
+                     duration_hours, toll_cost))
+                
+                return self._notify_success("Calculado vía TollGuru", distance_km, duration_hours, toll_cost)
+            else:
+                _logger.error("TollGuru Error: %s", response.text)
+                raise UserError(_("Error TollGuru: %s") % response.text)
+
+        except Exception as e:
+            raise UserError(_("Error de conexión con TollGuru: %s") % str(e))
+
+    def _notify_success(self, source, dist, dur, tolls):
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'tms.waybill',
+            'res_id': self.id,
+            'view_mode': 'form',
+            'target': 'current',
+            'effect': {
+                'fadeout': 'slow',
+                'message': _('%s\nRuta Actualizada: %.2f km, %.2f hrs, $%s') % (source, dist, dur, tolls),
+                'type': 'rainbow_man',
+            }
+        }
+
 
     def action_start_route_manual(self):
         """
@@ -1682,7 +1580,7 @@ class TmsWaybill(models.Model):
         PLAN B (Respaldo Manual):
         - Registra la fecha/hora actual
         - NO registra GPS (lat/long quedan en 0.0)
-        - Cambia estado a 'transit'
+        - Cambia estado a 'in_transit'
 
         VENTAJA: El sistema sigue funcionando aunque la App falle.
         """
@@ -1697,7 +1595,7 @@ class TmsWaybill(models.Model):
             'date_started_route': now,
             'lat_started_route': 0.0,  # 0.0 = Manual
             'long_started_route': 0.0,  # 0.0 = Manual
-            'state': 'transit',
+            'state': 'in_transit',
         })
 
     def action_arrived_dest_manual(self):
@@ -1707,7 +1605,7 @@ class TmsWaybill(models.Model):
         PLAN B (Respaldo Manual):
         - Registra la fecha/hora actual
         - NO registra GPS (lat/long quedan en 0.0)
-        - Cambia estado a 'destination'
+        - Cambia estado a 'arrived'
         """
         self.ensure_one()
 
@@ -1719,7 +1617,7 @@ class TmsWaybill(models.Model):
             'date_arrived_dest': now,
             'lat_arrived_dest': 0.0,  # 0.0 = Manual
             'long_arrived_dest': 0.0,  # 0.0 = Manual
-            'state': 'destination',
+            'state': 'arrived',
         })
 
     def action_create_invoice(self):
@@ -1736,7 +1634,8 @@ class TmsWaybill(models.Model):
         # TODO: Aquí se puede integrar la creación real de factura
         # account_invoice = self.env['account.move'].create({...})
 
-        self.write({'state': 'invoiced'})
+        # Cambia el estado a 'closed' (Facturado/Cerrado) - estado declarado en fields.Selection
+        self.write({'state': 'closed'})
 
     def _action_sign(self, signature, signed_by):
         """
@@ -1846,7 +1745,7 @@ class TmsWaybill(models.Model):
                 'last_app_lat': lat,
                 'last_app_long': long,
                 'last_report_date': now,
-                'state': 'transit',
+                'state': 'in_transit',
             })
             message = _('Ruta iniciada correctamente')
 
@@ -1859,7 +1758,7 @@ class TmsWaybill(models.Model):
                 'last_app_lat': lat,
                 'last_app_long': long,
                 'last_report_date': now,
-                'state': 'destination',
+                'state': 'arrived',
             })
             message = _('Llegada a destino registrada')
 
@@ -1889,21 +1788,12 @@ class TmsWaybill(models.Model):
     # MÉTODO CREATE (Generar folio automático)
     # ============================================================
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        """
-        Genera folio automático para cada viaje.
-        Formato: VJ/0001, VJ/0002, etc.
-        """
-        for vals in vals_list:
-            if vals.get('name', 'Nuevo') == 'Nuevo':
-                vals['name'] = self.env['ir.sequence'].next_by_code('tms.waybill') or 'Nuevo'
-        return super(TmsWaybill, self).create(vals_list)
-
-
     def action_send_email(self):
         """ Abre el wizard de correo con la plantilla pre-cargada """
         self.ensure_one()
+        # Validar antes de enviar
+        self._check_waybill_validity()
+
         # Referencia a la plantilla creada en data/mail_template_data.xml
         template = self.env.ref('tms.email_template_tms_waybill')
 
@@ -1925,6 +1815,19 @@ class TmsWaybill(models.Model):
             'target': 'new',
             'context': ctx,
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """
+        Genera folio automático para cada viaje.
+        Formato: VJ/0001, VJ/0002, etc.
+        """
+        for vals in vals_list:
+            if vals.get('name', 'Nuevo') == 'Nuevo':
+                vals['name'] = self.env['ir.sequence'].next_by_code('tms.waybill') or 'Nuevo'
+        return super(TmsWaybill, self).create(vals_list)
+
+
 
 
 # ============================================================
@@ -2008,6 +1911,18 @@ class TmsWaybillLine(models.Model):
         help='Indica si la mercancía es material peligroso'
     )
 
+    material_peligroso_id = fields.Many2one(
+        'tms.sat.material.peligroso',
+        string='Clave Material Peligroso',
+        help='Clave del material peligroso según catálogo SAT'
+    )
+
+    embalaje_id = fields.Many2one(
+        'tms.sat.embalaje',
+        string='Tipo de Embalaje',
+        help='Clave del tipo de embalaje según catálogo SAT'
+    )
+
     # Objeto de Impuesto (CFDI 4.0)
     l10n_mx_edi_tax_object = fields.Selection(
         selection=[
@@ -2056,30 +1971,6 @@ class TmsWaybillLine(models.Model):
         help='Unidad de medida de la pureza.'
     )
 
-    def action_send_email(self):
-        """ Abre el wizard de correo con la plantilla pre-cargada """
-        self.ensure_one()
-        # Referencia a la plantilla creada en data/mail_template_data.xml
-        template = self.env.ref('tms.email_template_tms_waybill')
-
-        ctx = {
-            'default_model': 'tms.waybill',
-            'default_res_ids': self.ids,
-            'default_use_template': bool(template),
-            'default_template_id': template.id,
-            'default_composition_mode': 'comment',
-            'force_email': True,
-        }
-
-        return {
-            'type': 'ir.actions.act_window',
-            'view_mode': 'form',
-            'res_model': 'mail.compose.message',
-            'views': [(False, 'form')],
-            'view_id': False,
-            'target': 'new',
-            'context': ctx,
-        }
 
 class TmsWaybillCustomsRegime(models.Model):
     _name = 'tms.waybill.customs.regime'

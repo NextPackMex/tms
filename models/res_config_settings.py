@@ -6,6 +6,11 @@ class ResConfigSettings(models.TransientModel):
     tms_use_google_maps = fields.Boolean(string="Integración con Mapas", config_parameter='tms.use_google_maps')
     tms_google_maps_api_key = fields.Char(string="Google Maps API Key", config_parameter='tms.google_maps_api_key')
     tms_tollguru_api_key = fields.Char(string="TollGuru API Key", config_parameter='tms.tollguru_api_key')
+    tms_tollguru_debug = fields.Boolean(
+        string='Debug TollGuru (Log respuestas API)',
+        config_parameter='tms.tollguru_debug',
+        help='Activa logs detallados de TollGuru en el servidor. Desactivar en producción.'
+    )
     tms_route_provider = fields.Selection([
         ('std', 'Manual / Estándar'),
         ('google', 'Google Maps API'),

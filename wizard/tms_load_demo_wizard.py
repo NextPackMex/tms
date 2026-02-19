@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
 from odoo import models, fields, api, _
+from odoo.exceptions import UserError, ValidationError
+from odoo.modules.module import get_module_path
 from odoo.tools import convert_file
 import logging
 
@@ -28,16 +31,10 @@ class TmsLoadDemoWizard(models.TransientModel):
         # Ruta relativa del archivo dentro del módulo
         filename = 'demo/tms_expanded_demo.xml'
         
-        # Usamos convert_file de Odoo tools
-        # convert_file(env, module, filename, idref, mode='update', noupdate=False)
         try:
-            # Obtenemos la ruta absoluta del archivo usando get_module_resource si fuera necesario, 
-            # pero convert_file suele manejar rutas relativas si se pasa el package correcto.
-            # Sin embargo, convert_file espera 'filename' como ruta absoluta o relativa manejada por el framework.
-            # La forma más segura llamando desde código es obtener path.
-            
-            from odoo.modules.module import get_module_resource
-            fp = get_module_resource(module_name, filename)
+            # Obtener la ruta del módulo y construir la ruta completa al archivo
+            module_path = get_module_path(module_name)
+            fp = os.path.join(module_path, filename)
             
             if not fp:
                 raise UserError(_("No se encontró el archivo de datos demo: %s") % filename)
@@ -58,4 +55,4 @@ class TmsLoadDemoWizard(models.TransientModel):
             
         except Exception as e:
             _logger.error("Error cargando datos demo TMS: %s", str(e))
-            raise models.ValidationError(_("Ocurrió un error al cargar los datos: %s") % str(e))
+            raise ValidationError(_("Ocurrió un error al cargar los datos: %s") % str(e))

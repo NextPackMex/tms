@@ -66,6 +66,8 @@
                                 <group string="Pesos y Casetas">
                                     <field name="tms_gross_vehicle_weight" string="Peso Bruto (Ton)"/>
                                     <field name="num_axles"/>
+                                    <field name="tms_num_axles"/>
+                                    <field name="tms_fuel_performance"/>
                                     <field name="performance_km_l"/>
                                 </group>
                             </group>
@@ -113,6 +115,7 @@
                         <group string="Configuración SAT">
                             <field name="sat_config_id" string="SubTipo Remolque SAT" required="1"/>
                             <field name="tms_gross_vehicle_weight" string="Peso (Ton)"/>
+                            <field name="tms_num_axles"/>
                         </group>
                     </group>
                 </sheet>
