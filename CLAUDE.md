@@ -250,34 +250,32 @@ tms/
 
 ### ✅ Etapas Completadas
 
-| Etapa | Nombre                         | Issues Resueltos                   |
-| ----- | ------------------------------ | ---------------------------------- |
-| 2.0.1 | Eliminar duplicados Python     | I-03,I-04,I-05,I-06,I-07,I-08      |
-| 2.0.2 | Fix estados + Dolly + TollGuru | I-09 + tren vehicular completo     |
-| 2.0.3 | Campos SAT + ACL regímenes     | I-10 (verificado, ya existía)      |
-| 2.0.4 | Fix partner + multi-empresa    | I-01,I-02 (verificado, ya existía) |
+| Etapa | Nombre                               | Issues Resueltos                   |
+| ----- | ------------------------------------ | ---------------------------------- |
+| 2.0.1 | Eliminar duplicados Python           | I-03,I-04,I-05,I-06,I-07,I-08      |
+| 2.0.2 | Fix estados + Dolly + TollGuru       | I-09 + tren vehicular completo     |
+| 2.0.3 | Campos SAT + ACL regímenes           | I-10 (verificado, ya existía)      |
+| 2.0.4 | Fix partner + multi-empresa          | I-01,I-02 (verificado, ya existía) |
+| 2.0.5 | Fix domain vehículo + amount_untaxed | I-10, I-13                         |
 
 ### 🚧 Etapas Pendientes V2.0
 
-| Etapa | Nombre                               | Issues     |
-| ----- | ------------------------------------ | ---------- |
-| 2.0.5 | Fix domain vehículo + amount_untaxed | I-10, I-13 |
-| 2.0.6 | Unificar cp_type/waybill_type        | I-11       |
-| 2.0.7 | Limpiar constraints redundantes      | I-14       |
-| 2.0.8 | Auditar dependencias manifest        | I-15       |
-| 2.0.9 | QA instalar base limpia              | —          |
+| Etapa | Nombre                          | Issues |
+| ----- | ------------------------------- | ------ |
+| 2.0.6 | Unificar cp_type/waybill_type   | I-11   |
+| 2.0.7 | Limpiar constraints redundantes | I-14   |
+| 2.0.8 | Auditar dependencias manifest   | I-15   |
+| 2.0.9 | QA instalar base limpia         | —      |
 
 ---
 
 ## 8. Issues Conocidos (Pendientes)
 
-| ID   | Severidad | Descripción                                                      | Archivo         |
-| ---- | --------- | ---------------------------------------------------------------- | --------------- |
-| I-10 | 🟡        | vehicle_id domain incorrecto (is_trailer=True en lugar de False) | tms_waybill.py  |
-| I-11 | 🟡        | cp_type vs waybill_type duplicados                               | tms_waybill.py  |
-| I-13 | 🟡        | amount_untaxed store=True escrito desde compute store=False      | tms_waybill.py  |
-| I-14 | 🟢        | \_check_financials redundante                                    | tms_waybill.py  |
-| I-15 | 🟢        | Dependencias excesivas en manifest                               | **manifest**.py |
+| ID   | Severidad | Descripción                        | Archivo         |
+| ---- | --------- | ---------------------------------- | --------------- |
+| I-11 | 🟡        | cp_type vs waybill_type duplicados | tms_waybill.py  |
+| I-14 | 🟢        | \_check_financials redundante      | tms_waybill.py  |
+| I-15 | 🟢        | Dependencias excesivas en manifest | **manifest**.py |
 
 ### Issues Resueltos (NO repetir)
 
@@ -287,6 +285,8 @@ tms/
 - ✅ I-04: TmsVehicleType duplicado → eliminado
 - ✅ I-05,06,07,08: Métodos duplicados en tms_waybill.py → eliminados
 - ✅ I-09: Estados inconsistentes (transit/destination/carta_porte) → corregidos
+- ✅ I-10: vehicle_id domain incorrecto (tms_is_trailer=False) → corregido
+- ✅ I-13: amount_untaxed persistencia con botón aplicar → corregido
 
 ---
 
