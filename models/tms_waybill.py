@@ -1101,8 +1101,6 @@ class TmsWaybill(models.Model):
         PROPUESTA 2 (Por Viaje): (Costos Totales) / (1 - Margen%)
         PROPUESTA 3 (Directa): Monto fijo capturado manualmente
 
-        El campo amount_total se actualiza según la propuesta seleccionada.
-
         IMPORTANTE:
         - Este método es para campos NO almacenados (store=False)
         - Depende de cost_diesel_total que SÍ está almacenado
@@ -1125,14 +1123,22 @@ class TmsWaybill(models.Model):
             else:
                 record.proposal_trip_total = total_costs
 
-            # 3. Actualizar Monto Final (SUBTOTAL / Untaxed) basado en selección
-            # Los impuestos se calculan automáticamente en _compute_amount_all
-            if record.selected_proposal == 'km':
-                record.amount_untaxed = record.proposal_km_total
-            elif record.selected_proposal == 'trip':
-                record.amount_untaxed = record.proposal_trip_total
-            else:
-                record.amount_untaxed = record.proposal_direct_amount
+    def action_apply_proposal(self):
+        """
+        Aplica el valor de la propuesta de cotización seleccionada al Subtotal.
+        Esto asegura que el valor se guarde correctamente en la base de datos.
+        """
+        self.ensure_one()
+        value = 0.0
+        if self.selected_proposal == 'km':
+            value = self.proposal_km_total
+        elif self.selected_proposal == 'trip':
+            value = self.proposal_trip_total
+        else:
+            value = self.proposal_direct_amount
+        
+        self.write({'amount_untaxed': value})
+        return True
 
 
 

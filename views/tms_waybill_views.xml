@@ -287,6 +287,7 @@
                                     <!-- label con 'for' para Odoo 18 -->
                                     <label for="selected_proposal" string="Selecciona la propuesta que se aplicará al cliente." class="o_form_label text-muted"/>
                                     <field name="selected_proposal" widget="radio"/>
+                                    <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
                                 </group>
                             </group>
 
