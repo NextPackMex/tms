@@ -894,6 +894,20 @@ class TmsWaybill(models.Model):
         string='Bitácora de Eventos'
     )
 
+    # Contador de eventos GPS para el smart button
+    tracking_count = fields.Integer(
+        string='Eventos GPS',
+        compute='_compute_tracking_count',
+        store=False,
+        help='Número de eventos de rastreo registrados en este viaje'
+    )
+
+    @api.depends('tracking_event_ids')
+    def _compute_tracking_count(self):
+        """Cuenta los eventos GPS para mostrar en el smart button."""
+        for rec in self:
+            rec.tracking_count = len(rec.tracking_event_ids)
+
     # Text: motivo de rechazo desde el portal
     # Se captura cuando el cliente rechaza la cotización desde el portal
     rejection_reason = fields.Text(
@@ -1031,6 +1045,20 @@ class TmsWaybill(models.Model):
         string='Mercancías',
         help='Mercancías transportadas en el viaje'
     )
+
+    # Contador de mercancías para el smart button
+    line_count = fields.Integer(
+        string='Cant. Mercancías',
+        compute='_compute_line_count',
+        store=False,
+        help='Número de líneas de mercancía registradas en este viaje'
+    )
+
+    @api.depends('line_ids')
+    def _compute_line_count(self):
+        """Cuenta las líneas de mercancía para mostrar en el smart button."""
+        for rec in self:
+            rec.line_count = len(rec.line_ids)
 
     @api.depends('amount_untaxed')
     def _compute_amount_all(self):
@@ -1319,6 +1347,56 @@ class TmsWaybill(models.Model):
 
     # Solución al duplicado: action_confirm ahora establece el estado 'en_pedido'
     # incorporando la lógica de validación existente.
+
+    # ============================================================
+    # SMART BUTTONS — Acciones de navegación rápida
+    # ============================================================
+
+    def action_view_lines(self):
+        """
+        Abre la lista de mercancías (tms.waybill.line) de este viaje.
+        Accionado desde el smart button de Mercancías.
+        """
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Mercancías — {self.name}',
+            'res_model': 'tms.waybill.line',
+            'view_mode': 'list,form',
+            'domain': [('waybill_id', '=', self.id)],
+            'context': {'default_waybill_id': self.id},
+        }
+
+    def action_view_tracking(self):
+        """
+        Abre la bitácora de eventos GPS (tms.tracking.event) de este viaje.
+        Accionado desde el smart button de Bitácora GPS.
+        """
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Bitácora GPS — {self.name}',
+            'res_model': 'tms.tracking.event',
+            'view_mode': 'list,form',
+            'domain': [('waybill_id', '=', self.id)],
+            'context': {'default_waybill_id': self.id},
+        }
+
+    def action_view_vehicle(self):
+        """
+        Abre la ficha del vehículo (fleet.vehicle) asignado a este viaje.
+        Accionado desde el smart button de Vehículo.
+        """
+        self.ensure_one()
+        if not self.vehicle_id:
+            return {}
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Vehículo',
+            'res_model': 'fleet.vehicle',
+            'view_mode': 'form',
+            'res_id': self.vehicle_id.id,
+        }
 
     def action_set_en_pedido(self):
         """

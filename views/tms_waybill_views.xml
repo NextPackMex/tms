@@ -111,6 +111,33 @@
                 </header>
 
                 <sheet>
+                    <!-- =============================================
+                         SMART BUTTONS: Navegación rápida y contadores
+                         ============================================= -->
+                    <div class="oe_button_box" name="button_box">
+
+                        <!-- Smart Button: Mercancías  (siempre visible) -->
+                        <button name="action_view_lines" type="object" class="oe_stat_button" icon="fa-cube">
+                            <field name="line_count" widget="statinfo" string="Mercancías"/>
+                        </button>
+
+                        <!-- Smart Button: Bitácora GPS (visible desde estado Carta Porte) -->
+                        <button name="action_view_tracking" type="object" class="oe_stat_button" icon="fa-map-marker" invisible="state in ['draft','en_pedido','assigned']">
+                            <field name="tracking_count" widget="statinfo" string="Eventos GPS"/>
+                        </button>
+
+                        <!-- Smart Button: Vehículo (visible cuando hay vehículo asignado) -->
+                        <button name="action_view_vehicle" type="object" class="oe_stat_button" icon="fa-truck" invisible="not vehicle_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="vehicle_id" readonly="1" nolabel="1" options="{'no_open': True}"/>
+                                </span>
+                                <span class="o_stat_text">Vehículo</span>
+                            </div>
+                        </button>
+
+                    </div>
+
                     <field name="company_id" invisible="1"/>
                     <field name="is_fuel_price_outdated" invisible="1"/>
                     <div class="alert alert-warning" role="alert" invisible="not is_fuel_price_outdated">
