@@ -550,13 +550,14 @@ class TmsWaybill(models.Model):
     def _onchange_require_trailer(self):
         """
         Si se desmarca 'Lleva Remolque', se limpian todos los campos de remolque
-        (trailer1_id, dolly_id, trailer2_id) y se recalculan los ejes totales.
+        y se fuerza el recálculo de ejes en la interfaz.
         """
         if not self.require_trailer:
-            self.trailer1_id = False
-            self.dolly_id = False
-            self.trailer2_id = False
-            # Forzar recálculo de ejes (sólo contará los del tracto)
+            self.update({
+                'trailer1_id': False,
+                'dolly_id': False,
+                'trailer2_id': False,
+            })
             self._compute_total_axles()
 
     # Many2one: remolque 1
@@ -606,12 +607,11 @@ class TmsWaybill(models.Model):
         si 'Lleva Remolque' está activo, sus componentes de arrastre.
         """
         for record in self:
-            total = 0
-            # Siempre se cuentan los ejes del vehículo principal (tracto)
-            if record.vehicle_id:
-                total += record.vehicle_id.tms_num_axles or 0
+            # Primero obtenemos los ejes del tractor (base siempre presente)
+            total = record.vehicle_id.tms_num_axles if record.vehicle_id else 0
             
-            # Solo se suman remolques si el toggle está activo
+            # Solo se suman remolques si el toggle está activo. 
+            # Si está inactivo, ignoramos cualquier valor remanente en los campos.
             if record.require_trailer:
                 if record.trailer1_id:
                     total += record.trailer1_id.tms_num_axles or 0
@@ -1966,6 +1966,19 @@ class TmsWaybill(models.Model):
             'context': ctx,
         }
 
+    def write(self, vals):
+        """
+        Purga de datos técnica: Si se desactiva 'require_trailer',
+        vaciamos forzosamente los campos de remolque para mantener integridad.
+        """
+        if 'require_trailer' in vals and not vals['require_trailer']:
+            vals.update({
+                'trailer1_id': False,
+                'dolly_id': False,
+                'trailer2_id': False,
+            })
+        return super(TmsWaybill, self).write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         """
@@ -1973,6 +1986,14 @@ class TmsWaybill(models.Model):
         Formato: VJ/0001, VJ/0002, etc.
         """
         for vals in vals_list:
+            # Asegurar limpieza inicial si require_trailer viene en False
+            if vals.get('require_trailer') is False:
+                vals.update({
+                    'trailer1_id': False,
+                    'dolly_id': False,
+                    'trailer2_id': False,
+                })
+            
             if vals.get('name', 'Nuevo') == 'Nuevo':
                 vals['name'] = self.env['ir.sequence'].next_by_code('tms.waybill') or 'Nuevo'
         return super(TmsWaybill, self).create(vals_list)
