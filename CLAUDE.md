@@ -4,7 +4,7 @@
 
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
 
-# Última actualización: 2026-02-25
+# Última actualización: 2026-02-25 — V2.0 COMPLETADO
 
 # ══════════════════════════════════════════════════════════════
 
@@ -15,7 +15,7 @@
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.0.0
+**Versión módulo:** 19.0.2.0.0 — Release V2.0 estable
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -250,23 +250,34 @@ tms/
 
 ### ✅ Etapas Completadas
 
-| Etapa | Nombre                               | Issues Resueltos                   |
-| ----- | ------------------------------------ | ---------------------------------- |
-| 2.0.1 | Eliminar duplicados Python           | I-03,I-04,I-05,I-06,I-07,I-08      |
-| 2.0.2 | Fix estados + Dolly + TollGuru       | I-09 + tren vehicular completo     |
-| 2.0.3 | Campos SAT + ACL regímenes           | I-10 (verificado, ya existía)      |
-| 2.0.4 | Fix partner + multi-empresa          | I-01,I-02 (verificado, ya existía) |
-| 2.0.5 | Fix domain vehículo + amount_untaxed | I-10, I-13                         |
-| 2.0.6 | Unificar cp_type/waybill_type        | I-11 (Unificado en waybill_type)   |
-| 2.0.7 | Limpiar constraints redundantes      | I-14 (Removido \_check_financials) |
-| 2.0.8 | Auditar dependencias manifest        | I-15 (Limpieza de dependencias)    |
-| 2.0.9 | QA instalar base limpia              | — (Validado pipeline E2E)          |
+| Etapa | Nombre                               | Issues Resueltos                     |
+| ----- | ------------------------------------ | ------------------------------------ |
+| 2.0.1 | Eliminar duplicados Python           | I-03,I-04,I-05,I-06,I-07,I-08        |
+| 2.0.2 | Fix estados + Dolly + TollGuru       | I-09 + tren vehicular completo       |
+| 2.0.3 | Campos SAT + ACL regímenes           | I-10 (verificado, ya existía)        |
+| 2.0.4 | Fix partner + multi-empresa          | I-01,I-02 (verificado, ya existía)   |
+| 2.0.5 | Fix domain vehículo + amount_untaxed | I-10, I-13 + botón Aplicar Propuesta |
+| 2.0.6 | Unificar cp_type/waybill_type        | I-11                                 |
 
-### 📋 Etapas Próximas (V2.1+)
+### ✅ Etapas V2.0 — TODAS COMPLETADAS
 
-V2.0 Finalizada. Preparando terreno para automatización de cotización y UX.
+| Etapa | Nombre                                                   | Estado |
+| ----- | -------------------------------------------------------- | ------ |
+| 2.0.7 | Limpiar constraints + restaurar \_check_waybill_validity | ✅     |
+| 2.0.8 | Auditar manifest + fix UI remolques                      | ✅     |
+| 2.0.9 | QA BD limpia + datos demo + workflow E2E                 | ✅     |
+
+### 🚧 Siguiente Release: V2.1 — Pulido UX
 
 ---
+
+## 8. Issues Conocidos (Pendientes)
+
+| ID  | Severidad | Descripción | Archivo |
+| --- | --------- | ----------- | ------- |
+
+**Sin issues pendientes en V2.0** — Todos resueltos.
+**Sin issues pendientes en V2.0** — Todos resueltos.
 
 ### Issues Resueltos (NO repetir)
 
@@ -276,11 +287,6 @@ V2.0 Finalizada. Preparando terreno para automatización de cotización y UX.
 - ✅ I-04: TmsVehicleType duplicado → eliminado
 - ✅ I-05,06,07,08: Métodos duplicados en tms_waybill.py → eliminados
 - ✅ I-09: Estados inconsistentes (transit/destination/carta_porte) → corregidos
-- ✅ I-10: vehicle_id domain incorrecto (tms_is_trailer=False) → corregido
-- ✅ I-11: cp_type vs waybill_type duplicados → unificados
-- ✅ I-13: amount_untaxed persistencia con botón aplicar → corregido
-- ✅ I-14: \_check_financials redundante → eliminado
-- ✅ I-15: Dependencias excesivas en manifest → corregido
 
 ---
 
