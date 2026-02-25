@@ -241,6 +241,57 @@ class TmsWaybill(models.Model):
     )
 
     # ============================================================
+    # PRIORIDAD Y COLOR KANBAN
+    # ============================================================
+
+    # Prioridad del viaje — Se muestra como estrellas en el kanban
+    priority = fields.Selection(
+        selection=[
+            ('0', 'Normal'),
+            ('1', 'Urgente'),
+            ('2', 'Muy Urgente'),
+            ('3', 'Crítico'),
+        ],
+        string='Prioridad',
+        default='0',
+        tracking=True,
+        index=True,
+        help='Nivel de urgencia del viaje. Se muestra como estrellas en el kanban.'
+    )
+
+    # Color kanban: entero 0-11 que Odoo mapea a colores de la paleta estándar.
+    # Se asigna automáticamente según el estado con un compute.
+    color = fields.Integer(
+        string='Color Kanban',
+        compute='_compute_kanban_color',
+        store=True,
+        help='Color de la banda lateral en el kanban, calculado desde el estado del viaje.'
+    )
+
+    # Mapa estado → color Odoo (paleta 0-11)
+    # 0=sin color, 1=rojo, 2=naranja, 3=amarillo, 4=azul claro,
+    # 5=morado, 6=salmon, 7=gris medio, 8=azul marino, 9=fucsia,
+    # 10=verde, 11=morado oscuro
+    _STATE_COLOR_MAP = {
+        'draft': 0,         # gris (sin acento)
+        'en_pedido': 4,     # azul claro
+        'assigned': 3,      # amarillo
+        'waybill': 5,       # morado
+        'in_transit': 10,   # verde
+        'arrived': 10,      # verde (llegó)
+        'closed': 7,        # gris medio (cerrado)
+        'cancel': 1,        # rojo
+        'rejected': 6,      # salmon
+    }
+
+    @api.depends('state')
+    def _compute_kanban_color(self):
+        """Asigna el color de la banda lateral del kanban según el estado del viaje."""
+        for rec in self:
+            rec.color = self._STATE_COLOR_MAP.get(rec.state, 0)
+
+
+    # ============================================================
     # ACTORES: CLIENTE DE FACTURACIÓN (Quién Paga)
     # ============================================================
 
