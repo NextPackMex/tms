@@ -29,11 +29,11 @@
                 <progressbar field="priority" colors="{&quot;0&quot;: &quot;success&quot;, &quot;1&quot;: &quot;warning&quot;, &quot;2&quot;: &quot;warning&quot;, &quot;3&quot;: &quot;danger&quot;}"/>
 
                 <templates>
-                    <t t-name="card" t-att-class="'oe_kanban_color_' + record.color.raw_value">
+                    <t t-name="card">
                         <!-- ============================================================
                              CABECERA: Folio + prioridad (estrellas) + tipo de carta porte
                              ============================================================ -->
-                        <div class="oe_kanban_card oe_kanban_global_click" style="border-left: 4px solid;">
+                        <div class="oe_kanban_card oe_kanban_global_click">
                             <!-- Folio + estrellas de prioridad -->
                             <div class="o_kanban_record_top mb-1 d-flex justify-content-between align-items-center">
                                 <div class="o_kanban_record_headings">
@@ -334,13 +334,13 @@
                             <group string="Unidad Asignada" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="vehicle_id" required="state != 'draft'"/>
-                                    <field name="require_trailer" widget="boolean_toggle"/>
+                                    <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque"/>
                                     <field name="trailer1_id" invisible="not require_trailer"/>
                                     <field name="dolly_id" invisible="not require_trailer"/>
                                 </group>
                                 <group>
                                     <field name="driver_id"/>
-                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)"/>
+                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)" invisible="not require_trailer"/>
                                     <field name="total_axles"/>
                                 </group>
                             </group>

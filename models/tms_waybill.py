@@ -541,7 +541,7 @@ class TmsWaybill(models.Model):
     # Boolean: Indica si el viaje REQUIERE remolque forzosamente
     # Si es True, no se permite avanzar a Carta Porte sin trailer1_id
     require_trailer = fields.Boolean(
-        string='Lleva Caja/Remolque',
+        string='Lleva Remolque',
         default=False,
         help='Si se marca, es obligatorio asignar un remolque antes de generar la Carta Porte.'
     )
@@ -549,11 +549,15 @@ class TmsWaybill(models.Model):
     @api.onchange('require_trailer')
     def _onchange_require_trailer(self):
         """
-        Si se desmarca 'Lleva Caja/Remolque', se limpian los campos de remolque.
+        Si se desmarca 'Lleva Remolque', se limpian todos los campos de remolque
+        (trailer1_id, dolly_id, trailer2_id) y se recalculan los ejes totales.
         """
         if not self.require_trailer:
             self.trailer1_id = False
+            self.dolly_id = False
             self.trailer2_id = False
+            # Forzar recálculo de ejes (sólo contará los del tracto)
+            self._compute_total_axles()
 
     # Many2one: remolque 1
     trailer1_id = fields.Many2one(
@@ -591,21 +595,31 @@ class TmsWaybill(models.Model):
         help='Suma de ejes del Tractor + Remolque 1 + Remolque 2'
     )
 
-    @api.depends('vehicle_id.tms_num_axles',
+    @api.depends('require_trailer',
+                 'vehicle_id.tms_num_axles',
                  'trailer1_id.tms_num_axles',
                  'dolly_id.tms_num_axles',
                  'trailer2_id.tms_num_axles')
     def _compute_total_axles(self):
+        """
+        Calcula el total de ejes del viaje sumando el tracto y,
+        si 'Lleva Remolque' está activo, sus componentes de arrastre.
+        """
         for record in self:
             total = 0
+            # Siempre se cuentan los ejes del vehículo principal (tracto)
             if record.vehicle_id:
                 total += record.vehicle_id.tms_num_axles or 0
-            if record.trailer1_id:
-                total += record.trailer1_id.tms_num_axles or 0
-            if record.dolly_id:
-                total += record.dolly_id.tms_num_axles or 0
-            if record.trailer2_id:
-                total += record.trailer2_id.tms_num_axles or 0
+            
+            # Solo se suman remolques si el toggle está activo
+            if record.require_trailer:
+                if record.trailer1_id:
+                    total += record.trailer1_id.tms_num_axles or 0
+                if record.dolly_id:
+                    total += record.dolly_id.tms_num_axles or 0
+                if record.trailer2_id:
+                    total += record.trailer2_id.tms_num_axles or 0
+            
             record.total_axles = total
 
     # ============================================================
