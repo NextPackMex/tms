@@ -104,6 +104,8 @@
                     <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'in_transit'"/>
                     <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
                     <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
+                    <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
+                    <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['draft','en_pedido','assigned']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
                     <field name="state" widget="statusbar" statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
@@ -122,7 +124,8 @@
                             </h1>
                         </div>
 
-                        <div class="text-center">
+                        <!-- Fechas de embarque/entrega: solo relevantes cuando el viaje ya está en ruta -->
+                        <div class="text-center" invisible="state in ['draft','en_pedido','assigned']">
                             <div class="d-flex gap-3">
                                 <div>
                                     <label for="date_started_route" string="Fecha Y hora Embarque" class="text-danger fw-bold"/>
@@ -154,16 +157,16 @@
                     <!-- ACTORES DEL VIAJE (HEADER) -->
                     <div class="row mb-3">
                         <div class="col-lg-8">
-                            <!-- FACTURACIÓN CARD -->
+                            <!-- FACTURACIÓN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
-                                <group string="Facturación" class="mb-0">
+                                <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="date_created" string="Fecha del Pedido"/>
                                     <field name="partner_invoice_id" required="state != 'draft'"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_facturacion" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
@@ -188,29 +191,29 @@
 
                     <div class="row mb-3">
                         <div class="col-lg-6">
-                            <!-- ORIGEN CARD -->
+                            <!-- ORIGEN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Origen" class="mb-0">
+                                <group string="Origen" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_origin_id" required="state != 'draft'"/>
                                     <field name="origin_address" required="state != 'draft'"/>
                                     <field name="origin_zip" required="state != 'draft'"/>
                                     <field name="origin_rfc"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_origen" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <!-- DESTINO CARD -->
+                            <!-- DESTINO CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Destino" class="mb-0">
+                                <group string="Destino" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_dest_id" required="state != 'draft'"/>
                                     <field name="dest_address" required="state != 'draft'"/>
                                     <field name="dest_zip" required="state != 'draft'"/>
                                     <field name="dest_rfc"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_destino" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
@@ -232,8 +235,8 @@
                                 </group>
                             </group>
 
-                            <!-- UNIDAD ASIGNADA -->
-                            <group string="Unidad Asignada">
+                            <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
+                            <group string="Unidad Asignada" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="vehicle_id" required="state != 'draft'"/>
                                     <field name="require_trailer" widget="boolean_toggle"/>
@@ -247,16 +250,16 @@
                                 </group>
                             </group>
 
-                            <!-- DETALLES DE RUTA -->
-                            <group string="Detalles de Ruta">
+                            <!-- DETALLES DE RUTA — readonly cuando el viaje ya está en ruta -->
+                            <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="distance_km" required="state != 'draft'"/>
                                     <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
                                     <field name="cost_tolls" widget="monetary" required="state != 'draft'"/>
                                 </group>
                                 <group>
-                                    <label for="action_compute_route_smart" string="Cálculo"/>
-                                    <div class="o_row">
+                                    <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
+                                    <div class="o_row" invisible="state in ['in_transit','arrived','closed','cancel']">
                                         <button name="action_compute_route_smart" type="object" string=" Calcular Ruta (Smart)" icon="fa-magic" class="btn btn-primary"/>
                                         <div class="text-muted ms-2">
                                             <i class="fa fa-info-circle"/>
@@ -270,7 +273,8 @@
                         <!-- ======================= -->
                         <!-- COTIZACIÓN Y COSTOS (SIEMPRE VISIBLE) -->
                         <!-- ======================= -->
-                        <page string="Cotización y Costos">
+                        <!-- Pestaña de cotización: readonly en estados operativos/finales -->
+                        <page string="Cotización y Costos" readonly="state in ['in_transit','arrived','closed','cancel']">
                             <group>
                                 <group string="Variables de Costo">
                                     <field name="fuel_price_liter"/>
@@ -327,7 +331,8 @@
                         <!-- ======================= -->
                         <!-- CARTA PORTE 3.1 -->
                         <!-- ======================= -->
-                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31">
+                        <!-- Carta Porte: no tiene sentido en borrador (sin info completa aún) -->
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state == 'draft'">
                             <group>
                                 <group string="Identificación">
                                     <label for="tms_id_ccp"/>
@@ -378,7 +383,8 @@
                         <!-- ======================= -->
                         <!-- BITÁCORA GPS           -->
                         <!-- ======================= -->
-                        <page string="Bitácora GPS">
+                        <!-- Bitácora GPS: solo relevante cuando el viaje ya salió (desde estado waybill) -->
+                        <page string="Bitácora GPS" invisible="state in ['draft','en_pedido','assigned']">
                             <field name="tracking_event_ids">
                                 <list string="Eventos de Rastreo" editable="bottom">
                                     <field name="date"/>
