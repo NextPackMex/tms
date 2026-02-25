@@ -7,29 +7,229 @@
     <data noupdate="1">
 
         <!--
-            Cliente Demo: Transportes del Norte
+            ==============================
+            RES.COMPANY (Empresas de prueba)
+            ==============================
+            Odoo crea la compañía base automáticamente (YourCompany).
+            Vamos a modificarla con los datos SAT requeridos para la Carta Porte.
         -->
-        <record id="partner_transportes_norte" model="res.partner">
-            <field name="name">Transportes del Norte</field>
-            <field name="customer_rank">1</field>
-            <!-- customer_rank > 0 marca este contacto como cliente -->
-            <field name="street">Av. Constitución 123</field>
-            <field name="city">Monterrey</field>
-            <field name="zip">64000</field>
+        <record id="base.main_company" model="res.company">
+            <field name="name">Logística Transportadora Nextpack SA de CV</field>
+            <field name="vat">LTN150415XYZ</field>
+            <field name="street">Lateral Autopista Qro-Mex 1234</field>
+            <field name="city">Querétaro</field>
+            <field name="state_id" ref="base.state_mx_que"/>
+            <field name="zip">76240</field>
             <field name="country_id" ref="base.mx"/>
-            <field name="phone">+52 81 1234 5678</field>
-            <field name="email">contacto@transportesnorte.com</field>
+            <field name="phone">+52 442 123 4567</field>
+            <field name="email">contacto@nextpack.mx</field>
+        </record>
+
+        <!-- Una segunda compañía (sub-sucursal) -->
+        <record id="company_sucursal_norte" model="res.company">
+            <field name="name">Fletes Monterrey SA de CV</field>
+            <field name="vat">FMO110505ABC</field>
+            <field name="street">Blvd Aeropuerto 555</field>
+            <field name="city">Apodaca</field>
+            <field name="state_id" ref="base.state_mx_nle"/>
+            <field name="zip">66600</field>
+            <field name="country_id" ref="base.mx"/>
         </record>
 
         <!--
-            Chofer Demo: Juan Pérez
+            ==============================
+            RES.PARTNER (Clientes / Origen / Destino)
+            ==============================
         -->
-        <record id="partner_driver_juan" model="res.partner">
-            <field name="name">Juan Pérez</field>
-            <field name="street">Calle Hidalgo 456</field>
+        <!-- 1. Cliente: Aceros Monterrey -->
+        <record id="partner_aceros_mty" model="res.partner">
+            <field name="name">Aceros y Perfiles de Monterrey SA de CV</field>
+            <field name="vat">APM980101XYZ</field>
+            <field name="customer_rank">1</field>
+            <field name="street">Av. de la Industria 111</field>
             <field name="city">Monterrey</field>
-            <field name="phone">+52 81 9876 5432</field>
-            <field name="email">juan.perez@example.com</field>
+            <field name="state_id" ref="base.state_mx_nle"/>
+            <field name="zip">64000</field>
+            <field name="country_id" ref="base.mx"/>
+            <field name="phone">+52 81 1234 5678</field>
+            <field name="email">logistica@acerosmty.com</field>
+        </record>
+
+        <!-- 2. Cliente: Distribuidora Centro -->
+        <record id="partner_dist_centro" model="res.partner">
+            <field name="name">Distribuidora Logística del Centro</field>
+            <field name="vat">DLC120304QWE</field>
+            <field name="customer_rank">1</field>
+            <field name="street">Eje Central Lázaro Cárdenas 45</field>
+            <field name="city">Ciudad de México</field>
+            <field name="state_id" ref="base.state_mx_cmx"/>
+            <field name="zip">06000</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+
+        <!-- 3. Cliente: Exportaciones GDL -->
+        <record id="partner_export_gdl" model="res.partner">
+            <field name="name">Exportaciones Tapatías GDL</field>
+            <field name="vat">ETG010615AAA</field>
+            <field name="customer_rank">1</field>
+            <field name="street">Av. Vallarta 321</field>
+            <field name="city">Guadalajara</field>
+            <field name="state_id" ref="base.state_mx_jal"/>
+            <field name="zip">44100</field>
+            <field name="country_id" ref="base.mx"/>
+        </record>
+
+
+        <!--
+            ==============================
+            HR.EMPLOYEE (Choferes)
+            Requiere módulo HR. Solo creamos empleados para usarse en la app.
+        -->
+        <record id="employee_driver_1" model="hr.employee">
+            <field name="name">Juan Pérez (Operador)</field>
+            <field name="tms_is_driver">1</field>
+            <field name="tms_driver_license">LIC-12345-NLE</field>
+            <field name="tms_driver_license_type">FEDERAL_B</field>
+        </record>
+
+        <record id="employee_driver_2" model="hr.employee">
+            <field name="name">Mario González (Operador)</field>
+            <field name="tms_is_driver">1</field>
+            <field name="tms_driver_license">LIC-54321-JAL</field>
+            <field name="tms_driver_license_type">FEDERAL_A</field>
+        </record>
+
+        <record id="employee_driver_3" model="hr.employee">
+            <field name="name">Carlos Ramírez (Operador Foráneo)</field>
+            <field name="tms_is_driver">1</field>
+            <field name="tms_driver_license">LIC-99887-CMX</field>
+            <field name="tms_driver_license_type">FEDERAL_E</field>
+        </record>
+
+
+        <!--
+            ==============================
+            FLEET.VEHICLE (Tractores, Remolques, Dolly)
+            ==============================
+        -->
+        <!-- CREAR MODELOS DE VEHICULO PRIMERO -->
+        <record id="model_kenworth_t680" model="fleet.vehicle.model">
+            <field name="name">T680</field>
+            <field name="brand_id" ref="base.main_company"/>
+            <!-- Hack simple en demo al no tener marcas pre-cargadas -->
+        </record>
+        <record id="model_freightliner_cascadia" model="fleet.vehicle.model">
+            <field name="name">Cascadia</field>
+            <field name="brand_id" ref="base.main_company"/>
+        </record>
+        <record id="model_caja_seca_53" model="fleet.vehicle.model">
+            <field name="name">Caja Seca 53ft</field>
+            <field name="brand_id" ref="base.main_company"/>
+        </record>
+        <record id="model_dolly_eje2" model="fleet.vehicle.model">
+            <field name="name">Dolly Tipo A</field>
+            <field name="brand_id" ref="base.main_company"/>
+        </record>
+
+        <!-- TRACTOR 1 -->
+        <record id="vehicle_tractor_1" model="fleet.vehicle">
+            <field name="model_id" ref="model_kenworth_t680"/>
+            <field name="license_plate">TT-111-AA</field>
+            <field name="tms_is_trailer">0</field>
+            <!-- tms_is_dolly NO es trailer -->
+        </record>
+
+        <!-- TRACTOR 2 -->
+        <record id="vehicle_tractor_2" model="fleet.vehicle">
+            <field name="model_id" ref="model_kenworth_t680"/>
+            <field name="license_plate">TT-222-BB</field>
+            <field name="tms_is_trailer">0</field>
+        </record>
+
+        <!-- TRACTOR 3 -->
+        <record id="vehicle_tractor_3" model="fleet.vehicle">
+            <field name="model_id" ref="model_freightliner_cascadia"/>
+            <field name="license_plate">TT-333-CC</field>
+            <field name="tms_is_trailer">0</field>
+        </record>
+
+        <!-- REMOLQUE 1 -->
+        <record id="vehicle_remolque_1" model="fleet.vehicle">
+            <field name="model_id" ref="model_caja_seca_53"/>
+            <field name="license_plate">RM-444-XX</field>
+            <field name="tms_is_trailer">1</field>
+        </record>
+
+        <!-- REMOLQUE 2 -->
+        <record id="vehicle_remolque_2" model="fleet.vehicle">
+            <field name="model_id" ref="model_caja_seca_53"/>
+            <field name="license_plate">RM-555-YY</field>
+            <field name="tms_is_trailer">1</field>
+        </record>
+
+        <!-- DOLLY 1 -->
+        <record id="vehicle_dolly_1" model="fleet.vehicle">
+            <field name="model_id" ref="model_dolly_eje2"/>
+            <field name="license_plate">DL-666-ZZ</field>
+            <field name="tms_is_trailer">1</field>
+            <field name="tms_is_dolly">1</field>
+        </record>
+
+        <!--
+            ==============================
+            TMS.DESTINATION (Destinos)
+            ==============================
+        -->
+        <record id="tms_dest_mty_cdmx" model="tms.destination">
+            <field name="origin_zip">64000</field>
+            <field name="dest_zip">06000</field>
+            <field name="distance_km">900</field>
+            <field name="duration_hours">12.5</field>
+        </record>
+
+        <record id="tms_dest_qro_gdl" model="tms.destination">
+            <field name="origin_zip">76240</field>
+            <field name="dest_zip">44100</field>
+            <field name="distance_km">350</field>
+            <field name="duration_hours">4.5</field>
+        </record>
+
+        <!--
+            ==============================
+            TMS.WAYBILL (Cartas Porte Demo)
+            ==============================
+        -->
+        <!-- Waybill 1: Borrador -->
+        <record id="waybill_demo_draft" model="tms.waybill">
+            <field name="state">draft</field>
+            <field name="waybill_type">income</field>
+            <field name="partner_invoice_id" ref="partner_aceros_mty"/>
+            <field name="partner_origin_id" ref="partner_aceros_mty"/>
+            <field name="partner_dest_id" ref="partner_dist_centro"/>
+            <!-- Simular un cálculo preliminar pero sin confirmar todavía -->
+            <field name="distance_km">900</field>
+            <field name="duration_hours">12.5</field>
+            <field name="route_id" ref="tms_dest_mty_cdmx" />
+            <field name="amount_untaxed">15000.0</field>
+        </record>
+
+        <!-- Waybill 2: Validada lista para carga / viaje (con chofer) -->
+        <record id="waybill_demo_ready" model="tms.waybill">
+            <field name="state">assigned</field>
+            <field name="waybill_type">income</field>
+            <field name="partner_invoice_id" ref="partner_export_gdl"/>
+            <field name="partner_origin_id" ref="partner_export_gdl"/>
+            <field name="partner_dest_id" ref="partner_aceros_mty"/>
+
+            <field name="route_id" ref="tms_dest_qro_gdl" />
+            <field name="distance_km">350</field>
+            <field name="duration_hours">4.5</field>
+
+            <field name="vehicle_id" ref="vehicle_tractor_1"/>
+            <field name="driver_id" ref="employee_driver_1"/>
+            <field name="trailer1_id" ref="vehicle_remolque_1"/>
+
+            <field name="amount_untaxed">8500.0</field>
         </record>
 
     </data>
