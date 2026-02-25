@@ -4,7 +4,7 @@
 
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
 
-# Última actualización: 2026-02-24
+# Última actualización: 2026-02-25
 
 # ══════════════════════════════════════════════════════════════
 
@@ -257,25 +257,16 @@ tms/
 | 2.0.3 | Campos SAT + ACL regímenes           | I-10 (verificado, ya existía)      |
 | 2.0.4 | Fix partner + multi-empresa          | I-01,I-02 (verificado, ya existía) |
 | 2.0.5 | Fix domain vehículo + amount_untaxed | I-10, I-13                         |
+| 2.0.6 | Unificar cp_type/waybill_type        | I-11 (Unificado en waybill_type)   |
+| 2.0.7 | Limpiar constraints redundantes      | I-14 (Removido \_check_financials) |
+| 2.0.8 | Auditar dependencias manifest        | I-15 (Limpieza de dependencias)    |
+| 2.0.9 | QA instalar base limpia              | — (Validado pipeline E2E)          |
 
-### 🚧 Etapas Pendientes V2.0
+### 📋 Etapas Próximas (V2.1+)
 
-| Etapa | Nombre                          | Issues |
-| ----- | ------------------------------- | ------ |
-| 2.0.6 | Unificar cp_type/waybill_type   | I-11   |
-| 2.0.7 | Limpiar constraints redundantes | I-14   |
-| 2.0.8 | Auditar dependencias manifest   | I-15   |
-| 2.0.9 | QA instalar base limpia         | —      |
+V2.0 Finalizada. Preparando terreno para automatización de cotización y UX.
 
 ---
-
-## 8. Issues Conocidos (Pendientes)
-
-| ID   | Severidad | Descripción                        | Archivo         |
-| ---- | --------- | ---------------------------------- | --------------- |
-| I-11 | 🟡        | cp_type vs waybill_type duplicados | tms_waybill.py  |
-| I-14 | 🟢        | \_check_financials redundante      | tms_waybill.py  |
-| I-15 | 🟢        | Dependencias excesivas en manifest | **manifest**.py |
 
 ### Issues Resueltos (NO repetir)
 
@@ -286,7 +277,10 @@ tms/
 - ✅ I-05,06,07,08: Métodos duplicados en tms_waybill.py → eliminados
 - ✅ I-09: Estados inconsistentes (transit/destination/carta_porte) → corregidos
 - ✅ I-10: vehicle_id domain incorrecto (tms_is_trailer=False) → corregido
+- ✅ I-11: cp_type vs waybill_type duplicados → unificados
 - ✅ I-13: amount_untaxed persistencia con botón aplicar → corregido
+- ✅ I-14: \_check_financials redundante → eliminado
+- ✅ I-15: Dependencias excesivas en manifest → corregido
 
 ---
 
@@ -406,7 +400,7 @@ git branch -d etapa-X.X-nombre
 
 ### ✅ V1.0 — Base Funcional (COMPLETADO)
 
-### ✅ V2.0 — Estabilización (EN PROGRESO — 4/9 etapas)
+### ✅ V2.0 — Estabilización (COMPLETADO — 9/9 etapas)
 
 ### 📋 V2.1 — Pulido UX
 
