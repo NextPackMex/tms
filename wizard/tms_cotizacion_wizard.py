@@ -367,7 +367,7 @@ class TmsCotizacionWizard(models.TransientModel):
             )
 
     @api.depends('distance_km', 'extra_km', 'price_per_km', 'cost_total_estimated',
-                 'profit_margin_percent', 'direct_price')
+                 'profit_margin_percent', 'direct_price', 'partner_invoice_id', 'partner_invoice_id.is_company')
     def _compute_proposals(self):
         for rec in self:
             # Propuesta 1: Por KM
@@ -376,6 +376,11 @@ class TmsCotizacionWizard(models.TransientModel):
 
             # Propuesta 2: Por Viaje (costos / (1 - margen))
             factor = 1 - (rec.profit_margin_percent / 100)
+            
+            # Retención 4% solo si cliente es persona moral
+            if rec.partner_invoice_id and rec.partner_invoice_id.is_company:
+                factor -= 0.04
+                
             if factor > 0:
                 rec.proposal_trip_total = rec.cost_total_estimated / factor
             else:

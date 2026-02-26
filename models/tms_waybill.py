@@ -510,7 +510,6 @@ class TmsWaybill(models.Model):
         string='Vehículo (Tractor)',
         domain="[('tms_is_trailer', '=', False), ('company_id', '=', company_id)]",
         check_company=True,
-        required=True,
         tracking=True,
         help='Tractocamión asignado al viaje'
     )
@@ -521,12 +520,7 @@ class TmsWaybill(models.Model):
         Al seleccionar vehículo, traer su rendimiento.
         """
         if self.vehicle_id:
-            # Check if tms_fuel_performance is set, otherwise default to performance_km_l or fallback
-            if self.vehicle_id.tms_fuel_performance:
-                self.fuel_performance = self.vehicle_id.tms_fuel_performance
-            else:
-                self.fuel_performance = self.vehicle_id.performance_km_l
-
+            self.fuel_performance = self.vehicle_id.tms_fuel_performance
 
     # Many2one: chofer asignado (Empleados)
     driver_id = fields.Many2one(
@@ -1125,16 +1119,21 @@ class TmsWaybill(models.Model):
         for rec in self:
             rec.line_count = len(rec.line_ids)
 
-    @api.depends('amount_untaxed')
+    @api.depends('amount_untaxed', 'partner_invoice_id', 'partner_invoice_id.is_company')
     def _compute_amount_all(self):
         """
         Calcula impuestos y total final.
-        Asume IVA 16% y Retención 4%.
+        Asume IVA 16% y Retención 4% (sólo si es persona moral).
         """
         for record in self:
             base = record.amount_untaxed
             iva = base * 0.16
-            ret = base * 0.04
+            
+            # Retención 4% solo si cliente es persona moral
+            if record.partner_invoice_id and record.partner_invoice_id.is_company:
+                ret = base * 0.04
+            else:
+                ret = 0.0
 
             record.amount_tax = iva
             record.amount_retention = ret
@@ -1185,7 +1184,8 @@ class TmsWaybill(models.Model):
 
     @api.depends('distance_km', 'extra_distance_km', 'price_per_km', 'cost_diesel_total',
                  'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other', 'cost_commission',
-                 'profit_margin_percent', 'proposal_direct_amount', 'selected_proposal')
+                 'profit_margin_percent', 'proposal_direct_amount', 'selected_proposal',
+                 'partner_invoice_id', 'partner_invoice_id.is_company')
     def _compute_proposal_values(self):
         """
         Calcula las 3 propuestas de cotización automáticamente.
@@ -1211,6 +1211,11 @@ class TmsWaybill(models.Model):
             total_costs = record.cost_diesel_total + record.cost_tolls + record.cost_driver + record.cost_maneuver + record.cost_other + record.cost_commission
             # Precio Venta = Costo Total / (1 - Margen%)
             margin_factor = 1 - (record.profit_margin_percent / 100)
+            
+            # Ajuste de Retención 4% si es persona moral
+            if record.partner_invoice_id and record.partner_invoice_id.is_company:
+                margin_factor -= 0.04
+                
             if margin_factor > 0:
                 record.proposal_trip_total = total_costs / margin_factor
             else:
@@ -1416,6 +1421,21 @@ class TmsWaybill(models.Model):
     # ============================================================
     # SMART BUTTONS — Acciones de navegación rápida
     # ============================================================
+
+    def action_nueva_cotizacion(self, *args, **kwargs):
+        """
+        Abre el wizard de cotización rápida.
+        Al no requerir self.ensure_one(), puede ejecutarse sobre recordsets
+        vacíos o múltiples registros desde list/kanban o form nuevo.
+        """
+        return {
+            'name': _('Nueva Cotización'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'tms.cotizacion.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {},
+        }
 
     def action_view_lines(self):
         """
