@@ -77,6 +77,14 @@
                         </group>
                     </group>
 
+                    <group string="💰 Propuesta C — Precio Directo">
+                        <field name="direct_price" string="Precio Directo ($)" required="True" widget="monetary" options="{'currency_field': False}" help="Captura el precio fijo si deseas ofrecer una tarifa directa al cliente"/>
+                    </group>
+                    <p class="text-muted ms-2">
+                        <i class="fa fa-info-circle" title="Info"/>
+                        Si capturas este precio, se usará como Propuesta C en la cotización.
+                    </p>
+
                     <!-- Resultados de Ruta (visibles solo después de calcular) -->
                     <group string="📊 Resultado de Ruta" invisible="not ruta_calculada">
                         <group>
@@ -93,6 +101,8 @@
                     <!-- 3 Propuestas (visibles solo después de calcular) -->
                     <group string="💼 Propuestas de Precio" invisible="not ruta_calculada">
                         <group>
+                            <field name="distance_km" string="Distancia Base (Km)" readonly="1"/>
+                            <field name="extra_km" string="Km Extras"/>
                             <field name="proposal_km_total" widget="monetary" options="{'currency_field': 'currency_id'}" string="Propuesta por KM" readonly="1"/>
                             <field name="proposal_trip_total" widget="monetary" options="{'currency_field': 'currency_id'}" string="Propuesta por Viaje" readonly="1"/>
                             <field name="direct_price" widget="monetary" options="{'currency_field': 'currency_id'}" string="Precio Directo"/>
@@ -131,12 +141,15 @@
                     <!-- Cliente y Contactos -->
                     <group string="👤 Actores del Viaje">
                         <group>
-                            <field name="partner_invoice_id" options="{'no_create_edit': True}"/>
-                            <field name="partner_origin_id" options="{'no_create_edit': True}"/>
+                            <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
+                            <field name="partner_invoice_street" string="Domicilio Fiscal" readonly="1"/>
+                            <field name="partner_origin_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
+                            <field name="partner_origin_street" string="Dirección Origen" readonly="1"/>
                             <field name="origin_address" placeholder="Calle y número de origen"/>
                         </group>
                         <group>
-                            <field name="partner_dest_id" options="{'no_create_edit': True}"/>
+                            <field name="partner_dest_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
+                            <field name="partner_dest_street" string="Dirección Destino" readonly="1"/>
                             <field name="dest_address" placeholder="Calle y número de destino"/>
                         </group>
                     </group>
@@ -151,6 +164,11 @@
                                     <field name="quantity"/>
                                     <field name="uom_sat_id"/>
                                     <field name="weight_kg"/>
+                                    <field name="is_dangerous"/>
+                                    <field name="material_peligroso_id" optional="hide" column_invisible="not is_dangerous"/>
+                                    <field name="embalaje_id" optional="hide" column_invisible="not is_dangerous"/>
+                                    <field name="sec_cofepris" optional="hide" column_invisible="not is_dangerous"/>
+                                    <field name="ing_activo" optional="hide" column_invisible="not is_dangerous"/>
                                 </list>
                             </field>
                         </page>
@@ -158,7 +176,7 @@
                             <group>
                                 <group>
                                     <field name="vehicle_id" options="{'no_create_edit': True}"/>
-                                    <field name="driver_id" options="{'no_create_edit': True}"/>
+                                    <field name="driver_id" options="{'no_create_edit': True}" domain="[('tms_is_driver', '=', True)]"/>
                                 </group>
                                 <group>
                                     <field name="require_trailer"/>
