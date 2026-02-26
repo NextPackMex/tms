@@ -58,7 +58,7 @@
                                  CLIENTE
                                  ============================================================ -->
                             <div class="text-muted small mb-2">
-                                <i class="fa fa-building me-1"/>
+                                <i class="fa fa-building me-1" title="Empresa"/>
                                 <field name="partner_invoice_id"/>
                             </div>
 
@@ -75,11 +75,11 @@
                                 <t t-if="record.distance_km.raw_value">
                                     <div class="d-flex gap-3 small text-muted">
                                         <span>
-                                            <i class="fa fa-road me-1"/>
+                                            <i class="fa fa-road me-1" title="Ruta"/>
                                             <field name="distance_km"/>
  km</span>
                                         <span>
-                                            <i class="fa fa-clock-o me-1"/>
+                                            <i class="fa fa-clock-o me-1" title="Duración"/>
                                             <field name="duration_hours"/>
  h</span>
                                     </div>
@@ -92,12 +92,12 @@
                             <t t-if="record.vehicle_id.raw_value">
                                 <div class="d-flex gap-3 small text-muted mb-2">
                                     <span>
-                                        <i class="fa fa-truck me-1 text-primary"/>
+                                        <i class="fa fa-truck me-1 text-primary" title="Vehículo"/>
                                         <field name="vehicle_id"/>
                                     </span>
                                     <t t-if="record.driver_id.raw_value">
                                         <span>
-                                            <i class="fa fa-user me-1 text-primary"/>
+                                            <i class="fa fa-user me-1 text-primary" title="Chofer"/>
                                             <field name="driver_id"/>
                                         </span>
                                     </t>
@@ -110,13 +110,13 @@
                             <div class="o_kanban_record_bottom mt-2 d-flex justify-content-between align-items-center">
                                 <div class="oe_kanban_bottom_left">
                                     <span class="text-muted small">
-                                        <i class="fa fa-calendar me-1"/>
+                                        <i class="fa fa-calendar me-1" title="Fecha"/>
                                         <field name="date_created"/>
                                     </span>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
                                     <strong class="text-success">
-                                        <i class="fa fa-usd me-1"/>
+                                        <i class="fa fa-usd me-1" title="Precio"/>
                                         <field name="amount_total" widget="monetary"/>
                                     </strong>
                                 </div>
@@ -160,6 +160,7 @@
         <field name="arch" type="xml">
             <form string="Viaje">
                 <header>
+                    <button name="action_nueva_cotizacion" string="🧮 Nueva Cotización" type="object" class="btn-secondary" icon="fa-calculator" invisible="state != 'draft'" help="Abre el wizard de cotización rápida de 2 pasos sin validar el registro actual"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
                     <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
                     <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>

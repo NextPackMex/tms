@@ -20,14 +20,14 @@ class ResConfigSettings(models.TransientModel):
     # ============================================================
     # SEGUROS DEFAULT (Relacionados a res.company)
     # ============================================================
-    tms_def_insurance_civil_liability = fields.Char(related='company_id.tms_def_insurance_civil_liability', readonly=False, string="Póliza")
-    tms_def_insurance_civil_liability_mx = fields.Char(related='company_id.tms_def_insurance_civil_liability_mx', readonly=False, string="Aseguradora")
+    tms_def_insurance_civil_liability = fields.Char(related='company_id.tms_def_insurance_civil_liability', readonly=False, string="Póliza RC")
+    tms_def_insurance_civil_liability_mx = fields.Char(related='company_id.tms_def_insurance_civil_liability_mx', readonly=False, string="Aseguradora RC")
 
-    tms_def_insurance_environmental = fields.Char(related='company_id.tms_def_insurance_environmental', readonly=False, string="Póliza")
-    tms_def_insurance_environmental_mx = fields.Char(related='company_id.tms_def_insurance_environmental_mx', readonly=False, string="Aseguradora")
+    tms_def_insurance_environmental = fields.Char(related='company_id.tms_def_insurance_environmental', readonly=False, string="Póliza Medio Ambiente")
+    tms_def_insurance_environmental_mx = fields.Char(related='company_id.tms_def_insurance_environmental_mx', readonly=False, string="Aseguradora Medio Ambiente")
 
-    tms_def_insurance_cargo = fields.Char(related='company_id.tms_def_insurance_cargo', readonly=False, string="Póliza")
-    tms_def_insurance_cargo_mx = fields.Char(related='company_id.tms_def_insurance_cargo_mx', readonly=False, string="Aseguradora")
+    tms_def_insurance_cargo = fields.Char(related='company_id.tms_def_insurance_cargo', readonly=False, string="Póliza Carga")
+    tms_def_insurance_cargo_mx = fields.Char(related='company_id.tms_def_insurance_cargo_mx', readonly=False, string="Aseguradora Carga")
 
     # CFDI 4.0
     tms_def_l10n_mx_edi_tax_object = fields.Selection(related='company_id.tms_def_l10n_mx_edi_tax_object', readonly=False, string="Objeto de Impuesto por Defecto (CFDI 4.0)")
