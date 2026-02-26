@@ -64,21 +64,21 @@
                     <!-- Variables de Costo -->
                     <group string="💰 Variables de Costo">
                         <group>
-                            <field name="fuel_price" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="fuel_price"/>
                             <field name="fuel_performance" string="Rendimiento (Km/L)"/>
-                            <field name="cost_driver" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                            <field name="cost_maneuver" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="cost_driver"/>
+                            <field name="cost_maneuver"/>
                         </group>
                         <group>
-                            <field name="cost_other" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                            <field name="cost_commission" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="cost_other"/>
+                            <field name="cost_commission"/>
                             <field name="profit_margin_percent" string="Margen de Utilidad (%)"/>
-                            <field name="price_per_km" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="price_per_km"/>
                         </group>
                     </group>
 
                     <group string="💰 Propuesta C — Precio Directo">
-                        <field name="direct_price" string="Precio Directo ($)" required="True" widget="monetary" options="{'currency_field': False}" help="Captura el precio fijo si deseas ofrecer una tarifa directa al cliente"/>
+                        <field name="direct_price" string="Precio Directo ($)" required="True" help="Captura el precio fijo si deseas ofrecer una tarifa directa al cliente"/>
                     </group>
                     <p class="text-muted ms-2">
                         <i class="fa fa-info-circle" title="Info"/>
@@ -90,11 +90,11 @@
                         <group>
                             <field name="distance_km"/>
                             <field name="duration_hours"/>
-                            <field name="toll_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="toll_cost"/>
                         </group>
                         <group>
-                            <field name="cost_diesel_total" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                            <field name="cost_total_estimated" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                            <field name="cost_diesel_total"/>
+                            <field name="cost_total_estimated"/>
                         </group>
                     </group>
 
@@ -103,9 +103,9 @@
                         <group>
                             <field name="distance_km" string="Distancia Base (Km)" readonly="1"/>
                             <field name="extra_km" string="Km Extras"/>
-                            <field name="proposal_km_total" widget="monetary" options="{'currency_field': 'currency_id'}" string="Propuesta por KM" readonly="1"/>
-                            <field name="proposal_trip_total" widget="monetary" options="{'currency_field': 'currency_id'}" string="Propuesta por Viaje" readonly="1"/>
-                            <field name="direct_price" widget="monetary" options="{'currency_field': 'currency_id'}" string="Precio Directo"/>
+                            <field name="proposal_km_total" string="Propuesta por KM" readonly="1"/>
+                            <field name="proposal_trip_total" string="Propuesta por Viaje" readonly="1"/>
+                            <field name="direct_price" string="Precio Directo"/>
                         </group>
                         <group>
                             <separator string="Selecciona la propuesta a aprobar:"/>
@@ -123,7 +123,7 @@
                     <!-- Resumen aprobado -->
                     <div class="alert alert-success mb-3" role="alert">
                         <strong>✅ Propuesta aprobada:</strong>
-                        <field name="amount_approved" widget="monetary" options="{'currency_field': 'currency_id'}" nolabel="1" readonly="1"/>
+                        <field name="amount_approved" nolabel="1" readonly="1"/>
                         &amp;nbsp;|&amp;nbsp;
                         <strong>Ruta:</strong>
                         <field name="origin_zip" nolabel="1" readonly="1"/>

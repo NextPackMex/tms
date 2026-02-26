@@ -117,7 +117,7 @@
                                 <div class="oe_kanban_bottom_right">
                                     <strong class="text-success">
                                         <i class="fa fa-usd me-1" title="Precio"/>
-                                        <field name="amount_total" widget="monetary"/>
+                                        <field name="amount_total" />
                                     </strong>
                                 </div>
                             </div>
@@ -142,7 +142,7 @@
                 <field name="route_name"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>
-                <field name="amount_total" widget="monetary"/>
+                <field name="amount_total" />
                 <!-- decoration-success: estado 'closed' (Facturado/Cerrado) resaltado en verde -->
                 <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'closed'"/>
                 <field name="company_id" column_invisible="True"/>
@@ -276,7 +276,7 @@
                                     <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger"/>
                                     <label for="amount_total" string="Precio Final"/>
                                     <h2>
-                                        <field name="amount_total" widget="monetary" decoration-danger="amount_total == 0"/>
+                                        <field name="amount_total"  decoration-danger="amount_total == 0"/>
                                     </h2>
                                     <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted"/>
                                     <field name="currency_id" invisible="1"/>
@@ -351,7 +351,7 @@
                                 <group>
                                     <field name="distance_km" required="state != 'draft'"/>
                                     <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
-                                    <field name="cost_tolls" widget="monetary" required="state != 'draft'"/>
+                                    <field name="cost_tolls"  required="state != 'draft'"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
@@ -408,18 +408,18 @@
                                         <i class="fa fa-info-circle"/>
  Los km extras se suman a la distancia base para el cobro
                                     </p>
-                                    <field name="proposal_km_total" widget="monetary" readonly="1" decoration-bf="1"/>
+                                    <field name="proposal_km_total"  readonly="1" decoration-bf="1"/>
                                 </group>
 
                                 <!-- Opción B: Por Viaje -->
                                 <group string="Por Costo + Margen">
                                     <field name="profit_margin_percent"/>
-                                    <field name="proposal_trip_total" widget="monetary" readonly="1"/>
+                                    <field name="proposal_trip_total"  readonly="1"/>
                                 </group>
 
                                 <!-- Opción C: Directa -->
                                 <group string="Precio Directo">
-                                    <field name="proposal_direct_amount" widget="monetary"/>
+                                    <field name="proposal_direct_amount" />
                                 </group>
                             </group>
                         </page>
