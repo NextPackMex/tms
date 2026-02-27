@@ -276,7 +276,7 @@
                                     <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger"/>
                                     <label for="amount_total" string="Precio Final"/>
                                     <h2>
-                                        <field name="amount_total"  decoration-danger="amount_total == 0"/>
+                                        <field name="amount_total" decoration-danger="amount_total == 0"/>
                                     </h2>
                                     <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted"/>
                                     <field name="currency_id" invisible="1"/>
@@ -351,7 +351,7 @@
                                 <group>
                                     <field name="distance_km" required="state != 'draft'"/>
                                     <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
-                                    <field name="cost_tolls"  required="state != 'draft'"/>
+                                    <field name="cost_tolls" required="state != 'draft'"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
@@ -371,55 +371,74 @@
                         <!-- ======================= -->
                         <!-- Pestaña de cotización: readonly en estados operativos/finales -->
                         <page string="Cotización y Costos" readonly="state in ['in_transit','arrived','closed','cancel']">
-                            <group>
-                                <group string="Variables de Costo">
+
+                            <!-- SECCIÓN 1: COSTOS OPERATIVOS -->
+                            <group string="⛽ COSTOS OPERATIVOS">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Usados para calcular Propuesta B
+                                </p>
+                                <group>
                                     <field name="fuel_price_liter"/>
-                                    <field name="fuel_performance"/>
-                                    <field name="cost_tolls"/>
                                     <field name="cost_driver"/>
-                                    <field name="cost_maneuver"/>
                                     <field name="cost_other"/>
-                                    <field name="cost_commission"/>
                                     <field name="cost_diesel_total" readonly="1"/>
-                                    <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
-                                <group string="Selección de Propuesta">
-                                    <!-- label con 'for' para Odoo 18 -->
-                                    <label for="selected_proposal" string="Selecciona la propuesta que se aplicará al cliente." class="o_form_label text-muted"/>
-                                    <field name="selected_proposal" widget="radio"/>
-                                    <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
+                                <group>
+                                    <field name="fuel_performance"/>
+                                    <field name="cost_maneuver"/>
+                                    <field name="cost_commission"/>
+                                    <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
                             </group>
 
-                            <separator string="Comparativa de Propuestas"/>
-
-                            <group col="3">
-                                <!-- Opción A: Por KM -->
-                                <group string="🅰️ Por Kilómetro">
+                            <!-- SECCIÓN 2: PRECIO POR KILÓMETRO -->
+                            <group string="📐 PRECIO POR KILÓMETRO">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Usado para calcular Propuesta A
+                                </p>
+                                <group>
                                     <field name="price_per_km"/>
-                                    <label for="distance_km" string="Distancia Total"/>
+                                    <label for="distance_km" string="Distancia Base"/>
                                     <div class="o_row">
                                         <field name="distance_km" class="oe_inline" readonly="1"/>
- km base +
-                                        <field name="extra_distance_km" class="oe_inline"/>
- km extras
+ km
                                     </div>
-                                    <p class="text-muted small" style="margin-top: 5px;">
-                                        <i class="fa fa-info-circle"/>
- Los km extras se suman a la distancia base para el cobro
-                                    </p>
-                                    <field name="proposal_km_total"  readonly="1" decoration-bf="1"/>
                                 </group>
-
-                                <!-- Opción B: Por Viaje -->
-                                <group string="Por Costo + Margen">
+                                <group>
                                     <field name="profit_margin_percent"/>
-                                    <field name="proposal_trip_total"  readonly="1"/>
+                                    <field name="extra_distance_km" string="Km Extras"/>
                                 </group>
+                            </group>
 
-                                <!-- Opción C: Directa -->
-                                <group string="Precio Directo">
-                                    <field name="proposal_direct_amount" />
+                            <!-- SECCIÓN 3: PRECIO DIRECTO -->
+                            <group string="💰 PRECIO DIRECTO">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Propuesta C — tarifa fija
+                                </p>
+                                <group>
+                                    <field name="proposal_direct_amount" string="Precio Directo"/>
+                                </group>
+                            </group>
+
+                            <!-- SECCIÓN 4: COMPARATIVA DE PROPUESTAS -->
+                            <group string="🚛 COMPARATIVA DE PROPUESTAS">
+                                <group col="3">
+                                    <group string="A — Por KM">
+                                        <field name="proposal_km_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                    <group string="B — Por Viaje">
+                                        <field name="proposal_trip_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                    <group string="C — Directo">
+                                        <field name="proposal_direct_amount" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="selected_proposal" widget="radio" options="{'horizontal': true}"/>
+                                    <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary mt-2" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
                                 </group>
                             </group>
                         </page>

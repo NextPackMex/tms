@@ -50,8 +50,8 @@
                 ================================================ -->
                 <div invisible="step != '1'">
 
-                    <!-- Ruta -->
-                    <group string="🗺️ Ruta">
+                    <!-- SECCIÓN 1: CONFIGURACIÓN DEL VIAJE -->
+                    <group string="🚛 CONFIGURACIÓN DEL VIAJE">
                         <group>
                             <field name="origin_zip" placeholder="Ej: 64000"/>
                             <field name="dest_zip" placeholder="Ej: 06600"/>
@@ -61,32 +61,51 @@
                         </group>
                     </group>
 
-                    <!-- Variables de Costo -->
-                    <group string="💰 Variables de Costo">
+                    <!-- SECCIÓN 2: COSTOS OPERATIVOS -->
+                    <group string="⛽ COSTOS OPERATIVOS">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle"/>
+ Estas variables calculan la Propuesta B
+                        </p>
                         <group>
                             <field name="fuel_price"/>
-                            <field name="fuel_performance" string="Rendimiento (Km/L)"/>
                             <field name="cost_driver"/>
-                            <field name="cost_maneuver"/>
+                            <field name="cost_other"/>
                         </group>
                         <group>
-                            <field name="cost_other"/>
+                            <field name="fuel_performance" string="Rendimiento (Km/L)"/>
+                            <field name="cost_maneuver"/>
                             <field name="cost_commission"/>
-                            <field name="profit_margin_percent" string="Margen de Utilidad (%)"/>
-                            <field name="price_per_km"/>
                         </group>
                     </group>
 
-                    <group string="💰 Propuesta C — Precio Directo">
-                        <field name="direct_price" string="Precio Directo ($)" required="True" help="Captura el precio fijo si deseas ofrecer una tarifa directa al cliente"/>
+                    <!-- SECCIÓN 3: PRECIO POR KILÓMETRO -->
+                    <group string="📐 PRECIO POR KILÓMETRO">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle"/>
+ Esta variable calcula la Propuesta A
+                        </p>
+                        <group>
+                            <field name="price_per_km"/>
+                        </group>
+                        <group>
+                            <field name="profit_margin_percent" string="Margen de Utilidad (%)"/>
+                        </group>
                     </group>
-                    <p class="text-muted ms-2">
-                        <i class="fa fa-info-circle" title="Info"/>
-                        Si capturas este precio, se usará como Propuesta C en la cotización.
-                    </p>
 
-                    <!-- Resultados de Ruta (visibles solo después de calcular) -->
-                    <group string="📊 Resultado de Ruta" invisible="not ruta_calculada">
+                    <!-- SECCIÓN 4: PRECIO DIRECTO -->
+                    <group string="💰 PRECIO DIRECTO">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle"/>
+ Propuesta C — captura tarifa fija
+                        </p>
+                        <group>
+                            <field name="direct_price" string="Precio Directo ($)" required="True"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 5: RESULTADO DE RUTA -->
+                    <group string="📊 RESULTADO DE RUTA" invisible="not ruta_calculada">
                         <group>
                             <field name="distance_km"/>
                             <field name="duration_hours"/>
@@ -98,18 +117,21 @@
                         </group>
                     </group>
 
-                    <!-- 3 Propuestas (visibles solo después de calcular) -->
-                    <group string="💼 Propuestas de Precio" invisible="not ruta_calculada">
-                        <group>
-                            <field name="distance_km" string="Distancia Base (Km)" readonly="1"/>
-                            <field name="extra_km" string="Km Extras"/>
-                            <field name="proposal_km_total" string="Propuesta por KM" readonly="1"/>
-                            <field name="proposal_trip_total" string="Propuesta por Viaje" readonly="1"/>
-                            <field name="direct_price" string="Precio Directo"/>
+                    <!-- SECCIÓN 6: SELECCIONA UNA PROPUESTA -->
+                    <group string="🚛 SELECCIONA UNA PROPUESTA" invisible="not ruta_calculada">
+                        <group col="3">
+                            <group string="A — Por KM">
+                                <field name="proposal_km_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
+                            <group string="B — Por Viaje">
+                                <field name="proposal_trip_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
+                            <group string="C — Directo">
+                                <field name="direct_price" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
                         </group>
                         <group>
-                            <separator string="Selecciona la propuesta a aprobar:"/>
-                            <field name="selected_proposal" widget="radio" nolabel="1"/>
+                            <field name="selected_proposal" widget="radio" options="{'horizontal': true}"/>
                         </group>
                     </group>
 
@@ -198,8 +220,8 @@
                 ================================================ -->
                 <footer>
                     <!-- Paso 1 -->
-                    <button name="action_calcular_ruta" type="object" string="🔍 Calcular Ruta" class="btn-primary" invisible="step != '1'"/>
-                    <button name="action_aprobar_propuesta" type="object" string="✅ Aprobar y Continuar →" class="btn-success" invisible="step != '1' or not ruta_calculada"/>
+                    <button name="action_calcular_ruta" type="object" string="🧮 Calcular Ruta y Propuestas" class="btn-primary" invisible="step != '1'"/>
+                    <button name="action_aprobar_propuesta" type="object" string="✅ Aprobar y Continuar →" class="btn-success" invisible="step != '1' or not ruta_calculada or not selected_proposal"/>
 
                     <!-- Paso 2 -->
                     <button name="action_crear_waybill" type="object" string="🚚 Crear Viaje" class="btn-primary" invisible="step != '2'"/>
