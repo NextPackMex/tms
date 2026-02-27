@@ -88,6 +88,8 @@ class TmsWaybill(models.Model):
     state = fields.Selection(
         string='Estado',
         selection=[
+            ('cotizado', 'Cotizado'),
+            ('aprobado', 'Aprobado'),
             ('draft', 'Solicitud'),
             ('en_pedido', 'En Pedido'),
             ('assigned', 'Por Asignar'),
@@ -98,7 +100,7 @@ class TmsWaybill(models.Model):
             ('cancel', 'Cancelado'),
             ('rejected', 'Rechazado'),  # Agregado para rechazo desde portal
         ],
-        default='draft',
+        default='cotizado',
         required=True,
         tracking=True,
         group_expand='_expand_states',
@@ -273,6 +275,8 @@ class TmsWaybill(models.Model):
     # 5=morado, 6=salmon, 7=gris medio, 8=azul marino, 9=fucsia,
     # 10=verde, 11=morado oscuro
     _STATE_COLOR_MAP = {
+        'cotizado': 0,      # gris
+        'aprobado': 0,      # gris
         'draft': 0,         # gris (sin acento)
         'en_pedido': 4,     # azul claro
         'assigned': 3,      # amarillo
@@ -990,6 +994,22 @@ class TmsWaybill(models.Model):
             'target': 'new',  # <--- 'new' fuerza la nueva pestaña
             'url': self.get_portal_url(),
         }
+
+    def action_approve_quotation(self):
+        """Transición cotizado → aprobado. El cliente aceptó el precio."""
+        self.ensure_one()
+        if self.state != 'cotizado':
+            raise UserError(_("Solo se pueden aprobar viajes en estado Cotizado."))
+        self.write({'state': 'aprobado'})
+        return True
+
+    def action_confirm_order(self):
+        """Transición aprobado → draft. Datos completos, confirmar pedido."""
+        self.ensure_one()
+        if self.state != 'aprobado':
+            raise UserError(_("Solo se pueden confirmar viajes en estado Aprobado."))
+        self.write({'state': 'draft'})
+        return True
 
     def action_assign(self):
         """
@@ -2002,10 +2022,17 @@ class TmsWaybill(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """
-        Genera folio automático para cada viaje.
-        Formato: VJ/0001, VJ/0002, etc.
+        Validar que los viajes se creen mediante el Wizard de cotización.
+        Genera folio automático para cada viaje (VJ/0001, VJ/0002, etc).
         """
         for vals in vals_list:
+            # Validación de procedencia
+            if not vals.get('partner_invoice_id') and not self.env.context.get('from_wizard'):
+                raise UserError(
+                    _('Los viajes deben crearse desde el wizard de cotización. '
+                      'Use el botón "Nueva Cotización" en el tablero.')
+                )
+
             # Asegurar limpieza inicial si require_trailer viene en False
             if vals.get('require_trailer') is False:
                 vals.update({

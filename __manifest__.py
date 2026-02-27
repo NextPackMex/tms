@@ -83,6 +83,7 @@
         # 3. Wizard de importación
         'wizard/sat_import_wizard_views.xml',
         'wizard/partner_assign_company_wizard_views.xml',
+        'wizard/tms_cotizacion_wizard_views.xml',
 
         # 3. Vistas de Catálogos SAT (orden alfabético)
         'views/sat_clave_prod_views.xml',

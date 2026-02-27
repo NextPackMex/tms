@@ -4,3 +4,4 @@
 from . import sat_import_wizard
 from . import partner_assign_company_wizard
 from . import tms_load_demo_wizard
+from . import tms_cotizacion_wizard

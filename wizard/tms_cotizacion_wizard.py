@@ -242,10 +242,10 @@ class TmsCotizacionWizard(models.TransientModel):
 
     partner_origin_street = fields.Char(
         compute='_compute_partner_streets',
-        string='Dirección Origen'
+        string='Domicilio Carga (Registrado)'
     )
 
-    origin_address = fields.Char(string='Dirección Origen')
+    origin_address = fields.Char(string='Dirección Carga (Manual)')
 
     partner_dest_id = fields.Many2one(
         'res.partner',
@@ -256,10 +256,10 @@ class TmsCotizacionWizard(models.TransientModel):
 
     partner_dest_street = fields.Char(
         compute='_compute_partner_streets',
-        string='Dirección Destino'
+        string='Domicilio Entrega (Registrado)'
     )
 
-    dest_address = fields.Char(string='Dirección Destino')
+    dest_address = fields.Char(string='Dirección Entrega (Manual)')
 
     @api.depends('partner_invoice_id', 'partner_origin_id', 'partner_dest_id')
     def _compute_partner_streets(self):
@@ -524,7 +524,7 @@ class TmsCotizacionWizard(models.TransientModel):
         # Construir vals del waybill
         vals = {
             'company_id': self.company_id.id,
-            'state': 'draft',
+            'state': 'cotizado',
             'cp_type': self.cp_type,
             'waybill_type': 'income' if self.cp_type == 'ingreso' else 'transfer',
             # Ruta
@@ -573,13 +573,13 @@ class TmsCotizacionWizard(models.TransientModel):
                 'is_dangerous': line.is_dangerous,
                 'material_peligroso_id': line.material_peligroso_id.id if line.material_peligroso_id else False,
                 'embalaje_id': line.embalaje_id.id if line.embalaje_id else False,
-                'sec_cofepris': line.sec_cofepris,
-                'ing_activo': line.ing_activo,
+                'l10n_mx_edi_sector_cofepris': line.sec_cofepris,
+                'l10n_mx_edi_active_ingredient': line.ing_activo,
             }))
         if line_vals:
             vals['line_ids'] = line_vals
 
-        waybill = self.env['tms.waybill'].create(vals)
+        waybill = self.env['tms.waybill'].with_context(from_wizard=True).create(vals)
 
         # Abrir el waybill recién creado
         return {
@@ -638,6 +638,7 @@ class TmsCotizacionWizardLine(models.TransientModel):
         string='Cantidad',
         digits=(10, 3),
         default=1.0,
+        required=True,
     )
 
     uom_sat_id = fields.Many2one(
@@ -650,11 +651,12 @@ class TmsCotizacionWizardLine(models.TransientModel):
         string='Peso (Kg)',
         digits=(10, 3),
         default=0.0,
+        required=True,
     )
 
     is_dangerous = fields.Boolean(
-        string='Material Peligroso',
-        default=False,
+        string='¿Material Peligroso?',
+        default=False
     )
 
     material_peligroso_id = fields.Many2one(

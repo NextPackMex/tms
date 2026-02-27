@@ -135,6 +135,21 @@
                         </group>
                     </group>
 
+                    <!-- SECCIÓN 7: CARGA (BÁSICO) -->
+                    <group string="📦 CARGA">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle"/>
+ Captura una descripción general de la carga. Los datos fiscales completos se pedirán al aprobar la cotización.
+                        </p>
+                        <field name="line_ids" nolabel="1" colspan="2">
+                            <list editable="bottom">
+                                <field name="description" string="¿Qué llevas?" required="True"/>
+                                <field name="quantity" string="Cantidad"/>
+                                <field name="weight_kg" string="Peso (Kg)"/>
+                            </list>
+                        </field>
+                    </group>
+
                 </div>
 
                 <!-- ================================================
@@ -166,19 +181,19 @@
                             <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
                             <field name="partner_invoice_street" string="Domicilio Fiscal" readonly="1"/>
                             <field name="partner_origin_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
-                            <field name="partner_origin_street" string="Dirección Origen" readonly="1"/>
+                            <field name="partner_origin_street" readonly="1"/>
                             <field name="origin_address" placeholder="Calle y número de origen"/>
                         </group>
                         <group>
                             <field name="partner_dest_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
-                            <field name="partner_dest_street" string="Dirección Destino" readonly="1"/>
+                            <field name="partner_dest_street" readonly="1"/>
                             <field name="dest_address" placeholder="Calle y número de destino"/>
                         </group>
                     </group>
 
                     <!-- Mercancías y Unidad -->
                     <notebook>
-                        <page string="📦 Mercancías">
+                        <page string="📦 Mercancías Detalle fiscal">
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="product_sat_id"/>
@@ -187,10 +202,10 @@
                                     <field name="uom_sat_id"/>
                                     <field name="weight_kg"/>
                                     <field name="is_dangerous"/>
-                                    <field name="material_peligroso_id" optional="hide" column_invisible="not is_dangerous"/>
-                                    <field name="embalaje_id" optional="hide" column_invisible="not is_dangerous"/>
-                                    <field name="sec_cofepris" optional="hide" column_invisible="not is_dangerous"/>
-                                    <field name="ing_activo" optional="hide" column_invisible="not is_dangerous"/>
+                                    <field name="material_peligroso_id" optional="hide"/>
+                                    <field name="embalaje_id" optional="hide"/>
+                                    <field name="sec_cofepris" optional="hide"/>
+                                    <field name="ing_activo" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -234,5 +249,7 @@
             </form>
         </field>
     </record>
+
+    <menuitem id="menu_tms_nueva_cotizacion" name="Nueva Cotización" parent="menu_tms_operations" action="action_tms_cotizacion_wizard" sequence="1" groups="tms.group_tms_user,tms.group_tms_manager"/>
 
 </odoo>

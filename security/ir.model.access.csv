@@ -33,3 +33,7 @@ access_tms_tracking_event_manager,tms.tracking.event.manager,model_tms_tracking_
 access_tms_load_demo_wizard_manager,tms.load.demo.wizard.manager,model_tms_load_demo_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_waybill_customs_regime_user,tms.waybill.customs.regime.user,model_tms_waybill_customs_regime,tms.group_tms_user,1,1,1,1
 access_tms_waybill_customs_regime_manager,tms.waybill.customs.regime.manager,model_tms_waybill_customs_regime,tms.group_tms_manager,1,1,1,1
+access_tms_cotizacion_wizard_user,tms.cotizacion.wizard.user,model_tms_cotizacion_wizard,tms.group_tms_user,1,1,1,1
+access_tms_cotizacion_wizard_manager,tms.cotizacion.wizard.manager,model_tms_cotizacion_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_cotizacion_wizard_line_user,tms.cotizacion.wizard.line.user,model_tms_cotizacion_wizard_line,tms.group_tms_user,1,1,1,1
+access_tms_cotizacion_wizard_line_manager,tms.cotizacion.wizard.line.manager,model_tms_cotizacion_wizard_line,tms.group_tms_manager,1,1,1,1

@@ -8,7 +8,7 @@
         <field name="name">tms.waybill.kanban</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="true">
+            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="true" create="false" on_create="%(tms.action_tms_cotizacion_wizard)d">
                 <!-- Campos necesarios para la tarjeta kanban -->
                 <field name="name"/>
                 <field name="state"/>
@@ -135,7 +135,10 @@
         <field name="name">tms.waybill.list</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <list string="Viajes">
+            <list string="Viajes" create="false">
+                <header>
+                    <button name="%(tms.action_tms_cotizacion_wizard)d" string="Nueva Cotización" type="action" class="btn-primary" icon="fa-plus"/>
+                </header>
                 <field name="name"/>
                 <field name="date_created"/>
                 <field name="partner_invoice_id"/>
@@ -158,9 +161,11 @@
         <field name="name">tms.waybill.form</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <form string="Viaje">
+            <form string="Viaje" create="false">
                 <header>
                     <button name="action_nueva_cotizacion" string="🧮 Nueva Cotización" type="object" class="btn-secondary" icon="fa-calculator" invisible="state != 'draft'" help="Abre el wizard de cotización rápida de 2 pasos sin validar el registro actual"/>
+                    <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
+                    <button name="action_confirm_order" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'aprobado'"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
                     <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
                     <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>
@@ -176,7 +181,7 @@
                     <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
                     <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['draft','en_pedido','assigned']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
-                    <field name="state" widget="statusbar" statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
+                    <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
 
                 <sheet>
@@ -332,7 +337,7 @@
                             </group>
 
                             <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
-                            <group string="Unidad Asignada" readonly="state in ['in_transit','arrived','closed','cancel']">
+                            <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="vehicle_id" required="state != 'draft'"/>
                                     <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque"/>
@@ -447,7 +452,7 @@
                         <!-- CARTA PORTE 3.1 -->
                         <!-- ======================= -->
                         <!-- Carta Porte: no tiene sentido en borrador (sin info completa aún) -->
-                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state == 'draft'">
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']">
                             <group>
                                 <group string="Identificación">
                                     <label for="tms_id_ccp"/>
@@ -478,13 +483,13 @@
                         <page string="Mercancías">
                             <field name="line_ids">
                                 <list editable="bottom">
-                                    <field name="product_sat_id" string="Clave SAT"/>
+                                    <field name="product_sat_id" string="Clave SAT" column_invisible="parent.state == 'cotizado'"/>
                                     <field name="description" string="Descripción"/>
                                     <field name="quantity" string="Cant."/>
-                                    <field name="uom_sat_id" string="Unidad"/>
+                                    <field name="uom_sat_id" string="Unidad" column_invisible="parent.state == 'cotizado'"/>
                                     <field name="weight_kg" string="Peso Kg"/>
                                     <field name="dimensions" optional="hide" string="Dimens."/>
-                                    <field name="is_dangerous" string="¿Pel.?"/>
+                                    <field name="is_dangerous" string="¿Pel.?" column_invisible="parent.state == 'cotizado'"/>
                                     <field name="material_peligroso_id" invisible="not is_dangerous" required="is_dangerous" optional="hide" string="Mat. Pelig."/>
                                     <field name="embalaje_id" optional="hide" string="Embalaje"/>
                                     <field name="l10n_mx_edi_tax_object" optional="hide" string="Obj. Imp."/>

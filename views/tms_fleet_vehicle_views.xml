@@ -68,7 +68,6 @@
                                     <field name="num_axles"/>
                                     <field name="tms_num_axles"/>
                                     <field name="tms_fuel_performance"/>
-                                    <field name="performance_km_l"/>
                                 </group>
                             </group>
                         </page>
