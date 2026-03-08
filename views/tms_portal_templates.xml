@@ -379,6 +379,15 @@
                                     </div>
                                 </div>
                             </t>
+
+                            <!-- Historial y Comunicación (Chatter del Portal) -->
+                            <div class="mt-4">
+                                <h5><i class="fa fa-comments"/> Comunicación</h5>
+                                <t t-call="portal.message_thread">
+                                    <t t-set="object" t-value="waybill"/>
+                                    <t t-set="token" t-value="token"/>
+                                </t>
+                            </div>
                         </div>
 
                         <!--

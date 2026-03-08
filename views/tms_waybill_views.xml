@@ -163,7 +163,6 @@
         <field name="arch" type="xml">
             <form string="Viaje" create="false">
                 <header>
-                    <button name="action_nueva_cotizacion" string="🧮 Nueva Cotización" type="object" class="btn-secondary" icon="fa-calculator" invisible="state != 'draft'" help="Abre el wizard de cotización rápida de 2 pasos sin validar el registro actual"/>
                     <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
                     <button name="action_confirm_order" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'aprobado'"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
@@ -189,16 +188,6 @@
                          SMART BUTTONS: Navegación rápida y contadores
                          ============================================= -->
                     <div class="oe_button_box" name="button_box">
-
-                        <!-- Smart Button: Mercancías  (siempre visible) -->
-                        <button name="action_view_lines" type="object" class="oe_stat_button" icon="fa-cube">
-                            <field name="line_count" widget="statinfo" string="Mercancías"/>
-                        </button>
-
-                        <!-- Smart Button: Bitácora GPS (visible desde estado Carta Porte) -->
-                        <button name="action_view_tracking" type="object" class="oe_stat_button" icon="fa-map-marker" invisible="state in ['draft','en_pedido','assigned']">
-                            <field name="tracking_count" widget="statinfo" string="Eventos GPS"/>
-                        </button>
 
                         <!-- Smart Button: Vehículo (visible cuando hay vehículo asignado) -->
                         <button name="action_view_vehicle" type="object" class="oe_stat_button" icon="fa-truck" invisible="not vehicle_id">
@@ -297,7 +286,11 @@
                                 <group string="Origen" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_origin_id" required="state != 'draft'"/>
                                     <field name="origin_address" required="state != 'draft'"/>
-                                    <field name="origin_zip" required="state != 'draft'"/>
+                                    <label for="origin_zip"/>
+                                    <div class="d-flex align-items-center">
+                                        <field name="origin_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
+                                    </div>
                                     <field name="origin_rfc"/>
                                 </group>
                                 <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
@@ -311,7 +304,11 @@
                                 <group string="Destino" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_dest_id" required="state != 'draft'"/>
                                     <field name="dest_address" required="state != 'draft'"/>
-                                    <field name="dest_zip" required="state != 'draft'"/>
+                                    <label for="dest_zip"/>
+                                    <div class="d-flex align-items-center">
+                                        <field name="dest_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
+                                    </div>
                                     <field name="dest_rfc"/>
                                 </group>
                                 <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
@@ -330,9 +327,8 @@
                         <!-- ======================= -->
                         <page string="Información de Ruta">
                             <group>
-                                <group invisible="state in ['draft','en_pedido']">
-                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}" class="oe_edit_only"/>
-                                    <field name="waybill_type" widget="badge" class="oe_read_only" decoration-info="waybill_type == 'income'" decoration-muted="waybill_type == 'transfer'"/>
+                                <group>
+                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}"/>
                                 </group>
                             </group>
 
@@ -481,21 +477,22 @@
                         <!-- MERCANCÍAS             -->
                         <!-- ======================= -->
                         <page string="Mercancías">
+                            <field name="has_dangerous_lines" invisible="1"/>
                             <field name="line_ids">
                                 <list editable="bottom">
-                                    <field name="product_sat_id" string="Clave SAT" column_invisible="parent.state == 'cotizado'"/>
+                                    <field name="product_sat_id" string="Clave SAT"/>
                                     <field name="description" string="Descripción"/>
                                     <field name="quantity" string="Cant."/>
-                                    <field name="uom_sat_id" string="Unidad" column_invisible="parent.state == 'cotizado'"/>
+                                    <field name="uom_sat_id" string="Unidad"/>
+                                    <field name="dimensions" string="Dimens." widget="tms_dimensions" placeholder="000/000/000cm"/>
                                     <field name="weight_kg" string="Peso Kg"/>
-                                    <field name="dimensions" optional="hide" string="Dimens."/>
-                                    <field name="is_dangerous" string="¿Pel.?" column_invisible="parent.state == 'cotizado'"/>
-                                    <field name="material_peligroso_id" invisible="not is_dangerous" required="is_dangerous" optional="hide" string="Mat. Pelig."/>
-                                    <field name="embalaje_id" optional="hide" string="Embalaje"/>
-                                    <field name="l10n_mx_edi_tax_object" optional="hide" string="Obj. Imp."/>
-                                    <field name="l10n_mx_edi_sector_cofepris" optional="hide" string="Sec. COF."/>
-                                    <field name="l10n_mx_edi_active_ingredient" optional="hide" string="Ing. Act."/>
-                                    <field name="l10n_mx_edi_nominal_purity" optional="hide" string="Pur. Nom."/>
+                                    <field name="is_dangerous" string="¿Pel.?"/>
+                                    <field name="embalaje_id" string="Embalaje"/>
+                                    <field name="material_peligroso_id" string="Mat. Pelig." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous" required="is_dangerous"/>
+                                    <field name="l10n_mx_edi_sector_cofepris" string="Sec. COF." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_active_ingredient" string="Ing. Act." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_nominal_purity" string="Pur. Nom." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_tax_object" string="Obj. Imp." optional="hide"/>
                                 </list>
                             </field>
                         </page>

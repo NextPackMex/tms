@@ -83,7 +83,6 @@
         # 3. Wizard de importación
         'wizard/sat_import_wizard_views.xml',
         'wizard/partner_assign_company_wizard_views.xml',
-        'wizard/tms_cotizacion_wizard_views.xml',
 
         # 3. Vistas de Catálogos SAT (orden alfabético)
         'views/sat_clave_prod_views.xml',
@@ -110,27 +109,30 @@
         # 5. Vistas de Destinos/Rutas
         'views/tms_destination_views.xml',
 
-        # 6. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
+        # 6. Wizard cotización (ANTES de tms_waybill_views para que action_tms_cotizacion_wizard exista)
+        'wizard/tms_cotizacion_wizard_views.xml',
+
+        # 7. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',
         'views/tms_fuel_history_views.xml',
 
-        # 7. Dashboard
+        # 8. Dashboard
         'views/tms_dashboard_views.xml',
 
-        # 8. Plantillas del Portal Web (Firma Digital)
+        # 9. Plantillas del Portal Web (Firma Digital)
         'views/tms_portal_templates.xml',
 
-        # 9. Reportes PDF
+        # 10. Reportes PDF
         'reports/tms_waybill_report.xml',
         'data/mail_template_data.xml',
 
-        # 10. Menús (AL FINAL para que todas las acciones estén disponibles)
+        # 11. Menús (AL FINAL para que todas las acciones estén disponibles)
         # IMPORTANTE: tms_menus.xml ANTES de sat_menus.xml
         # porque sat_menus.xml usa action_tms_dashboard que se define en tms_menus.xml
         'views/tms_menus.xml',               # Define action_tms_dashboard y menús operativos
-        'wizard/tms_load_demo_wizard_view.xml', # Load after menus
         'views/res_config_settings_views.xml', # Depende de menu_tms_config
         'views/sat_menus.xml',               # Usa menu_tms_root y action_tms_dashboard
+        'wizard/tms_load_demo_wizard_view.xml', # Load after menus
     ],
 
     'assets': {
@@ -138,6 +140,7 @@
             'tms/static/src/js/tms_portal_link_handler.js',
             'tms/static/src/js/tms_tour.js',
             'tms/static/src/js/tms_command.js',
+            'tms/static/src/js/tms_dimensions_widget.js',
         ],
         # Assets para portal: JS y CSS para vista moderna estilo Sales
         'web.assets_frontend': [

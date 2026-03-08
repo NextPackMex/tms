@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 import requests
 import json
 import uuid
@@ -231,7 +232,7 @@ class TmsWaybill(models.Model):
 
     # Mantener waybill_type por compatibilidad o usar cp_type como principal
     waybill_type = fields.Selection(
-        string='Tipo de Carta Porte (Legacy)',
+        string='Tipo de Carta Porte',
         selection=[
             ('income', 'Ingreso (Flete Cobrado)'),
             ('transfer', 'Traslado (Sin Cobro)'),
@@ -356,6 +357,12 @@ class TmsWaybill(models.Model):
         size=5,
     )
 
+    origin_city_name = fields.Char(
+        string='Ciudad Origen',
+        compute='_compute_city_names',
+        store=False,
+    )
+
     # Char: dirección origen (calle y número)
     origin_address = fields.Char(
         string='Dirección Origen',
@@ -393,6 +400,12 @@ class TmsWaybill(models.Model):
     dest_zip = fields.Char(
         string='CP Destino',
         size=5,
+    )
+
+    dest_city_name = fields.Char(
+        string='Ciudad Destino',
+        compute='_compute_city_names',
+        store=False,
     )
 
     # Char: dirección destino (calle y número)
@@ -492,15 +505,24 @@ class TmsWaybill(models.Model):
             self.duration_hours = 0.0
             self.cost_tolls = 0.0
 
-    @api.depends('partner_origin_id', 'partner_dest_id')
+    @api.depends('partner_origin_id', 'partner_dest_id', 'origin_zip', 'dest_zip')
     def _compute_route_name(self):
         """
         Calcula el nombre de la ruta.
-        Formato: "Ciudad/Nombre Origen → Ciudad/Nombre Destino"
+        Formato: "Ciudad Origen → Ciudad Destino"
+        Fallback: busca ciudad por CP si no hay partner/city.
         """
         for record in self:
-            origin = record.partner_origin_id.city or record.partner_origin_id.name or "?"
-            dest = record.partner_dest_id.city or record.partner_dest_id.name or "?"
+            origin = (record.partner_origin_id.city
+                      or record.partner_origin_id.name
+                      or record._get_city_from_zip(record.origin_zip)
+                      or record.origin_zip
+                      or "?")
+            dest = (record.partner_dest_id.city
+                    or record.partner_dest_id.name
+                    or record._get_city_from_zip(record.dest_zip)
+                    or record.dest_zip
+                    or "?")
             record.route_name = f"{origin} → {dest}"
 
     # ============================================================
@@ -1133,6 +1155,16 @@ class TmsWaybill(models.Model):
         help='Número de líneas de mercancía registradas en este viaje'
     )
 
+    has_dangerous_lines = fields.Boolean(
+        compute='_compute_has_dangerous_lines',
+        store=False,
+    )
+
+    @api.depends('line_ids.is_dangerous')
+    def _compute_has_dangerous_lines(self):
+        for rec in self:
+            rec.has_dangerous_lines = any(l.is_dangerous for l in rec.line_ids)
+
     @api.depends('line_ids')
     def _compute_line_count(self):
         """Cuenta las líneas de mercancía para mostrar en el smart button."""
@@ -1409,6 +1441,34 @@ class TmsWaybill(models.Model):
 
 
     # ============================================================
+    # COMPUTE: Nombre de ciudad a partir del CP
+    # ============================================================
+
+    @api.depends('origin_zip', 'dest_zip')
+    def _compute_city_names(self):
+        for rec in self:
+            rec.origin_city_name = rec._get_city_from_zip(rec.origin_zip)
+            rec.dest_city_name = rec._get_city_from_zip(rec.dest_zip)
+
+    def _get_city_from_zip(self, zip_code):
+        if not zip_code:
+            return ''
+        cp = self.env['tms.sat.codigo.postal'].with_context(active_test=False).search(
+            [('code', '=', zip_code)], limit=1)
+        if not cp:
+            return ''
+        if cp.municipio and cp.estado:
+            muni = self.env['tms.sat.municipio'].search(
+                [('code', '=', cp.municipio), ('estado', '=', cp.estado)], limit=1)
+            if muni:
+                state = self.env['res.country.state'].search(
+                    ['|', ('code', '=', cp.estado), ('code', '=', f'MX-{cp.estado}'),
+                     ('country_id.code', '=', 'MX')], limit=1)
+                state_name = state.name if state else cp.estado
+                return f"{muni.name}, {state_name}"
+        return cp.estado or ''
+
+    # ============================================================
     # MÉTODO: Group Expand (CRÍTICO para Kanban)
     # ============================================================
 
@@ -1418,12 +1478,14 @@ class TmsWaybill(models.Model):
         Retorna la lista completa de estados.
         """
         return [
+            'cotizado',
+            'aprobado',
             'draft',
             'en_pedido',
             'assigned',
             'waybill',
             'in_transit',
-            'rejected',  # Agregado para rechazo desde portal
+            'rejected',
             'arrived',
             'closed',
             'cancel',
@@ -2116,10 +2178,12 @@ class TmsWaybillLine(models.Model):
         help='Peso total de la mercancía en kilogramos'
     )
 
-    # Char: dimensiones (opcional)
+    # Char: dimensiones (opcional) — SAT Carta Porte 3.1
+    # Patrón XSD: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)
     dimensions = fields.Char(
         string='Dimensiones',
-        help='Dimensiones de la mercancía (ej: 1.2m x 0.8m x 0.5m)'
+        size=15,
+        help='Largo/Alto/Ancho en cm o plg. Ej: 30/40/30cm (máx 999 por medida)'
     )
 
     # Boolean: es material peligroso
@@ -2188,6 +2252,20 @@ class TmsWaybillLine(models.Model):
         string='Unidad Pureza',
         help='Unidad de medida de la pureza.'
     )
+
+    @api.constrains('dimensions')
+    def _check_dimensions_format(self):
+        """Valida formato SAT Carta Porte 3.1: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)?"""
+        sat_pattern = re.compile(r'^([0-9]{1,3}/){2}[0-9]{1,3}(cm|plg)?$')
+        for line in self:
+            if line.dimensions and not sat_pattern.match(line.dimensions):
+                raise ValidationError(_(
+                    'Dimensiones "%(dim)s" no cumple formato SAT.\n'
+                    'Formato: Largo/Alto/Ancho (unidad opcional: cm o plg)\n'
+                    'Ejemplos: 9/9/9, 30/40/30cm, 120/80/50plg\n'
+                    'Máximo 999 por medida.',
+                    dim=line.dimensions,
+                ))
 
 
 class TmsWaybillCustomsRegime(models.Model):

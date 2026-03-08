@@ -2,320 +2,454 @@
 <odoo>
     <data noupdate="1">
 
-        <!-- ==================================================== -->
-        <!-- 4 CLIENTES                                          -->
-        <!-- ==================================================== -->
+        <!-- ============================================================ -->
+        <!-- SECCION 1: CONFIGS SAT DE REMOLQUES (no existen en BD)       -->
+        <!-- Estos registros se necesitan porque el catálogo SAT           -->
+        <!-- c_SubTipoRem no se importa por defecto vía Excel.            -->
+        <!-- ============================================================ -->
+        <record id="demo_sat_ctr003" model="tms.sat.config.autotransporte">
+            <field name="code">CTR003</field>
+            <field name="name">Caja Cerrada</field>
+            <field name="total_axles">2</field>
+            <field name="numero_ejes_remolque">2</field>
+            <field name="remolque">1</field>
+        </record>
+        <record id="demo_sat_ctr005" model="tms.sat.config.autotransporte">
+            <field name="code">CTR005</field>
+            <field name="name">Caja Refrigerada</field>
+            <field name="total_axles">2</field>
+            <field name="numero_ejes_remolque">2</field>
+            <field name="remolque">1</field>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- SECCION 2: CLIENTES (res.partner)                            -->
+        <!-- Empresas con TODOS los campos CFDI 4.0 / Carta Porte         -->
+        <!-- ============================================================ -->
         <record id="demo_partner_customer_1" model="res.partner">
-            <field name="name">Logística del Norte S.A. de C.V.</field>
+            <field name="name">LOGISTICA DEL NORTE SA DE CV</field>
+            <field name="is_company" eval="True"/>
             <field name="customer_rank">1</field>
-            <field name="street">Av. Industrial 100</field>
+            <field name="street">Av. Industriales 1450, Col. Centro</field>
             <field name="city">Monterrey</field>
             <field name="state_id" ref="base.state_mx_nl"/>
             <field name="zip">64000</field>
             <field name="country_id" ref="base.mx"/>
-            <field name="vat">LNO123456789</field>
-            <field name="email">logistica.norte@example.com</field>
+            <field name="vat">LNO200415H73</field>
+            <field name="email">logistica@lognorte.com.mx</field>
+            <field name="phone">+52 81 8345 6789</field>
+            <field name="l10n_mx_edi_fiscal_regime">601</field>
+            <field name="l10n_mx_edi_usage">G03</field>
         </record>
 
         <record id="demo_partner_customer_2" model="res.partner">
-            <field name="name">Alimentos Frescos de México</field>
+            <field name="name">ALIMENTOS FRESCOS DE MEXICO SA DE CV</field>
+            <field name="is_company" eval="True"/>
             <field name="customer_rank">1</field>
-            <field name="street">Mercado de Abastos Local 4</field>
+            <field name="street">Mercado de Abastos Local 4, Col. Las Juntas</field>
             <field name="city">Guadalajara</field>
             <field name="state_id" ref="base.state_mx_jal"/>
-            <field name="zip">44000</field>
+            <field name="zip">44100</field>
             <field name="country_id" ref="base.mx"/>
-            <field name="vat">AFM987654321</field>
-            <field name="email">compras@alimentosfrescos.com</field>
+            <field name="vat">AFM180620QR5</field>
+            <field name="email">compras@alimentosfrescos.com.mx</field>
+            <field name="phone">+52 33 3678 1234</field>
+            <field name="l10n_mx_edi_fiscal_regime">601</field>
+            <field name="l10n_mx_edi_usage">G03</field>
         </record>
 
         <record id="demo_partner_customer_3" model="res.partner">
-            <field name="name">Distribuidora Central CDMX</field>
+            <field name="name">DISTRIBUIDORA CENTRAL CDMX SA DE CV</field>
+            <field name="is_company" eval="True"/>
             <field name="customer_rank">1</field>
-            <field name="street">Eje Central 555</field>
+            <field name="street">Eje Central Lazaro Cardenas 555, Col. Juárez</field>
             <field name="city">Ciudad de México</field>
             <field name="state_id" ref="base.state_mx_df"/>
-            <field name="zip">06000</field>
+            <field name="zip">06600</field>
             <field name="country_id" ref="base.mx"/>
-            <field name="vat">DCC112233445</field>
-            <field name="email">ventas@distcentral.com</field>
+            <field name="vat">DCC150312LP8</field>
+            <field name="email">ventas@distcentral.com.mx</field>
+            <field name="phone">+52 55 5512 3456</field>
+            <field name="l10n_mx_edi_fiscal_regime">601</field>
+            <field name="l10n_mx_edi_usage">G03</field>
         </record>
 
         <record id="demo_partner_customer_4" model="res.partner">
-            <field name="name">Exportadora del Bajío</field>
+            <field name="name">EXPORTADORA DEL BAJIO SA DE CV</field>
+            <field name="is_company" eval="True"/>
             <field name="customer_rank">1</field>
-            <field name="street">Parque Industrial Bajío nave 3</field>
+            <field name="street">Blvd. Aeropuerto 1020, Parque Industrial</field>
             <field name="city">León</field>
             <field name="state_id" ref="base.state_mx_gto"/>
             <field name="zip">37000</field>
             <field name="country_id" ref="base.mx"/>
-            <field name="vat">EBA998877665</field>
-            <field name="email">embarques@exportbajio.com</field>
+            <field name="vat">EBA190801MN2</field>
+            <field name="email">embarques@exportbajio.com.mx</field>
+            <field name="phone">+52 477 712 5678</field>
+            <field name="l10n_mx_edi_fiscal_regime">601</field>
+            <field name="l10n_mx_edi_usage">G03</field>
         </record>
 
-
-        <!-- ==================================================== -->
-        <!-- 4 CHOFERES (HR.EMPLOYEE)                           -->
-        <!-- ==================================================== -->
+        <!-- ============================================================ -->
+        <!-- SECCION 3: CONTACTOS DE CHOFERES (res.partner)               -->
+        <!-- RFC 13 chars (persona física), domicilio fiscal completo     -->
+        <!-- ============================================================ -->
         <record id="demo_contact_driver_1" model="res.partner">
-            <field name="name">Roberto Gómez (Chofer)</field>
-            <field name="street">Calle 1 #101</field>
-            <field name="vat">GOCR800101XYZ</field>
-            <field name="zip">64000</field>
+            <field name="name">Roberto Gómez López</field>
+            <field name="street">Calle Hidalgo 245, Col. Obrera</field>
+            <field name="city">Monterrey</field>
+            <field name="zip">64700</field>
             <field name="state_id" ref="base.state_mx_nl"/>
+            <field name="country_id" ref="base.mx"/>
+            <field name="vat">GOLR800115HN8</field>
+            <field name="phone">+52 81 1234 5678</field>
+            <field name="l10n_mx_edi_fiscal_regime">605</field>
         </record>
+
         <record id="demo_contact_driver_2" model="res.partner">
-            <field name="name">Carlos Santana (Chofer)</field>
-            <field name="street">Calle 2 #202</field>
-            <field name="vat">SACA850202ABC</field>
-            <field name="zip">44000</field>
+            <field name="name">Carlos Santana Ruiz</field>
+            <field name="street">Av. Vallarta 3200, Col. Vallarta Poniente</field>
+            <field name="city">Guadalajara</field>
+            <field name="zip">44110</field>
             <field name="state_id" ref="base.state_mx_jal"/>
+            <field name="country_id" ref="base.mx"/>
+            <field name="vat">SARC850220JA4</field>
+            <field name="phone">+52 33 2345 6789</field>
+            <field name="l10n_mx_edi_fiscal_regime">612</field>
         </record>
+
         <record id="demo_contact_driver_3" model="res.partner">
-            <field name="name">Luis Miguel (Chofer)</field>
-            <field name="street">Calle 3 #303</field>
-            <field name="vat">MILI900303QWE</field>
-            <field name="zip">06000</field>
-            <field name="state_id" ref="base.state_mx_df"/>
+            <field name="name">Luis Miguel Torres</field>
+            <field name="street">Av. Constituyentes 120, Col. Centro</field>
+            <field name="city">Querétaro</field>
+            <field name="zip">76040</field>
+            <field name="state_id" ref="base.state_mx_qro"/>
+            <field name="country_id" ref="base.mx"/>
+            <field name="vat">TOTL900305CM9</field>
+            <field name="phone">+52 442 345 6789</field>
+            <field name="l10n_mx_edi_fiscal_regime">605</field>
         </record>
+
         <record id="demo_contact_driver_4" model="res.partner">
-            <field name="name">Alejandro Fernández (Chofer)</field>
-            <field name="street">Calle 4 #404</field>
-            <field name="vat">FEAL950404RTY</field>
-            <field name="zip">37000</field>
+            <field name="name">Alejandro Fernández Díaz</field>
+            <field name="street">Blvd. López Mateos 780, Col. León Moderno</field>
+            <field name="city">León</field>
+            <field name="zip">37150</field>
             <field name="state_id" ref="base.state_mx_gto"/>
+            <field name="country_id" ref="base.mx"/>
+            <field name="vat">FEDA950410GT3</field>
+            <field name="phone">+52 477 456 7890</field>
+            <field name="l10n_mx_edi_fiscal_regime">612</field>
         </record>
 
+        <!-- ============================================================ -->
+        <!-- SECCION 4: EMPLEADOS CHOFERES (hr.employee)                  -->
+        <!-- Licencia federal, tipo, vigencia, régimen fiscal              -->
+        <!-- ============================================================ -->
         <record id="demo_driver_1" model="hr.employee">
-            <field name="name">Roberto Gómez</field>
+            <field name="name">Roberto Gómez López</field>
             <field name="work_contact_id" ref="demo_contact_driver_1"/>
-            <field name="tms_is_driver">True</field>
-            <field name="tms_driver_license_type">B</field>
-            <field name="tms_driver_license">LIC-800101</field>
+            <field name="tms_is_driver" eval="True"/>
+            <field name="tms_driver_license">000123456789</field>
+            <field name="tms_driver_license_type">E</field>
+            <field name="tms_driver_license_expiration">2028-06-30</field>
             <field name="l10n_mx_edi_fiscal_regime">605</field>
         </record>
+
         <record id="demo_driver_2" model="hr.employee">
-            <field name="name">Carlos Santana</field>
+            <field name="name">Carlos Santana Ruiz</field>
             <field name="work_contact_id" ref="demo_contact_driver_2"/>
-            <field name="tms_is_driver">True</field>
+            <field name="tms_is_driver" eval="True"/>
+            <field name="tms_driver_license">000987654321</field>
             <field name="tms_driver_license_type">C</field>
-            <field name="tms_driver_license">LIC-850202</field>
+            <field name="tms_driver_license_expiration">2027-12-31</field>
+            <field name="l10n_mx_edi_fiscal_regime">612</field>
+        </record>
+
+        <record id="demo_driver_3" model="hr.employee">
+            <field name="name">Luis Miguel Torres</field>
+            <field name="work_contact_id" ref="demo_contact_driver_3"/>
+            <field name="tms_is_driver" eval="True"/>
+            <field name="tms_driver_license">000456789012</field>
+            <field name="tms_driver_license_type">E</field>
+            <field name="tms_driver_license_expiration">2028-03-15</field>
             <field name="l10n_mx_edi_fiscal_regime">605</field>
         </record>
-        <record id="demo_driver_3" model="hr.employee">
-            <field name="name">Luis Miguel</field>
-            <field name="work_contact_id" ref="demo_contact_driver_3"/>
-            <field name="tms_is_driver">True</field>
-            <field name="tms_driver_license_type">B</field>
-            <field name="tms_driver_license">LIC-900303</field>
-            <field name="l10n_mx_edi_fiscal_regime">612</field>
-        </record>
+
         <record id="demo_driver_4" model="hr.employee">
-            <field name="name">Alejandro Fernández</field>
+            <field name="name">Alejandro Fernández Díaz</field>
             <field name="work_contact_id" ref="demo_contact_driver_4"/>
-            <field name="tms_is_driver">True</field>
-            <field name="tms_driver_license_type">B</field>
-            <field name="tms_driver_license">LIC-950404</field>
+            <field name="tms_is_driver" eval="True"/>
+            <field name="tms_driver_license">000321654987</field>
+            <field name="tms_driver_license_type">C</field>
+            <field name="tms_driver_license_expiration">2027-09-30</field>
             <field name="l10n_mx_edi_fiscal_regime">612</field>
         </record>
 
-
-        <!-- ==================================================== -->
-        <!-- 4 TRACTORES                                         -->
-        <!-- ==================================================== -->
+        <!-- ============================================================ -->
+        <!-- SECCION 5: MARCAS Y MODELOS DE VEHICULO                      -->
+        <!-- ============================================================ -->
         <record id="demo_brand_kenworth" model="fleet.vehicle.model.brand">
             <field name="name">Kenworth</field>
         </record>
         <record id="demo_brand_freightliner" model="fleet.vehicle.model.brand">
             <field name="name">Freightliner</field>
         </record>
-        <record id="demo_brand_generic" model="fleet.vehicle.model.brand">
-            <field name="name">Generico</field>
+        <record id="demo_brand_utility" model="fleet.vehicle.model.brand">
+            <field name="name">Utility Trailer</field>
         </record>
 
-        <record id="demo_model_kenworth" model="fleet.vehicle.model">
-            <field name="name">Kenworth T680</field>
-            <field name="vehicle_type">car</field>
+        <!-- Modelos Tractor -->
+        <record id="demo_model_kw_t680" model="fleet.vehicle.model">
+            <field name="name">T680</field>
             <field name="brand_id" ref="demo_brand_kenworth"/>
-        </record>
-        <record id="demo_model_freightliner" model="fleet.vehicle.model">
-            <field name="name">Freightliner Cascadia</field>
             <field name="vehicle_type">car</field>
+        </record>
+        <record id="demo_model_kw_t880" model="fleet.vehicle.model">
+            <field name="name">T880</field>
+            <field name="brand_id" ref="demo_brand_kenworth"/>
+            <field name="vehicle_type">car</field>
+        </record>
+        <record id="demo_model_fl_cascadia" model="fleet.vehicle.model">
+            <field name="name">Cascadia</field>
             <field name="brand_id" ref="demo_brand_freightliner"/>
-        </record>
-
-        <record id="demo_tractor_1" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_kenworth"/>
-            <field name="license_plate">TRACTO-01</field>
-            <field name="no_economico">T-001</field>
-            <field name="tms_is_trailer">False</field>
-            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
-            <field name="permiso_sct_number">123456789</field>
-            <field name="tms_insurance_civil_liability">POL-CIV-001</field>
-            <field name="tms_insurance_civil_liability_mx">Qualitas</field>
-        </record>
-        <record id="demo_tractor_2" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_kenworth"/>
-            <field name="license_plate">TRACTO-02</field>
-            <field name="no_economico">T-002</field>
-            <field name="tms_is_trailer">False</field>
-            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
-            <field name="permiso_sct_number">123456789</field>
-            <field name="tms_insurance_civil_liability">POL-CIV-002</field>
-            <field name="tms_insurance_civil_liability_mx">Qualitas</field>
-        </record>
-        <record id="demo_tractor_3" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_freightliner"/>
-            <field name="license_plate">TRACTO-03</field>
-            <field name="no_economico">T-003</field>
-            <field name="tms_is_trailer">False</field>
-            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
-            <field name="permiso_sct_number">123456789</field>
-            <field name="tms_insurance_civil_liability">POL-CIV-003</field>
-            <field name="tms_insurance_civil_liability_mx">Seguros Monterrey</field>
-        </record>
-        <record id="demo_tractor_4" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_freightliner"/>
-            <field name="license_plate">TRACTO-04</field>
-            <field name="no_economico">T-004</field>
-            <field name="tms_is_trailer">False</field>
-            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
-            <field name="permiso_sct_number">123456789</field>
-            <field name="tms_insurance_civil_liability">POL-CIV-004</field>
-            <field name="tms_insurance_civil_liability_mx">Seguros Monterrey</field>
-        </record>
-
-        <!-- ==================================================== -->
-        <!-- 4 REMOLQUES                                         -->
-        <!-- ==================================================== -->
-        <record id="demo_model_trailer_box_53" model="fleet.vehicle.model">
-            <field name="name">Caja Seca 53ft</field>
             <field name="vehicle_type">car</field>
-            <field name="brand_id" ref="demo_brand_generic"/>
         </record>
 
-        <record id="sat_config_CTR004" model="tms.sat.config.autotransporte">
-            <field name="code">CTR004</field>
-            <field name="name">Caja Cerrada</field>
+        <!-- Modelos Remolque -->
+        <record id="demo_model_caja_seca_53" model="fleet.vehicle.model">
+            <field name="name">Caja Seca 53 pies</field>
+            <field name="brand_id" ref="demo_brand_utility"/>
+            <field name="vehicle_type">car</field>
+        </record>
+        <record id="demo_model_caja_ref_48" model="fleet.vehicle.model">
+            <field name="name">Caja Refrigerada 48 pies</field>
+            <field name="brand_id" ref="demo_brand_utility"/>
+            <field name="vehicle_type">car</field>
         </record>
 
+        <!-- ============================================================ -->
+        <!-- SECCION 6: TRACTORES (fleet.vehicle)                         -->
+        <!-- Configurados al 100% para validación Carta Porte 3.1         -->
+        <!-- Campos CP: placa, año, config SAT, permiso SCT, seguros      -->
+        <!-- ============================================================ -->
+        <record id="demo_tractor_1" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_kw_t680"/>
+            <field name="license_plate">JN5-83-A1</field>
+            <field name="no_economico">T-001</field>
+            <field name="model_year">2022</field>
+            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
+            <field name="sat_permiso_sct_id" search="[('code', '=', 'TPAF01')]"/>
+            <field name="permiso_sct_number">PERM-SCT-00001</field>
+            <field name="tms_fuel_performance">2.8</field>
+            <field name="tms_gross_vehicle_weight">15.5</field>
+            <field name="tms_num_axles">3</field>
+            <field name="tms_insurance_civil_liability">POL-RC-2025-001</field>
+            <field name="tms_insurance_civil_liability_mx">Qualitas Compañía de Seguros</field>
+            <field name="tms_insurance_cargo">POL-CARGA-2025-001</field>
+            <field name="tms_insurance_cargo_mx">Qualitas Compañía de Seguros</field>
+        </record>
+
+        <record id="demo_tractor_2" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_kw_t680"/>
+            <field name="license_plate">JN5-83-B2</field>
+            <field name="no_economico">T-002</field>
+            <field name="model_year">2023</field>
+            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
+            <field name="sat_permiso_sct_id" search="[('code', '=', 'TPAF01')]"/>
+            <field name="permiso_sct_number">PERM-SCT-00002</field>
+            <field name="tms_fuel_performance">2.6</field>
+            <field name="tms_gross_vehicle_weight">15.5</field>
+            <field name="tms_num_axles">3</field>
+            <field name="tms_insurance_civil_liability">POL-RC-2025-002</field>
+            <field name="tms_insurance_civil_liability_mx">Qualitas Compañía de Seguros</field>
+            <field name="tms_insurance_cargo">POL-CARGA-2025-002</field>
+            <field name="tms_insurance_cargo_mx">Qualitas Compañía de Seguros</field>
+        </record>
+
+        <record id="demo_tractor_3" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_fl_cascadia"/>
+            <field name="license_plate">NL8-27-C3</field>
+            <field name="no_economico">T-003</field>
+            <field name="model_year">2021</field>
+            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
+            <field name="sat_permiso_sct_id" search="[('code', '=', 'TPAF01')]"/>
+            <field name="permiso_sct_number">PERM-SCT-00003</field>
+            <field name="tms_fuel_performance">2.5</field>
+            <field name="tms_gross_vehicle_weight">16.0</field>
+            <field name="tms_num_axles">3</field>
+            <field name="tms_insurance_civil_liability">POL-RC-2025-003</field>
+            <field name="tms_insurance_civil_liability_mx">GNP Seguros</field>
+            <field name="tms_insurance_cargo">POL-CARGA-2025-003</field>
+            <field name="tms_insurance_cargo_mx">GNP Seguros</field>
+        </record>
+
+        <record id="demo_tractor_4" model="fleet.vehicle">
+            <field name="model_id" ref="demo_model_kw_t880"/>
+            <field name="license_plate">GTO-44-D4</field>
+            <field name="no_economico">T-004</field>
+            <field name="model_year">2020</field>
+            <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="sat_config_id" search="[('code', '=', 'T3S2')]"/>
+            <field name="sat_permiso_sct_id" search="[('code', '=', 'TPAF01')]"/>
+            <field name="permiso_sct_number">PERM-SCT-00004</field>
+            <field name="tms_fuel_performance">2.4</field>
+            <field name="tms_gross_vehicle_weight">16.5</field>
+            <field name="tms_num_axles">3</field>
+            <field name="tms_insurance_civil_liability">POL-RC-2025-004</field>
+            <field name="tms_insurance_civil_liability_mx">GNP Seguros</field>
+            <field name="tms_insurance_cargo">POL-CARGA-2025-004</field>
+            <field name="tms_insurance_cargo_mx">GNP Seguros</field>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- SECCION 7: REMOLQUES (fleet.vehicle)                         -->
+        <!-- Configurados para Carta Porte 3.1 (SubTipoRem)              -->
+        <!-- ============================================================ -->
         <record id="demo_trailer_1" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_trailer_box_53"/>
-            <field name="license_plate">REM-01</field>
+            <field name="model_id" ref="demo_model_caja_seca_53"/>
+            <field name="license_plate">REM-01-AA</field>
             <field name="no_economico">R-001</field>
-            <field name="tms_is_trailer">True</field>
+            <field name="model_year">2021</field>
             <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_trailer"/>
-            <field name="sat_config_id" ref="sat_config_CTR004"/>
+            <field name="sat_config_id" ref="demo_sat_ctr003"/>
+            <field name="tms_gross_vehicle_weight">8.0</field>
+            <field name="tms_num_axles">2</field>
         </record>
+
         <record id="demo_trailer_2" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_trailer_box_53"/>
-            <field name="license_plate">REM-02</field>
+            <field name="model_id" ref="demo_model_caja_seca_53"/>
+            <field name="license_plate">REM-02-BB</field>
             <field name="no_economico">R-002</field>
-            <field name="tms_is_trailer">True</field>
+            <field name="model_year">2022</field>
             <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_trailer"/>
-            <field name="sat_config_id" ref="sat_config_CTR004"/>
+            <field name="sat_config_id" ref="demo_sat_ctr003"/>
+            <field name="tms_gross_vehicle_weight">8.0</field>
+            <field name="tms_num_axles">2</field>
         </record>
+
         <record id="demo_trailer_3" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_trailer_box_53"/>
-            <field name="license_plate">REM-03</field>
+            <field name="model_id" ref="demo_model_caja_ref_48"/>
+            <field name="license_plate">REM-03-CC</field>
             <field name="no_economico">R-003</field>
-            <field name="tms_is_trailer">True</field>
+            <field name="model_year">2023</field>
             <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_trailer"/>
-            <field name="sat_config_id" ref="sat_config_CTR004"/>
+            <field name="sat_config_id" ref="demo_sat_ctr005"/>
+            <field name="tms_gross_vehicle_weight">9.5</field>
+            <field name="tms_num_axles">2</field>
         </record>
+
         <record id="demo_trailer_4" model="fleet.vehicle">
-            <field name="model_id" ref="demo_model_trailer_box_53"/>
-            <field name="license_plate">REM-04</field>
+            <field name="model_id" ref="demo_model_caja_seca_53"/>
+            <field name="license_plate">REM-04-DD</field>
             <field name="no_economico">R-004</field>
-            <field name="tms_is_trailer">True</field>
+            <field name="model_year">2020</field>
             <field name="tms_vehicle_type_id" ref="tms.tms_vehicle_type_trailer"/>
-            <field name="sat_config_id" ref="sat_config_CTR004"/>
+            <field name="sat_config_id" ref="demo_sat_ctr003"/>
+            <field name="tms_gross_vehicle_weight">7.5</field>
+            <field name="tms_num_axles">2</field>
         </record>
 
-
-        <!-- ==================================================== -->
-        <!-- 4 DESTINOS (TMS.DESTINATION - RUTAS)               -->
-        <!-- ==================================================== -->
-        <!-- Corregido: tms.destination es 'Rutas', usa ZIPs, no partner_id directo. 
-             Uso los zips de los clientes creados arriba:
-             Monterrey (NL): 64000
-             Guadalajara (JAL): 44000
-             CDMX (DF): 06000
-             Leon (GTO): 37000
-        -->
+        <!-- ============================================================ -->
+        <!-- SECCION 8: RUTAS / DESTINOS (tms.destination)                -->
+        <!-- Distancias y casetas realistas entre ciudades de México       -->
+        <!-- ============================================================ -->
         <record id="demo_destination_1" model="tms.destination">
-            <!-- Planta MTY (64000) -> CEDIS GDL (44000) -->
             <field name="origin_zip">64000</field>
-            <field name="dest_zip">44000</field>
+            <field name="dest_zip">44100</field>
             <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="distance_km">800</field>
-            <field name="duration_hours">10</field>
-            <field name="cost_tolls">3500.00</field>
-            <field name="notes">Ruta para Cliente: Logística del Norte</field>
+            <field name="distance_km">780</field>
+            <field name="duration_hours">9.5</field>
+            <field name="cost_tolls">3200.00</field>
+            <field name="notes">MTY - GDL via Autopista Saltillo-Guadalajara</field>
         </record>
 
         <record id="demo_destination_2" model="tms.destination">
-            <!-- GDL (44000) -> CDMX (06000) -->
-            <field name="origin_zip">44000</field>
-            <field name="dest_zip">06000</field>
+            <field name="origin_zip">44100</field>
+            <field name="dest_zip">06600</field>
             <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="distance_km">550</field>
-            <field name="duration_hours">7</field>
-            <field name="cost_tolls">2200.00</field>
-            <field name="notes">Ruta para Cliente: Alimentos Frescos</field>
+            <field name="distance_km">540</field>
+            <field name="duration_hours">6.5</field>
+            <field name="cost_tolls">1850.00</field>
+            <field name="notes">GDL - CDMX via Autopista Guadalajara-Mexico</field>
         </record>
 
         <record id="demo_destination_3" model="tms.destination">
-            <!-- CDMX (06000) -> Leon (37000) -->
-            <field name="origin_zip">06000</field>
+            <field name="origin_zip">06600</field>
             <field name="dest_zip">37000</field>
             <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="distance_km">400</field>
-            <field name="duration_hours">5</field>
-            <field name="cost_tolls">1800.00</field>
-            <field name="notes">Ruta para Cliente: Distribuidora Central</field>
+            <field name="distance_km">380</field>
+            <field name="duration_hours">4.5</field>
+            <field name="cost_tolls">1600.00</field>
+            <field name="notes">CDMX - Leon via Autopista Mexico-Queretaro-Irapuato</field>
         </record>
 
         <record id="demo_destination_4" model="tms.destination">
-            <!-- Leon (37000) -> MTY (64000) -->
             <field name="origin_zip">37000</field>
             <field name="dest_zip">64000</field>
             <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
-            <field name="distance_km">700</field>
-            <field name="duration_hours">9</field>
-            <field name="cost_tolls">3000.00</field>
-            <field name="notes">Ruta para Cliente: Exportadora del Bajío</field>
+            <field name="distance_km">690</field>
+            <field name="duration_hours">8.0</field>
+            <field name="cost_tolls">2800.00</field>
+            <field name="notes">Leon - MTY via Autopista SLP-Saltillo-Monterrey</field>
         </record>
 
-        <!-- ==================================================== -->
-        <!-- HISTORIAL DIESEL (TMS.FUEL.HISTORY)                -->
-        <!-- ==================================================== -->
-        <!-- Modelo tms.fuel.history = Historial Precios (Global)
-             No soporta vehicle_id ni litros. Cargaré precios históricos.
-        -->
+        <record id="demo_destination_5" model="tms.destination">
+            <field name="origin_zip">64000</field>
+            <field name="dest_zip">06600</field>
+            <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="distance_km">900</field>
+            <field name="duration_hours">11.0</field>
+            <field name="cost_tolls">4200.00</field>
+            <field name="notes">MTY - CDMX via Autopista Monterrey-Saltillo-SLP-Queretaro</field>
+        </record>
+
+        <record id="demo_destination_6" model="tms.destination">
+            <field name="origin_zip">76040</field>
+            <field name="dest_zip">44100</field>
+            <field name="vehicle_type_id" ref="tms.tms_vehicle_type_tractor"/>
+            <field name="distance_km">340</field>
+            <field name="duration_hours">4.0</field>
+            <field name="cost_tolls">1400.00</field>
+            <field name="notes">QRO - GDL via Autopista Queretaro-Irapuato-Guadalajara</field>
+        </record>
+
+        <!-- ============================================================ -->
+        <!-- SECCION 9: HISTORIAL DIESEL (tms.fuel.history)               -->
+        <!-- Precios reales del diesel en México 2025-2026                -->
+        <!-- ============================================================ -->
         <record id="demo_fuel_price_1" model="tms.fuel.history">
-            <field name="date">2024-01-01</field>
-            <field name="price">23.50</field>
-            <field name="notes">Precio Enero 2024</field>
+            <field name="date">2025-01-01</field>
+            <field name="price">24.82</field>
+            <field name="notes">Precio Diesel Enero 2025</field>
         </record>
         <record id="demo_fuel_price_2" model="tms.fuel.history">
-            <field name="date">2024-02-01</field>
-            <field name="price">23.60</field>
-            <field name="notes">Precio Febrero 2024</field>
+            <field name="date">2025-04-01</field>
+            <field name="price">24.95</field>
+            <field name="notes">Precio Diesel Abril 2025</field>
         </record>
         <record id="demo_fuel_price_3" model="tms.fuel.history">
-            <field name="date">2024-03-01</field>
-            <field name="price">23.40</field>
-            <field name="notes">Precio Marzo 2024</field>
+            <field name="date">2025-07-01</field>
+            <field name="price">25.10</field>
+            <field name="notes">Precio Diesel Julio 2025</field>
         </record>
         <record id="demo_fuel_price_4" model="tms.fuel.history">
-            <field name="date">2024-04-01</field>
-            <field name="price">23.55</field>
-            <field name="notes">Precio Abril 2024</field>
+            <field name="date">2025-10-01</field>
+            <field name="price">25.28</field>
+            <field name="notes">Precio Diesel Octubre 2025</field>
+        </record>
+        <record id="demo_fuel_price_5" model="tms.fuel.history">
+            <field name="date">2026-01-01</field>
+            <field name="price">25.45</field>
+            <field name="notes">Precio Diesel Enero 2026</field>
+        </record>
+        <record id="demo_fuel_price_6" model="tms.fuel.history">
+            <field name="date">2026-03-01</field>
+            <field name="price">25.52</field>
+            <field name="notes">Precio Diesel Marzo 2026</field>
         </record>
 
     </data>

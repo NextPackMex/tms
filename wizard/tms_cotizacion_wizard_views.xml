@@ -28,6 +28,9 @@
                 <field name="ruta_calculada" invisible="1"/>
                 <field name="currency_id" invisible="1"/>
                 <field name="company_id" invisible="1"/>
+                <field name="force_api_call" invisible="1"/>
+                <field name="manual_route_entry" invisible="1"/>
+                <field name="route_data_source" invisible="1"/>
 
                 <!-- ===== BARRA DE PROGRESO ===== -->
                 <div class="d-flex align-items-center mb-3 px-2 py-2 bg-light rounded">
@@ -53,18 +56,29 @@
                     <!-- SECCIÓN 1: CONFIGURACIÓN DEL VIAJE -->
                     <group string="🚛 CONFIGURACIÓN DEL VIAJE">
                         <group>
-                            <field name="origin_zip" placeholder="Ej: 64000"/>
-                            <field name="dest_zip" placeholder="Ej: 06600"/>
+                            <label for="origin_zip"/>
+                            <div class="d-flex flex-column">
+                                <field name="origin_zip" placeholder="Ej: 64000"/>
+                                <field name="origin_city" readonly="1" nolabel="1" class="text-muted fst-italic" invisible="not origin_city"/>
+                            </div>
+
+                            <label for="dest_zip"/>
+                            <div class="d-flex flex-column">
+                                <field name="dest_zip" placeholder="Ej: 06600"/>
+                                <field name="dest_city" readonly="1" nolabel="1" class="text-muted fst-italic" invisible="not dest_city"/>
+                            </div>
                         </group>
                         <group>
                             <field name="num_axles" string="Número de Ejes"/>
+                            <field name="force_api_call" string="Forzar consulta API"
+                                   invisible="not ruta_calculada"/>
                         </group>
                     </group>
 
                     <!-- SECCIÓN 2: COSTOS OPERATIVOS -->
                     <group string="⛽ COSTOS OPERATIVOS">
                         <p class="text-muted ms-2" colspan="2">
-                            <i class="fa fa-info-circle"/>
+                            <i class="fa fa-info-circle" title="Info"/>
  Estas variables calculan la Propuesta B
                         </p>
                         <group>
@@ -82,7 +96,7 @@
                     <!-- SECCIÓN 3: PRECIO POR KILÓMETRO -->
                     <group string="📐 PRECIO POR KILÓMETRO">
                         <p class="text-muted ms-2" colspan="2">
-                            <i class="fa fa-info-circle"/>
+                            <i class="fa fa-info-circle" title="Info"/>
  Esta variable calcula la Propuesta A
                         </p>
                         <group>
@@ -96,7 +110,7 @@
                     <!-- SECCIÓN 4: PRECIO DIRECTO -->
                     <group string="💰 PRECIO DIRECTO">
                         <p class="text-muted ms-2" colspan="2">
-                            <i class="fa fa-info-circle"/>
+                            <i class="fa fa-info-circle" title="Info"/>
  Propuesta C — captura tarifa fija
                         </p>
                         <group>
@@ -105,6 +119,12 @@
                     </group>
 
                     <!-- SECCIÓN 5: RESULTADO DE RUTA -->
+                    <div class="alert alert-info mb-2 ms-2 me-2" role="alert"
+                         invisible="not route_data_source">
+                        <i class="fa fa-info-circle me-1" title="Fuente de datos"/>
+                        <field name="route_data_source" nolabel="1" readonly="1" class="d-inline"/>
+                    </div>
+
                     <group string="📊 RESULTADO DE RUTA" invisible="not ruta_calculada">
                         <group>
                             <field name="distance_km"/>
@@ -114,6 +134,19 @@
                         <group>
                             <field name="cost_diesel_total"/>
                             <field name="cost_total_estimated"/>
+                        </group>
+                    </group>
+
+                    <!-- CAPTURA MANUAL (cuando API no disponible) -->
+                    <group string="CAPTURA MANUAL DE RUTA" invisible="not manual_route_entry">
+                        <p class="text-warning ms-2" colspan="2">
+                            <i class="fa fa-exclamation-triangle" title="Advertencia"/>
+                            TollGuru no disponible. Capture los datos manualmente.
+                        </p>
+                        <group>
+                            <field name="distance_km" readonly="0" string="Distancia (Km)"/>
+                            <field name="duration_hours" readonly="0" string="Duracion (Hrs)"/>
+                            <field name="toll_cost" readonly="0" string="Casetas ($)"/>
                         </group>
                     </group>
 
@@ -138,7 +171,7 @@
                     <!-- SECCIÓN 7: CARGA (BÁSICO) -->
                     <group string="📦 CARGA">
                         <p class="text-muted ms-2" colspan="2">
-                            <i class="fa fa-info-circle"/>
+                            <i class="fa fa-info-circle" title="Info"/>
  Captura una descripción general de la carga. Los datos fiscales completos se pedirán al aprobar la cotización.
                         </p>
                         <field name="line_ids" nolabel="1" colspan="2">
@@ -175,40 +208,16 @@
                         <field name="cp_type" widget="radio"/>
                     </group>
 
-                    <!-- Cliente y Contactos -->
+                    <!-- Cliente Facturación -->
                     <group string="👤 Actores del Viaje">
                         <group>
                             <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
                             <field name="partner_invoice_street" string="Domicilio Fiscal" readonly="1"/>
-                            <field name="partner_origin_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
-                            <field name="partner_origin_street" readonly="1"/>
-                            <field name="origin_address" placeholder="Calle y número de origen"/>
-                        </group>
-                        <group>
-                            <field name="partner_dest_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
-                            <field name="partner_dest_street" readonly="1"/>
-                            <field name="dest_address" placeholder="Calle y número de destino"/>
                         </group>
                     </group>
 
-                    <!-- Mercancías y Unidad -->
+                    <!-- Unidad y Notas -->
                     <notebook>
-                        <page string="📦 Mercancías Detalle fiscal">
-                            <field name="line_ids">
-                                <list editable="bottom">
-                                    <field name="product_sat_id"/>
-                                    <field name="description"/>
-                                    <field name="quantity"/>
-                                    <field name="uom_sat_id"/>
-                                    <field name="weight_kg"/>
-                                    <field name="is_dangerous"/>
-                                    <field name="material_peligroso_id" optional="hide"/>
-                                    <field name="embalaje_id" optional="hide"/>
-                                    <field name="sec_cofepris" optional="hide"/>
-                                    <field name="ing_activo" optional="hide"/>
-                                </list>
-                            </field>
-                        </page>
                         <page string="🚛 Unidad">
                             <group>
                                 <group>
@@ -235,8 +244,9 @@
                 ================================================ -->
                 <footer>
                     <!-- Paso 1 -->
-                    <button name="action_calcular_ruta" type="object" string="🧮 Calcular Ruta y Propuestas" class="btn-primary" invisible="step != '1'"/>
-                    <button name="action_aprobar_propuesta" type="object" string="✅ Aprobar y Continuar →" class="btn-success" invisible="step != '1' or not ruta_calculada or not selected_proposal"/>
+                    <button name="action_calcular_ruta" type="object" string="Calcular Ruta y Propuestas" class="btn-primary" invisible="step != '1' or manual_route_entry"/>
+                    <button name="action_manual_route_confirm" type="object" string="Confirmar Datos Manuales" class="btn-warning" invisible="step != '1' or not manual_route_entry"/>
+                    <button name="action_aprobar_propuesta" type="object" string="Aprobar y Continuar" class="btn-success" invisible="step != '1' or not ruta_calculada or not selected_proposal"/>
 
                     <!-- Paso 2 -->
                     <button name="action_crear_waybill" type="object" string="🚚 Crear Viaje" class="btn-primary" invisible="step != '2'"/>
@@ -250,6 +260,5 @@
         </field>
     </record>
 
-    <menuitem id="menu_tms_nueva_cotizacion" name="Nueva Cotización" parent="menu_tms_operations" action="action_tms_cotizacion_wizard" sequence="1" groups="tms.group_tms_user,tms.group_tms_manager"/>
 
 </odoo>

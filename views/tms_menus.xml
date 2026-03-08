@@ -89,4 +89,7 @@
         se definen en sat_menus.xml
     -->
 
+    <!-- Nueva Cotización (acción definida en tms_cotizacion_wizard_views.xml) -->
+    <menuitem id="menu_tms_nueva_cotizacion" name="Nueva Cotización" parent="menu_tms_operations" action="action_tms_cotizacion_wizard" sequence="1" groups="tms.group_tms_user,tms.group_tms_manager"/>
+
 </odoo>
