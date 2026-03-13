@@ -248,13 +248,7 @@ class FleetVehicle(models.Model):
         help='Segundo remolque (para configuraciones de doble remolque - misma empresa)'
     )
 
-    # Float: rendimiento de combustible
-    # Importante para calcular costo por KM
-    performance_km_l = fields.Float(
-        string='Rendimiento (Km/L)',
-        digits=(10, 2),
-        help='Rendimiento promedio en kilómetros por litro'
-    )
+
 
     # ============================================================
     # CAMPOS COMPUTADOS
@@ -380,7 +374,7 @@ class FleetVehicle(models.Model):
             self.is_trailer = False # No puede llevar remolque
             self.trailer1_id = False
             self.trailer2_id = False
-            self.performance_km_l = 0.0
+            self.tms_fuel_performance = 0.0
 
     @api.onchange('is_trailer')
     def _onchange_is_trailer(self):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 import requests
 import json
 import uuid
@@ -88,6 +89,8 @@ class TmsWaybill(models.Model):
     state = fields.Selection(
         string='Estado',
         selection=[
+            ('cotizado', 'Cotizado'),
+            ('aprobado', 'Aprobado'),
             ('draft', 'Solicitud'),
             ('en_pedido', 'En Pedido'),
             ('assigned', 'Por Asignar'),
@@ -98,7 +101,7 @@ class TmsWaybill(models.Model):
             ('cancel', 'Cancelado'),
             ('rejected', 'Rechazado'),  # Agregado para rechazo desde portal
         ],
-        default='draft',
+        default='cotizado',
         required=True,
         tracking=True,
         group_expand='_expand_states',
@@ -229,7 +232,7 @@ class TmsWaybill(models.Model):
 
     # Mantener waybill_type por compatibilidad o usar cp_type como principal
     waybill_type = fields.Selection(
-        string='Tipo de Carta Porte (Legacy)',
+        string='Tipo de Carta Porte',
         selection=[
             ('income', 'Ingreso (Flete Cobrado)'),
             ('transfer', 'Traslado (Sin Cobro)'),
@@ -239,6 +242,59 @@ class TmsWaybill(models.Model):
         tracking=True,
         help='Tipo de operación: Ingreso (cobra flete) o Traslado (sin cobro)'
     )
+
+    # ============================================================
+    # PRIORIDAD Y COLOR KANBAN
+    # ============================================================
+
+    # Prioridad del viaje — Se muestra como estrellas en el kanban
+    priority = fields.Selection(
+        selection=[
+            ('0', 'Normal'),
+            ('1', 'Urgente'),
+            ('2', 'Muy Urgente'),
+            ('3', 'Crítico'),
+        ],
+        string='Prioridad',
+        default='0',
+        tracking=True,
+        index=True,
+        help='Nivel de urgencia del viaje. Se muestra como estrellas en el kanban.'
+    )
+
+    # Color kanban: entero 0-11 que Odoo mapea a colores de la paleta estándar.
+    # Se asigna automáticamente según el estado con un compute.
+    color = fields.Integer(
+        string='Color Kanban',
+        compute='_compute_kanban_color',
+        store=True,
+        help='Color de la banda lateral en el kanban, calculado desde el estado del viaje.'
+    )
+
+    # Mapa estado → color Odoo (paleta 0-11)
+    # 0=sin color, 1=rojo, 2=naranja, 3=amarillo, 4=azul claro,
+    # 5=morado, 6=salmon, 7=gris medio, 8=azul marino, 9=fucsia,
+    # 10=verde, 11=morado oscuro
+    _STATE_COLOR_MAP = {
+        'cotizado': 0,      # gris
+        'aprobado': 0,      # gris
+        'draft': 0,         # gris (sin acento)
+        'en_pedido': 4,     # azul claro
+        'assigned': 3,      # amarillo
+        'waybill': 5,       # morado
+        'in_transit': 10,   # verde
+        'arrived': 10,      # verde (llegó)
+        'closed': 7,        # gris medio (cerrado)
+        'cancel': 1,        # rojo
+        'rejected': 6,      # salmon
+    }
+
+    @api.depends('state')
+    def _compute_kanban_color(self):
+        """Asigna el color de la banda lateral del kanban según el estado del viaje."""
+        for rec in self:
+            rec.color = self._STATE_COLOR_MAP.get(rec.state, 0)
+
 
     # ============================================================
     # ACTORES: CLIENTE DE FACTURACIÓN (Quién Paga)
@@ -301,6 +357,12 @@ class TmsWaybill(models.Model):
         size=5,
     )
 
+    origin_city_name = fields.Char(
+        string='Ciudad Origen',
+        compute='_compute_city_names',
+        store=False,
+    )
+
     # Char: dirección origen (calle y número)
     origin_address = fields.Char(
         string='Dirección Origen',
@@ -338,6 +400,12 @@ class TmsWaybill(models.Model):
     dest_zip = fields.Char(
         string='CP Destino',
         size=5,
+    )
+
+    dest_city_name = fields.Char(
+        string='Ciudad Destino',
+        compute='_compute_city_names',
+        store=False,
     )
 
     # Char: dirección destino (calle y número)
@@ -437,15 +505,24 @@ class TmsWaybill(models.Model):
             self.duration_hours = 0.0
             self.cost_tolls = 0.0
 
-    @api.depends('partner_origin_id', 'partner_dest_id')
+    @api.depends('partner_origin_id', 'partner_dest_id', 'origin_zip', 'dest_zip')
     def _compute_route_name(self):
         """
         Calcula el nombre de la ruta.
-        Formato: "Ciudad/Nombre Origen → Ciudad/Nombre Destino"
+        Formato: "Ciudad Origen → Ciudad Destino"
+        Fallback: busca ciudad por CP si no hay partner/city.
         """
         for record in self:
-            origin = record.partner_origin_id.city or record.partner_origin_id.name or "?"
-            dest = record.partner_dest_id.city or record.partner_dest_id.name or "?"
+            origin = (record.partner_origin_id.city
+                      or record.partner_origin_id.name
+                      or record._get_city_from_zip(record.origin_zip)
+                      or record.origin_zip
+                      or "?")
+            dest = (record.partner_dest_id.city
+                    or record.partner_dest_id.name
+                    or record._get_city_from_zip(record.dest_zip)
+                    or record.dest_zip
+                    or "?")
             record.route_name = f"{origin} → {dest}"
 
     # ============================================================
@@ -459,7 +536,6 @@ class TmsWaybill(models.Model):
         string='Vehículo (Tractor)',
         domain="[('tms_is_trailer', '=', False), ('company_id', '=', company_id)]",
         check_company=True,
-        required=True,
         tracking=True,
         help='Tractocamión asignado al viaje'
     )
@@ -470,12 +546,7 @@ class TmsWaybill(models.Model):
         Al seleccionar vehículo, traer su rendimiento.
         """
         if self.vehicle_id:
-            # Check if tms_fuel_performance is set, otherwise default to performance_km_l or fallback
-            if self.vehicle_id.tms_fuel_performance:
-                self.fuel_performance = self.vehicle_id.tms_fuel_performance
-            else:
-                self.fuel_performance = self.vehicle_id.performance_km_l
-
+            self.fuel_performance = self.vehicle_id.tms_fuel_performance
 
     # Many2one: chofer asignado (Empleados)
     driver_id = fields.Many2one(
@@ -490,7 +561,7 @@ class TmsWaybill(models.Model):
     # Boolean: Indica si el viaje REQUIERE remolque forzosamente
     # Si es True, no se permite avanzar a Carta Porte sin trailer1_id
     require_trailer = fields.Boolean(
-        string='Lleva Caja/Remolque',
+        string='Lleva Remolque',
         default=False,
         help='Si se marca, es obligatorio asignar un remolque antes de generar la Carta Porte.'
     )
@@ -498,11 +569,16 @@ class TmsWaybill(models.Model):
     @api.onchange('require_trailer')
     def _onchange_require_trailer(self):
         """
-        Si se desmarca 'Lleva Caja/Remolque', se limpian los campos de remolque.
+        Si se desmarca 'Lleva Remolque', se limpian todos los campos de remolque
+        y se fuerza el recálculo de ejes en la interfaz.
         """
         if not self.require_trailer:
-            self.trailer1_id = False
-            self.trailer2_id = False
+            self.update({
+                'trailer1_id': False,
+                'dolly_id': False,
+                'trailer2_id': False,
+            })
+            self._compute_total_axles()
 
     # Many2one: remolque 1
     trailer1_id = fields.Many2one(
@@ -540,21 +616,30 @@ class TmsWaybill(models.Model):
         help='Suma de ejes del Tractor + Remolque 1 + Remolque 2'
     )
 
-    @api.depends('vehicle_id.tms_num_axles',
+    @api.depends('require_trailer',
+                 'vehicle_id.tms_num_axles',
                  'trailer1_id.tms_num_axles',
                  'dolly_id.tms_num_axles',
                  'trailer2_id.tms_num_axles')
     def _compute_total_axles(self):
+        """
+        Calcula el total de ejes del viaje sumando el tracto y,
+        si 'Lleva Remolque' está activo, sus componentes de arrastre.
+        """
         for record in self:
-            total = 0
-            if record.vehicle_id:
-                total += record.vehicle_id.tms_num_axles or 0
-            if record.trailer1_id:
-                total += record.trailer1_id.tms_num_axles or 0
-            if record.dolly_id:
-                total += record.dolly_id.tms_num_axles or 0
-            if record.trailer2_id:
-                total += record.trailer2_id.tms_num_axles or 0
+            # Primero obtenemos los ejes del tractor (base siempre presente)
+            total = record.vehicle_id.tms_num_axles if record.vehicle_id else 0
+            
+            # Solo se suman remolques si el toggle está activo. 
+            # Si está inactivo, ignoramos cualquier valor remanente en los campos.
+            if record.require_trailer:
+                if record.trailer1_id:
+                    total += record.trailer1_id.tms_num_axles or 0
+                if record.dolly_id:
+                    total += record.dolly_id.tms_num_axles or 0
+                if record.trailer2_id:
+                    total += record.trailer2_id.tms_num_axles or 0
+            
             record.total_axles = total
 
     # ============================================================
@@ -894,6 +979,20 @@ class TmsWaybill(models.Model):
         string='Bitácora de Eventos'
     )
 
+    # Contador de eventos GPS para el smart button
+    tracking_count = fields.Integer(
+        string='Eventos GPS',
+        compute='_compute_tracking_count',
+        store=False,
+        help='Número de eventos de rastreo registrados en este viaje'
+    )
+
+    @api.depends('tracking_event_ids')
+    def _compute_tracking_count(self):
+        """Cuenta los eventos GPS para mostrar en el smart button."""
+        for rec in self:
+            rec.tracking_count = len(rec.tracking_event_ids)
+
     # Text: motivo de rechazo desde el portal
     # Se captura cuando el cliente rechaza la cotización desde el portal
     rejection_reason = fields.Text(
@@ -917,6 +1016,22 @@ class TmsWaybill(models.Model):
             'target': 'new',  # <--- 'new' fuerza la nueva pestaña
             'url': self.get_portal_url(),
         }
+
+    def action_approve_quotation(self):
+        """Transición cotizado → aprobado. El cliente aceptó el precio."""
+        self.ensure_one()
+        if self.state != 'cotizado':
+            raise UserError(_("Solo se pueden aprobar viajes en estado Cotizado."))
+        self.write({'state': 'aprobado'})
+        return True
+
+    def action_confirm_order(self):
+        """Transición aprobado → draft. Datos completos, confirmar pedido."""
+        self.ensure_one()
+        if self.state != 'aprobado':
+            raise UserError(_("Solo se pueden confirmar viajes en estado Aprobado."))
+        self.write({'state': 'draft'})
+        return True
 
     def action_assign(self):
         """
@@ -1032,16 +1147,45 @@ class TmsWaybill(models.Model):
         help='Mercancías transportadas en el viaje'
     )
 
-    @api.depends('amount_untaxed')
+    # Contador de mercancías para el smart button
+    line_count = fields.Integer(
+        string='Cant. Mercancías',
+        compute='_compute_line_count',
+        store=False,
+        help='Número de líneas de mercancía registradas en este viaje'
+    )
+
+    has_dangerous_lines = fields.Boolean(
+        compute='_compute_has_dangerous_lines',
+        store=False,
+    )
+
+    @api.depends('line_ids.is_dangerous')
+    def _compute_has_dangerous_lines(self):
+        for rec in self:
+            rec.has_dangerous_lines = any(l.is_dangerous for l in rec.line_ids)
+
+    @api.depends('line_ids')
+    def _compute_line_count(self):
+        """Cuenta las líneas de mercancía para mostrar en el smart button."""
+        for rec in self:
+            rec.line_count = len(rec.line_ids)
+
+    @api.depends('amount_untaxed', 'partner_invoice_id', 'partner_invoice_id.is_company')
     def _compute_amount_all(self):
         """
         Calcula impuestos y total final.
-        Asume IVA 16% y Retención 4%.
+        Asume IVA 16% y Retención 4% (sólo si es persona moral).
         """
         for record in self:
             base = record.amount_untaxed
             iva = base * 0.16
-            ret = base * 0.04
+            
+            # Retención 4% solo si cliente es persona moral
+            if record.partner_invoice_id and record.partner_invoice_id.is_company:
+                ret = base * 0.04
+            else:
+                ret = 0.0
 
             record.amount_tax = iva
             record.amount_retention = ret
@@ -1092,7 +1236,8 @@ class TmsWaybill(models.Model):
 
     @api.depends('distance_km', 'extra_distance_km', 'price_per_km', 'cost_diesel_total',
                  'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other', 'cost_commission',
-                 'profit_margin_percent', 'proposal_direct_amount', 'selected_proposal')
+                 'profit_margin_percent', 'proposal_direct_amount', 'selected_proposal',
+                 'partner_invoice_id', 'partner_invoice_id.is_company')
     def _compute_proposal_values(self):
         """
         Calcula las 3 propuestas de cotización automáticamente.
@@ -1118,6 +1263,11 @@ class TmsWaybill(models.Model):
             total_costs = record.cost_diesel_total + record.cost_tolls + record.cost_driver + record.cost_maneuver + record.cost_other + record.cost_commission
             # Precio Venta = Costo Total / (1 - Margen%)
             margin_factor = 1 - (record.profit_margin_percent / 100)
+            
+            # Ajuste de Retención 4% si es persona moral
+            if record.partner_invoice_id and record.partner_invoice_id.is_company:
+                margin_factor -= 0.04
+                
             if margin_factor > 0:
                 record.proposal_trip_total = total_costs / margin_factor
             else:
@@ -1291,6 +1441,34 @@ class TmsWaybill(models.Model):
 
 
     # ============================================================
+    # COMPUTE: Nombre de ciudad a partir del CP
+    # ============================================================
+
+    @api.depends('origin_zip', 'dest_zip')
+    def _compute_city_names(self):
+        for rec in self:
+            rec.origin_city_name = rec._get_city_from_zip(rec.origin_zip)
+            rec.dest_city_name = rec._get_city_from_zip(rec.dest_zip)
+
+    def _get_city_from_zip(self, zip_code):
+        if not zip_code:
+            return ''
+        cp = self.env['tms.sat.codigo.postal'].with_context(active_test=False).search(
+            [('code', '=', zip_code)], limit=1)
+        if not cp:
+            return ''
+        if cp.municipio and cp.estado:
+            muni = self.env['tms.sat.municipio'].search(
+                [('code', '=', cp.municipio), ('estado', '=', cp.estado)], limit=1)
+            if muni:
+                state = self.env['res.country.state'].search(
+                    ['|', ('code', '=', cp.estado), ('code', '=', f'MX-{cp.estado}'),
+                     ('country_id.code', '=', 'MX')], limit=1)
+                state_name = state.name if state else cp.estado
+                return f"{muni.name}, {state_name}"
+        return cp.estado or ''
+
+    # ============================================================
     # MÉTODO: Group Expand (CRÍTICO para Kanban)
     # ============================================================
 
@@ -1300,12 +1478,14 @@ class TmsWaybill(models.Model):
         Retorna la lista completa de estados.
         """
         return [
+            'cotizado',
+            'aprobado',
             'draft',
             'en_pedido',
             'assigned',
             'waybill',
             'in_transit',
-            'rejected',  # Agregado para rechazo desde portal
+            'rejected',
             'arrived',
             'closed',
             'cancel',
@@ -1319,6 +1499,71 @@ class TmsWaybill(models.Model):
 
     # Solución al duplicado: action_confirm ahora establece el estado 'en_pedido'
     # incorporando la lógica de validación existente.
+
+    # ============================================================
+    # SMART BUTTONS — Acciones de navegación rápida
+    # ============================================================
+
+    def action_nueva_cotizacion(self, *args, **kwargs):
+        """
+        Abre el wizard de cotización rápida.
+        Al no requerir self.ensure_one(), puede ejecutarse sobre recordsets
+        vacíos o múltiples registros desde list/kanban o form nuevo.
+        """
+        return {
+            'name': _('Nueva Cotización'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'tms.cotizacion.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {},
+        }
+
+    def action_view_lines(self):
+        """
+        Abre la lista de mercancías (tms.waybill.line) de este viaje.
+        Accionado desde el smart button de Mercancías.
+        """
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Mercancías — {self.name}',
+            'res_model': 'tms.waybill.line',
+            'view_mode': 'list,form',
+            'domain': [('waybill_id', '=', self.id)],
+            'context': {'default_waybill_id': self.id},
+        }
+
+    def action_view_tracking(self):
+        """
+        Abre la bitácora de eventos GPS (tms.tracking.event) de este viaje.
+        Accionado desde el smart button de Bitácora GPS.
+        """
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'Bitácora GPS — {self.name}',
+            'res_model': 'tms.tracking.event',
+            'view_mode': 'list,form',
+            'domain': [('waybill_id', '=', self.id)],
+            'context': {'default_waybill_id': self.id},
+        }
+
+    def action_view_vehicle(self):
+        """
+        Abre la ficha del vehículo (fleet.vehicle) asignado a este viaje.
+        Accionado desde el smart button de Vehículo.
+        """
+        self.ensure_one()
+        if not self.vehicle_id:
+            return {}
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Vehículo',
+            'res_model': 'fleet.vehicle',
+            'view_mode': 'form',
+            'res_id': self.vehicle_id.id,
+        }
 
     def action_set_en_pedido(self):
         """
@@ -1823,13 +2068,41 @@ class TmsWaybill(models.Model):
             'context': ctx,
         }
 
+    def write(self, vals):
+        """
+        Purga de datos técnica: Si se desactiva 'require_trailer',
+        vaciamos forzosamente los campos de remolque para mantener integridad.
+        """
+        if 'require_trailer' in vals and not vals['require_trailer']:
+            vals.update({
+                'trailer1_id': False,
+                'dolly_id': False,
+                'trailer2_id': False,
+            })
+        return super(TmsWaybill, self).write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         """
-        Genera folio automático para cada viaje.
-        Formato: VJ/0001, VJ/0002, etc.
+        Validar que los viajes se creen mediante el Wizard de cotización.
+        Genera folio automático para cada viaje (VJ/0001, VJ/0002, etc).
         """
         for vals in vals_list:
+            # Validación de procedencia
+            if not vals.get('partner_invoice_id') and not self.env.context.get('from_wizard'):
+                raise UserError(
+                    _('Los viajes deben crearse desde el wizard de cotización. '
+                      'Use el botón "Nueva Cotización" en el tablero.')
+                )
+
+            # Asegurar limpieza inicial si require_trailer viene en False
+            if vals.get('require_trailer') is False:
+                vals.update({
+                    'trailer1_id': False,
+                    'dolly_id': False,
+                    'trailer2_id': False,
+                })
+            
             if vals.get('name', 'Nuevo') == 'Nuevo':
                 vals['name'] = self.env['ir.sequence'].next_by_code('tms.waybill') or 'Nuevo'
         return super(TmsWaybill, self).create(vals_list)
@@ -1905,10 +2178,12 @@ class TmsWaybillLine(models.Model):
         help='Peso total de la mercancía en kilogramos'
     )
 
-    # Char: dimensiones (opcional)
+    # Char: dimensiones (opcional) — SAT Carta Porte 3.1
+    # Patrón XSD: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)
     dimensions = fields.Char(
         string='Dimensiones',
-        help='Dimensiones de la mercancía (ej: 1.2m x 0.8m x 0.5m)'
+        size=15,
+        help='Largo/Alto/Ancho en cm o plg. Ej: 30/40/30cm (máx 999 por medida)'
     )
 
     # Boolean: es material peligroso
@@ -1977,6 +2252,20 @@ class TmsWaybillLine(models.Model):
         string='Unidad Pureza',
         help='Unidad de medida de la pureza.'
     )
+
+    @api.constrains('dimensions')
+    def _check_dimensions_format(self):
+        """Valida formato SAT Carta Porte 3.1: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)?"""
+        sat_pattern = re.compile(r'^([0-9]{1,3}/){2}[0-9]{1,3}(cm|plg)?$')
+        for line in self:
+            if line.dimensions and not sat_pattern.match(line.dimensions):
+                raise ValidationError(_(
+                    'Dimensiones "%(dim)s" no cumple formato SAT.\n'
+                    'Formato: Largo/Alto/Ancho (unidad opcional: cm o plg)\n'
+                    'Ejemplos: 9/9/9, 30/40/30cm, 120/80/50plg\n'
+                    'Máximo 999 por medida.',
+                    dim=line.dimensions,
+                ))
 
 
 class TmsWaybillCustomsRegime(models.Model):

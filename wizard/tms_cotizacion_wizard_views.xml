@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================
+         ACCIÓN: Abrir wizard desde menú o botón
+         binding_model_id: aparece automáticamente en list y kanban de tms.waybill
+    ============================================================ -->
+    <record id="action_tms_cotizacion_wizard" model="ir.actions.act_window">
+        <field name="name">Nueva Cotización</field>
+        <field name="res_model">tms.cotizacion.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_tms_waybill"/>
+        <field name="binding_view_types">list,kanban</field>
+    </record>
+
+    <!-- ============================================================
+         VISTA: Wizard Cotización Multi-Paso
+    ============================================================ -->
+    <record id="view_tms_cotizacion_wizard_form" model="ir.ui.view">
+        <field name="name">tms.cotizacion.wizard.form</field>
+        <field name="model">tms.cotizacion.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Nueva Cotización de Viaje">
+
+                <!-- Campos de control (invisibles) -->
+                <field name="step" invisible="1"/>
+                <field name="ruta_calculada" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+                <field name="force_api_call" invisible="1"/>
+                <field name="manual_route_entry" invisible="1"/>
+                <field name="route_data_source" invisible="1"/>
+
+                <!-- ===== BARRA DE PROGRESO ===== -->
+                <div class="d-flex align-items-center mb-3 px-2 py-2 bg-light rounded">
+                    <div class="me-3">
+                        <span class="badge rounded-pill bg-primary fs-6" invisible="step != '1'">1</span>
+                        <span class="badge rounded-pill bg-secondary fs-6" invisible="step == '1'">1</span>
+                        <span class="ms-1 fw-bold">Cotización Rápida</span>
+                    </div>
+                    <span class="text-muted me-3">›</span>
+                    <div>
+                        <span class="badge rounded-pill bg-primary fs-6" invisible="step != '2'">2</span>
+                        <span class="badge rounded-pill bg-secondary fs-6" invisible="step == '2'">2</span>
+                        <span class="ms-1 fw-bold text-muted" invisible="step == '2'">Datos del Viaje</span>
+                        <span class="ms-1 fw-bold" invisible="step != '2'">Datos del Viaje</span>
+                    </div>
+                </div>
+
+                <!-- ================================================
+                     PASO 1: COTIZACIÓN RÁPIDA
+                ================================================ -->
+                <div invisible="step != '1'">
+
+                    <!-- SECCIÓN 1: CONFIGURACIÓN DEL VIAJE -->
+                    <group string="🚛 CONFIGURACIÓN DEL VIAJE">
+                        <group>
+                            <label for="origin_zip"/>
+                            <div class="d-flex flex-column">
+                                <field name="origin_zip" placeholder="Ej: 64000"/>
+                                <field name="origin_city" readonly="1" nolabel="1" class="text-muted fst-italic" invisible="not origin_city"/>
+                            </div>
+
+                            <label for="dest_zip"/>
+                            <div class="d-flex flex-column">
+                                <field name="dest_zip" placeholder="Ej: 06600"/>
+                                <field name="dest_city" readonly="1" nolabel="1" class="text-muted fst-italic" invisible="not dest_city"/>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="num_axles" string="Número de Ejes"/>
+                            <field name="force_api_call" string="Forzar consulta API"
+                                   invisible="not ruta_calculada"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 2: COSTOS OPERATIVOS -->
+                    <group string="⛽ COSTOS OPERATIVOS">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle" title="Info"/>
+ Estas variables calculan la Propuesta B
+                        </p>
+                        <group>
+                            <field name="fuel_price"/>
+                            <field name="cost_driver"/>
+                            <field name="cost_other"/>
+                        </group>
+                        <group>
+                            <field name="fuel_performance" string="Rendimiento (Km/L)"/>
+                            <field name="cost_maneuver"/>
+                            <field name="cost_commission"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 3: PRECIO POR KILÓMETRO -->
+                    <group string="📐 PRECIO POR KILÓMETRO">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle" title="Info"/>
+ Esta variable calcula la Propuesta A
+                        </p>
+                        <group>
+                            <field name="price_per_km"/>
+                        </group>
+                        <group>
+                            <field name="profit_margin_percent" string="Margen de Utilidad (%)"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 4: PRECIO DIRECTO -->
+                    <group string="💰 PRECIO DIRECTO">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle" title="Info"/>
+ Propuesta C — captura tarifa fija
+                        </p>
+                        <group>
+                            <field name="direct_price" string="Precio Directo ($)" required="True"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 5: RESULTADO DE RUTA -->
+                    <div class="alert alert-info mb-2 ms-2 me-2" role="alert"
+                         invisible="not route_data_source">
+                        <i class="fa fa-info-circle me-1" title="Fuente de datos"/>
+                        <field name="route_data_source" nolabel="1" readonly="1" class="d-inline"/>
+                    </div>
+
+                    <group string="📊 RESULTADO DE RUTA" invisible="not ruta_calculada">
+                        <group>
+                            <field name="distance_km"/>
+                            <field name="duration_hours"/>
+                            <field name="toll_cost"/>
+                        </group>
+                        <group>
+                            <field name="cost_diesel_total"/>
+                            <field name="cost_total_estimated"/>
+                        </group>
+                    </group>
+
+                    <!-- CAPTURA MANUAL (cuando API no disponible) -->
+                    <group string="CAPTURA MANUAL DE RUTA" invisible="not manual_route_entry">
+                        <p class="text-warning ms-2" colspan="2">
+                            <i class="fa fa-exclamation-triangle" title="Advertencia"/>
+                            TollGuru no disponible. Capture los datos manualmente.
+                        </p>
+                        <group>
+                            <field name="distance_km" readonly="0" string="Distancia (Km)"/>
+                            <field name="duration_hours" readonly="0" string="Duracion (Hrs)"/>
+                            <field name="toll_cost" readonly="0" string="Casetas ($)"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 6: SELECCIONA UNA PROPUESTA -->
+                    <group string="🚛 SELECCIONA UNA PROPUESTA" invisible="not ruta_calculada">
+                        <group col="3">
+                            <group string="A — Por KM">
+                                <field name="proposal_km_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
+                            <group string="B — Por Viaje">
+                                <field name="proposal_trip_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
+                            <group string="C — Directo">
+                                <field name="direct_price" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                            </group>
+                        </group>
+                        <group>
+                            <field name="selected_proposal" widget="radio" options="{'horizontal': true}"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 7: CARGA (BÁSICO) -->
+                    <group string="📦 CARGA">
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle" title="Info"/>
+ Captura una descripción general de la carga. Los datos fiscales completos se pedirán al aprobar la cotización.
+                        </p>
+                        <field name="line_ids" nolabel="1" colspan="2">
+                            <list editable="bottom">
+                                <field name="description" string="¿Qué llevas?" required="True"/>
+                                <field name="quantity" string="Cantidad"/>
+                                <field name="weight_kg" string="Peso (Kg)"/>
+                            </list>
+                        </field>
+                    </group>
+
+                </div>
+
+                <!-- ================================================
+                     PASO 2: DATOS COMPLETOS DEL VIAJE
+                ================================================ -->
+                <div invisible="step != '2'">
+
+                    <!-- Resumen aprobado -->
+                    <div class="alert alert-success mb-3" role="alert">
+                        <strong>✅ Propuesta aprobada:</strong>
+                        <field name="amount_approved" nolabel="1" readonly="1"/>
+                        &amp;nbsp;|&amp;nbsp;
+                        <strong>Ruta:</strong>
+                        <field name="origin_zip" nolabel="1" readonly="1"/>
+                        →
+                        <field name="dest_zip" nolabel="1" readonly="1"/>
+                        (                        <field name="distance_km" nolabel="1" readonly="1"/>
+ km)
+                    </div>
+
+                    <!-- Tipo de operación -->
+                    <group string="📋 Tipo de Operación">
+                        <field name="cp_type" widget="radio"/>
+                    </group>
+
+                    <!-- Cliente Facturación -->
+                    <group string="👤 Actores del Viaje">
+                        <group>
+                            <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
+                            <field name="partner_invoice_street" string="Domicilio Fiscal" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <!-- Unidad y Notas -->
+                    <notebook>
+                        <page string="🚛 Unidad">
+                            <group>
+                                <group>
+                                    <field name="vehicle_id" options="{'no_create_edit': True}"/>
+                                    <field name="driver_id" options="{'no_create_edit': True}" domain="[('tms_is_driver', '=', True)]"/>
+                                </group>
+                                <group>
+                                    <field name="require_trailer"/>
+                                    <field name="trailer1_id" invisible="not require_trailer" options="{'no_create_edit': True}"/>
+                                    <field name="dolly_id" invisible="not require_trailer" options="{'no_create_edit': True}"/>
+                                    <field name="trailer2_id" invisible="not require_trailer" options="{'no_create_edit': True}"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="📝 Notas">
+                            <field name="notes" placeholder="Instrucciones especiales, observaciones del cliente, etc."/>
+                        </page>
+                    </notebook>
+
+                </div>
+
+                <!-- ================================================
+                     FOOTER: BOTONES DINÁMICOS POR PASO
+                ================================================ -->
+                <footer>
+                    <!-- Paso 1 -->
+                    <button name="action_calcular_ruta" type="object" string="Calcular Ruta y Propuestas" class="btn-primary" invisible="step != '1' or manual_route_entry"/>
+                    <button name="action_manual_route_confirm" type="object" string="Confirmar Datos Manuales" class="btn-warning" invisible="step != '1' or not manual_route_entry"/>
+                    <button name="action_aprobar_propuesta" type="object" string="Aprobar y Continuar" class="btn-success" invisible="step != '1' or not ruta_calculada or not selected_proposal"/>
+
+                    <!-- Paso 2 -->
+                    <button name="action_crear_waybill" type="object" string="🚚 Crear Viaje" class="btn-primary" invisible="step != '2'"/>
+                    <button name="action_volver_paso1" type="object" string="← Atrás" class="btn-secondary" invisible="step != '2'"/>
+
+                    <!-- Siempre visible -->
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+
+            </form>
+        </field>
+    </record>
+
+
+</odoo>

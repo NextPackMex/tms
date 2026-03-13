@@ -1,0 +1,22 @@
+2026-03-04 22:45:13,702 19716 WARNING ? odoo.tools.config: unknown option 'timezone' in the config file at /Users/macbookpro/odoo/odoo19ce/proyectos/tms/odoo.conf, option stored as-is, without parsing 
+2026-03-04 22:45:13,702 19716 WARNING ? odoo.tools.config: missing --http-interface/http_interface, using 0.0.0.0 by default, will change to 127.0.0.1 in 20.0 
+2026-03-04 22:45:13,702 19716 INFO ? odoo: Odoo version 19.0 
+2026-03-04 22:45:13,703 19716 INFO ? odoo: Using configuration file at /Users/macbookpro/odoo/odoo19ce/proyectos/tms/odoo.conf 
+2026-03-04 22:45:13,703 19716 INFO ? odoo: addons paths: _NamespacePath(['/Users/macbookpro/odoo/odoo19ce/odoo-19.0/odoo/addons', '/Users/macbookpro/Library/Application Support/Odoo/addons/19.0', '/Users/macbookpro/odoo/odoo19ce/odoo-19.0/addons', '/Users/macbookpro/odoo/odoo19ce/proyectos', '/Users/macbookpro/odoo/odoo19ce/proyectos/tms']) 
+2026-03-04 22:45:13,703 19716 INFO ? odoo: database: default@default:default 
+2026-03-04 22:45:14,127 19716 INFO tms_nuevo odoo.modules.loading: loading 1 modules... 
+2026-03-04 22:45:14,132 19716 INFO tms_nuevo odoo.modules.loading: 1 modules loaded in 0.00s, 0 queries (+0 extra) 
+2026-03-04 22:45:14,162 19716 INFO tms_nuevo odoo.modules.loading: updating modules list 
+2026-03-04 22:45:14,165 19716 INFO tms_nuevo odoo.addons.base.models.ir_module: ALLOW access to module.update_list on [] to user __system__ #1 via n/a 
+2026-03-04 22:45:15,759 19716 INFO tms_nuevo odoo.addons.base.models.ir_module: ALLOW access to module.button_install on ['Nextpack Theme'] to user __system__ #1 via n/a 
+2026-03-04 22:45:15,814 19716 INFO tms_nuevo odoo.modules.loading: loading 73 modules... 
+2026-03-04 22:45:16,862 19716 INFO tms_nuevo odoo.modules.loading: Loading module tms_theme (73/73) 
+2026-03-04 22:45:17,136 19716 INFO tms_nuevo odoo.addons.base.models.ir_module: module tms_theme: no translation for language es_MX 
+2026-03-04 22:45:17,266 19716 INFO tms_nuevo odoo.modules.loading: Module tms_theme loaded in 0.40s, 19 queries (+19 other) 
+2026-03-04 22:45:17,266 19716 INFO tms_nuevo odoo.modules.loading: 73 modules loaded in 1.45s, 19 queries (+19 extra) 
+2026-03-04 22:45:18,622 19716 INFO tms_nuevo odoo.modules.loading: Modules loaded. 
+2026-03-04 22:45:18,708 19716 INFO tms_nuevo odoo.registry: Registry changed, signaling through the database 
+2026-03-04 22:45:18,709 19716 INFO tms_nuevo odoo.registry: Registry loaded in 4.630s 
+2026-03-04 22:45:18,709 19716 INFO tms_nuevo odoo.service.server: Initiating shutdown 
+2026-03-04 22:45:18,709 19716 INFO tms_nuevo odoo.service.server: Hit CTRL-C again or send a second signal to force the shutdown. 
+2026-03-04 22:45:18,709 19716 INFO tms_nuevo odoo.sql_db: ConnectionPool(read/write;used=0/count=0/max=64): Closed 1 connections  

@@ -8,49 +8,117 @@
         <field name="name">tms.waybill.kanban</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="true">
+            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="true" create="false" on_create="%(tms.action_tms_cotizacion_wizard)d">
+                <!-- Campos necesarios para la tarjeta kanban -->
                 <field name="name"/>
                 <field name="state"/>
+                <field name="color"/>
+                <field name="priority"/>
                 <field name="currency_id"/>
                 <field name="waybill_type"/>
                 <field name="partner_invoice_id"/>
                 <field name="amount_total"/>
                 <field name="route_name"/>
                 <field name="date_created"/>
+                <field name="vehicle_id"/>
+                <field name="driver_id"/>
+                <field name="distance_km"/>
+                <field name="duration_hours"/>
+
+                <!-- Definición de colores por valor del campo 'color' -->
+                <progressbar field="priority" colors="{&quot;0&quot;: &quot;success&quot;, &quot;1&quot;: &quot;warning&quot;, &quot;2&quot;: &quot;warning&quot;, &quot;3&quot;: &quot;danger&quot;}"/>
 
                 <templates>
                     <t t-name="card">
+                        <!-- ============================================================
+                             CABECERA: Folio + prioridad (estrellas) + tipo de carta porte
+                             ============================================================ -->
                         <div class="oe_kanban_card oe_kanban_global_click">
-                            <div class="o_kanban_record_top mb-2">
+                            <!-- Folio + estrellas de prioridad -->
+                            <div class="o_kanban_record_top mb-1 d-flex justify-content-between align-items-center">
                                 <div class="o_kanban_record_headings">
                                     <strong class="o_kanban_record_title">
                                         <field name="name"/>
                                     </strong>
-                                    <div class="text-muted">
-                                        <field name="partner_invoice_id"/>
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <!-- Estrellas de prioridad -->
+                                    <field name="priority" widget="priority"/>
+                                    <!-- Badge de tipo -->
+                                    <t t-if="record.waybill_type.raw_value == 'income'">
+                                        <span class="badge text-bg-info ms-1">Ingreso</span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="badge text-bg-secondary ms-1">Traslado</span>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- ============================================================
+                                 CLIENTE
+                                 ============================================================ -->
+                            <div class="text-muted small mb-2">
+                                <i class="fa fa-building me-1" title="Empresa"/>
+                                <field name="partner_invoice_id"/>
+                            </div>
+
+                            <!-- ============================================================
+                                 RUTA: Origen → Destino con distancia/tiempo
+                                 ============================================================ -->
+                            <div class="o_kanban_record_body mb-2">
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    <i class="fa fa-map-marker text-danger"/>
+                                    <span class="small text-muted">
+                                        <field name="route_name"/>
+                                    </span>
+                                </div>
+                                <t t-if="record.distance_km.raw_value">
+                                    <div class="d-flex gap-3 small text-muted">
+                                        <span>
+                                            <i class="fa fa-road me-1" title="Ruta"/>
+                                            <field name="distance_km"/>
+ km</span>
+                                        <span>
+                                            <i class="fa fa-clock-o me-1" title="Duración"/>
+                                            <field name="duration_hours"/>
+ h</span>
                                     </div>
-                                </div>
+                                </t>
                             </div>
-                            <div class="o_kanban_record_body">
-                                <span class="badge text-bg-success">
-                                    <field name="amount_total" widget="monetary"/>
-                                </span>
-                                <div class="text-muted small mt-1">
-                                    <field name="route_name"/>
+
+                            <!-- ============================================================
+                                 VEHÍCULO Y CHOFER
+                                 ============================================================ -->
+                            <t t-if="record.vehicle_id.raw_value">
+                                <div class="d-flex gap-3 small text-muted mb-2">
+                                    <span>
+                                        <i class="fa fa-truck me-1 text-primary" title="Vehículo"/>
+                                        <field name="vehicle_id"/>
+                                    </span>
+                                    <t t-if="record.driver_id.raw_value">
+                                        <span>
+                                            <i class="fa fa-user me-1 text-primary" title="Chofer"/>
+                                            <field name="driver_id"/>
+                                        </span>
+                                    </t>
                                 </div>
-                            </div>
-                            <div class="o_kanban_record_bottom mt-2">
+                            </t>
+
+                            <!-- ============================================================
+                                 FOOTER: Fecha + Monto
+                                 ============================================================ -->
+                            <div class="o_kanban_record_bottom mt-2 d-flex justify-content-between align-items-center">
                                 <div class="oe_kanban_bottom_left">
                                     <span class="text-muted small">
+                                        <i class="fa fa-calendar me-1" title="Fecha"/>
                                         <field name="date_created"/>
                                     </span>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
-                                    <t t-if="record.waybill_type.raw_value == 'income'">
-                                        <span class="badge text-bg-info">
-                                            Ingreso
-                                        </span>
-                                    </t>
+                                    <strong class="text-success">
+                                        <i class="fa fa-usd me-1" title="Precio"/>
+                                        <field name="amount_total" />
+                                    </strong>
                                 </div>
                             </div>
                         </div>
@@ -67,14 +135,17 @@
         <field name="name">tms.waybill.list</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <list string="Viajes">
+            <list string="Viajes" create="false">
+                <header>
+                    <button name="%(tms.action_tms_cotizacion_wizard)d" string="Nueva Cotización" type="action" class="btn-primary" icon="fa-plus"/>
+                </header>
                 <field name="name"/>
                 <field name="date_created"/>
                 <field name="partner_invoice_id"/>
                 <field name="route_name"/>
                 <field name="vehicle_id"/>
                 <field name="driver_id"/>
-                <field name="amount_total" widget="monetary"/>
+                <field name="amount_total" />
                 <!-- decoration-success: estado 'closed' (Facturado/Cerrado) resaltado en verde -->
                 <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'closed'"/>
                 <field name="company_id" column_invisible="True"/>
@@ -90,8 +161,10 @@
         <field name="name">tms.waybill.form</field>
         <field name="model">tms.waybill</field>
         <field name="arch" type="xml">
-            <form string="Viaje">
+            <form string="Viaje" create="false">
                 <header>
+                    <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
+                    <button name="action_confirm_order" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'aprobado'"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
                     <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
                     <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>
@@ -104,11 +177,30 @@
                     <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'in_transit'"/>
                     <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
                     <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
+                    <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
+                    <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['draft','en_pedido','assigned']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
-                    <field name="state" widget="statusbar" statusbar_visible="draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
+                    <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
 
                 <sheet>
+                    <!-- =============================================
+                         SMART BUTTONS: Navegación rápida y contadores
+                         ============================================= -->
+                    <div class="oe_button_box" name="button_box">
+
+                        <!-- Smart Button: Vehículo (visible cuando hay vehículo asignado) -->
+                        <button name="action_view_vehicle" type="object" class="oe_stat_button" icon="fa-truck" invisible="not vehicle_id">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="vehicle_id" readonly="1" nolabel="1" options="{'no_open': True}"/>
+                                </span>
+                                <span class="o_stat_text">Vehículo</span>
+                            </div>
+                        </button>
+
+                    </div>
+
                     <field name="company_id" invisible="1"/>
                     <field name="is_fuel_price_outdated" invisible="1"/>
                     <div class="alert alert-warning" role="alert" invisible="not is_fuel_price_outdated">
@@ -122,7 +214,8 @@
                             </h1>
                         </div>
 
-                        <div class="text-center">
+                        <!-- Fechas de embarque/entrega: solo relevantes cuando el viaje ya está en ruta -->
+                        <div class="text-center" invisible="state in ['draft','en_pedido','assigned']">
                             <div class="d-flex gap-3">
                                 <div>
                                     <label for="date_started_route" string="Fecha Y hora Embarque" class="text-danger fw-bold"/>
@@ -154,16 +247,16 @@
                     <!-- ACTORES DEL VIAJE (HEADER) -->
                     <div class="row mb-3">
                         <div class="col-lg-8">
-                            <!-- FACTURACIÓN CARD -->
+                            <!-- FACTURACIÓN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
-                                <group string="Facturación" class="mb-0">
+                                <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="date_created" string="Fecha del Pedido"/>
                                     <field name="partner_invoice_id" required="state != 'draft'"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_facturacion" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
@@ -177,7 +270,7 @@
                                     <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger"/>
                                     <label for="amount_total" string="Precio Final"/>
                                     <h2>
-                                        <field name="amount_total" widget="monetary" decoration-danger="amount_total == 0"/>
+                                        <field name="amount_total" decoration-danger="amount_total == 0"/>
                                     </h2>
                                     <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted"/>
                                     <field name="currency_id" invisible="1"/>
@@ -188,29 +281,37 @@
 
                     <div class="row mb-3">
                         <div class="col-lg-6">
-                            <!-- ORIGEN CARD -->
+                            <!-- ORIGEN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Origen" class="mb-0">
+                                <group string="Origen" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_origin_id" required="state != 'draft'"/>
                                     <field name="origin_address" required="state != 'draft'"/>
-                                    <field name="origin_zip" required="state != 'draft'"/>
+                                    <label for="origin_zip"/>
+                                    <div class="d-flex align-items-center">
+                                        <field name="origin_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
+                                    </div>
                                     <field name="origin_rfc"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_origen" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <!-- DESTINO CARD -->
+                            <!-- DESTINO CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Destino" class="mb-0">
+                                <group string="Destino" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="partner_dest_id" required="state != 'draft'"/>
                                     <field name="dest_address" required="state != 'draft'"/>
-                                    <field name="dest_zip" required="state != 'draft'"/>
+                                    <label for="dest_zip"/>
+                                    <div class="d-flex align-items-center">
+                                        <field name="dest_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
+                                    </div>
                                     <field name="dest_rfc"/>
                                 </group>
-                                <div class="text-end mt-2">
+                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_destino" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
@@ -226,37 +327,36 @@
                         <!-- ======================= -->
                         <page string="Información de Ruta">
                             <group>
-                                <group invisible="state in ['draft','en_pedido']">
-                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}" class="oe_edit_only"/>
-                                    <field name="waybill_type" widget="badge" class="oe_read_only" decoration-info="waybill_type == 'income'" decoration-muted="waybill_type == 'transfer'"/>
+                                <group>
+                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}"/>
                                 </group>
                             </group>
 
-                            <!-- UNIDAD ASIGNADA -->
-                            <group string="Unidad Asignada">
+                            <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
+                            <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="vehicle_id" required="state != 'draft'"/>
-                                    <field name="require_trailer" widget="boolean_toggle"/>
+                                    <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque"/>
                                     <field name="trailer1_id" invisible="not require_trailer"/>
                                     <field name="dolly_id" invisible="not require_trailer"/>
                                 </group>
                                 <group>
                                     <field name="driver_id"/>
-                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)"/>
+                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)" invisible="not require_trailer"/>
                                     <field name="total_axles"/>
                                 </group>
                             </group>
 
-                            <!-- DETALLES DE RUTA -->
-                            <group string="Detalles de Ruta">
+                            <!-- DETALLES DE RUTA — readonly cuando el viaje ya está en ruta -->
+                            <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
                                     <field name="distance_km" required="state != 'draft'"/>
                                     <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
-                                    <field name="cost_tolls" widget="monetary" required="state != 'draft'"/>
+                                    <field name="cost_tolls" required="state != 'draft'"/>
                                 </group>
                                 <group>
-                                    <label for="action_compute_route_smart" string="Cálculo"/>
-                                    <div class="o_row">
+                                    <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
+                                    <div class="o_row" invisible="state in ['in_transit','arrived','closed','cancel']">
                                         <button name="action_compute_route_smart" type="object" string=" Calcular Ruta (Smart)" icon="fa-magic" class="btn btn-primary"/>
                                         <div class="text-muted ms-2">
                                             <i class="fa fa-info-circle"/>
@@ -270,56 +370,76 @@
                         <!-- ======================= -->
                         <!-- COTIZACIÓN Y COSTOS (SIEMPRE VISIBLE) -->
                         <!-- ======================= -->
-                        <page string="Cotización y Costos">
-                            <group>
-                                <group string="Variables de Costo">
+                        <!-- Pestaña de cotización: readonly en estados operativos/finales -->
+                        <page string="Cotización y Costos" readonly="state in ['in_transit','arrived','closed','cancel']">
+
+                            <!-- SECCIÓN 1: COSTOS OPERATIVOS -->
+                            <group string="⛽ COSTOS OPERATIVOS">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Usados para calcular Propuesta B
+                                </p>
+                                <group>
                                     <field name="fuel_price_liter"/>
-                                    <field name="fuel_performance"/>
-                                    <field name="cost_tolls"/>
                                     <field name="cost_driver"/>
-                                    <field name="cost_maneuver"/>
                                     <field name="cost_other"/>
-                                    <field name="cost_commission"/>
                                     <field name="cost_diesel_total" readonly="1"/>
-                                    <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
-                                <group string="Selección de Propuesta">
-                                    <!-- label con 'for' para Odoo 18 -->
-                                    <label for="selected_proposal" string="Selecciona la propuesta que se aplicará al cliente." class="o_form_label text-muted"/>
-                                    <field name="selected_proposal" widget="radio"/>
-                                    <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
+                                <group>
+                                    <field name="fuel_performance"/>
+                                    <field name="cost_maneuver"/>
+                                    <field name="cost_commission"/>
+                                    <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
                             </group>
 
-                            <separator string="Comparativa de Propuestas"/>
-
-                            <group col="3">
-                                <!-- Opción A: Por KM -->
-                                <group string="🅰️ Por Kilómetro">
+                            <!-- SECCIÓN 2: PRECIO POR KILÓMETRO -->
+                            <group string="📐 PRECIO POR KILÓMETRO">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Usado para calcular Propuesta A
+                                </p>
+                                <group>
                                     <field name="price_per_km"/>
-                                    <label for="distance_km" string="Distancia Total"/>
+                                    <label for="distance_km" string="Distancia Base"/>
                                     <div class="o_row">
                                         <field name="distance_km" class="oe_inline" readonly="1"/>
- km base +
-                                        <field name="extra_distance_km" class="oe_inline"/>
- km extras
+ km
                                     </div>
-                                    <p class="text-muted small" style="margin-top: 5px;">
-                                        <i class="fa fa-info-circle"/>
- Los km extras se suman a la distancia base para el cobro
-                                    </p>
-                                    <field name="proposal_km_total" widget="monetary" readonly="1" decoration-bf="1"/>
                                 </group>
-
-                                <!-- Opción B: Por Viaje -->
-                                <group string="Por Costo + Margen">
+                                <group>
                                     <field name="profit_margin_percent"/>
-                                    <field name="proposal_trip_total" widget="monetary" readonly="1"/>
+                                    <field name="extra_distance_km" string="Km Extras"/>
                                 </group>
+                            </group>
 
-                                <!-- Opción C: Directa -->
-                                <group string="Precio Directo">
-                                    <field name="proposal_direct_amount" widget="monetary"/>
+                            <!-- SECCIÓN 3: PRECIO DIRECTO -->
+                            <group string="💰 PRECIO DIRECTO">
+                                <p class="text-muted ms-2" colspan="2">
+                                    <i class="fa fa-info-circle"/>
+ Propuesta C — tarifa fija
+                                </p>
+                                <group>
+                                    <field name="proposal_direct_amount" string="Precio Directo"/>
+                                </group>
+                            </group>
+
+                            <!-- SECCIÓN 4: COMPARATIVA DE PROPUESTAS -->
+                            <group string="🚛 COMPARATIVA DE PROPUESTAS">
+                                <group col="3">
+                                    <group string="A — Por KM">
+                                        <field name="proposal_km_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                    <group string="B — Por Viaje">
+                                        <field name="proposal_trip_total" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                    <group string="C — Directo">
+                                        <field name="proposal_direct_amount" nolabel="1" readonly="1" decoration-bf="1" class="fs-5"/>
+                                    </group>
+                                </group>
+                                <group>
+                                    <field name="selected_proposal" widget="radio" options="{'horizontal': true}"/>
+                                    <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary mt-2" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
                                 </group>
                             </group>
                         </page>
@@ -327,7 +447,8 @@
                         <!-- ======================= -->
                         <!-- CARTA PORTE 3.1 -->
                         <!-- ======================= -->
-                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31">
+                        <!-- Carta Porte: no tiene sentido en borrador (sin info completa aún) -->
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']">
                             <group>
                                 <group string="Identificación">
                                     <label for="tms_id_ccp"/>
@@ -356,21 +477,22 @@
                         <!-- MERCANCÍAS             -->
                         <!-- ======================= -->
                         <page string="Mercancías">
+                            <field name="has_dangerous_lines" invisible="1"/>
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="product_sat_id" string="Clave SAT"/>
                                     <field name="description" string="Descripción"/>
                                     <field name="quantity" string="Cant."/>
                                     <field name="uom_sat_id" string="Unidad"/>
+                                    <field name="dimensions" string="Dimens." widget="tms_dimensions" placeholder="000/000/000cm"/>
                                     <field name="weight_kg" string="Peso Kg"/>
-                                    <field name="dimensions" optional="hide" string="Dimens."/>
                                     <field name="is_dangerous" string="¿Pel.?"/>
-                                    <field name="material_peligroso_id" invisible="not is_dangerous" required="is_dangerous" optional="hide" string="Mat. Pelig."/>
-                                    <field name="embalaje_id" optional="hide" string="Embalaje"/>
-                                    <field name="l10n_mx_edi_tax_object" optional="hide" string="Obj. Imp."/>
-                                    <field name="l10n_mx_edi_sector_cofepris" optional="hide" string="Sec. COF."/>
-                                    <field name="l10n_mx_edi_active_ingredient" optional="hide" string="Ing. Act."/>
-                                    <field name="l10n_mx_edi_nominal_purity" optional="hide" string="Pur. Nom."/>
+                                    <field name="embalaje_id" string="Embalaje"/>
+                                    <field name="material_peligroso_id" string="Mat. Pelig." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous" required="is_dangerous"/>
+                                    <field name="l10n_mx_edi_sector_cofepris" string="Sec. COF." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_active_ingredient" string="Ing. Act." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_nominal_purity" string="Pur. Nom." column_invisible="not parent.has_dangerous_lines" invisible="not is_dangerous"/>
+                                    <field name="l10n_mx_edi_tax_object" string="Obj. Imp." optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -378,7 +500,8 @@
                         <!-- ======================= -->
                         <!-- BITÁCORA GPS           -->
                         <!-- ======================= -->
-                        <page string="Bitácora GPS">
+                        <!-- Bitácora GPS: solo relevante cuando el viaje ya salió (desde estado waybill) -->
+                        <page string="Bitácora GPS" invisible="state in ['draft','en_pedido','assigned']">
                             <field name="tracking_event_ids">
                                 <list string="Eventos de Rastreo" editable="bottom">
                                     <field name="date"/>
