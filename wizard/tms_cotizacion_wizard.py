@@ -748,8 +748,10 @@ class TmsCotizacionWizard(models.TransientModel):
             'partner_invoice_id': self.partner_invoice_id.id,
             'partner_origin_id': self.partner_origin_id.id if self.partner_origin_id else False,
             'origin_address': self.origin_address or self._build_address(self.partner_origin_id),
+            'origin_zip': self.partner_origin_id.zip or self.origin_zip or False,
             'partner_dest_id': self.partner_dest_id.id if self.partner_dest_id else False,
             'dest_address': self.dest_address or self._build_address(self.partner_dest_id),
+            'dest_zip': self.partner_dest_id.zip or self.dest_zip or False,
             # Unidad
             'vehicle_id': self.vehicle_id.id if self.vehicle_id else False,
             'driver_id': self.driver_id.id if self.driver_id else False,

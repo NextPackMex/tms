@@ -251,7 +251,7 @@
                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
                                 <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
                                     <field name="date_created" string="Fecha del Pedido"/>
-                                    <field name="partner_invoice_id" required="state != 'draft'"/>
+                                    <field name="partner_invoice_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
@@ -284,11 +284,11 @@
                             <!-- ORIGEN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group string="Origen" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
-                                    <field name="partner_origin_id" required="state != 'draft'"/>
-                                    <field name="origin_address" required="state != 'draft'"/>
+                                    <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                    <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <label for="origin_zip"/>
                                     <div class="d-flex align-items-center">
-                                        <field name="origin_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="origin_rfc"/>
@@ -302,11 +302,11 @@
                             <!-- DESTINO CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
                                 <group string="Destino" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
-                                    <field name="partner_dest_id" required="state != 'draft'"/>
-                                    <field name="dest_address" required="state != 'draft'"/>
+                                    <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                    <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <label for="dest_zip"/>
                                     <div class="d-flex align-items-center">
-                                        <field name="dest_zip" required="state != 'draft'" class="me-2" style="max-width: 100px;"/>
+                                        <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="dest_rfc"/>
@@ -335,7 +335,7 @@
                             <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
                             <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
-                                    <field name="vehicle_id" required="state != 'draft'"/>
+                                    <field name="vehicle_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque"/>
                                     <field name="trailer1_id" invisible="not require_trailer"/>
                                     <field name="dolly_id" invisible="not require_trailer"/>
@@ -350,9 +350,9 @@
                             <!-- DETALLES DE RUTA — readonly cuando el viaje ya está en ruta -->
                             <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel']">
                                 <group>
-                                    <field name="distance_km" required="state != 'draft'"/>
-                                    <field name="duration_hours" widget="float_time" required="state != 'draft'"/>
-                                    <field name="cost_tolls" required="state != 'draft'"/>
+                                    <field name="distance_km" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                    <field name="duration_hours" widget="float_time" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                    <field name="cost_tolls" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
