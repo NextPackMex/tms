@@ -710,6 +710,8 @@ class TmsCotizacionWizard(models.TransientModel):
         No es un CFDI — es un documento comercial.
         """
         self.ensure_one()
+        if not self.partner_invoice_id:
+            raise UserError(_('Selecciona un cliente antes de descargar la pre-cotización.'))
         return self.env.ref('tms.action_report_tms_cotizacion').report_action(self)
 
     def action_send_email(self):
@@ -719,6 +721,8 @@ class TmsCotizacionWizard(models.TransientModel):
         Abre el composer para que el usuario pueda editar antes de enviar.
         """
         self.ensure_one()
+        if not self.partner_invoice_id:
+            raise UserError(_('Selecciona un cliente antes de enviar la cotización.'))
         if not self.partner_invoice_id.email:
             raise UserError(_(
                 'El cliente no tiene email configurado. '
