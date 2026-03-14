@@ -50,3 +50,28 @@ class ResCompany(models.Model):
         default='02',
         help='Valor por defecto para las líneas de viaje en CFDI 4.0.'
     )
+
+    # --- CSD para timbrado CFDI ---
+    tms_regimen_fiscal = fields.Selection(
+        selection=[
+            ('601', '601 - General de Ley Personas Morales'),
+            ('612', '612 - Actividades Empresariales y Profesionales'),
+            ('621', '621 - Incorporación Fiscal'),
+            ('626', '626 - RESICO'),
+        ],
+        string='Régimen Fiscal SAT',
+    )
+    tms_csd_cer = fields.Binary(string='CSD Certificado (.cer)')
+    tms_csd_key = fields.Binary(string='CSD Llave Privada (.key)')
+    tms_csd_password = fields.Char(string='Contraseña CSD')
+
+    # --- Seguros Carta Porte ---
+    tms_insurance_rc_company = fields.Char(string='Aseguradora RC')
+    tms_insurance_rc_policy = fields.Char(string='Póliza RC')
+    tms_insurance_rc_expiry = fields.Date(string='Vigencia RC')
+    tms_insurance_cargo_company = fields.Char(string='Aseguradora Carga')
+    tms_insurance_cargo_policy = fields.Char(string='Póliza Carga')
+    tms_insurance_cargo_expiry = fields.Date(string='Vigencia Carga')
+    tms_insurance_env_company = fields.Char(string='Aseguradora Ambiental')
+    tms_insurance_env_policy = fields.Char(string='Póliza Ambiental')
+    tms_insurance_env_expiry = fields.Date(string='Vigencia Ambiental')
