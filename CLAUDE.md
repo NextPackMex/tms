@@ -4,7 +4,7 @@
 
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
 
-# Última actualización: 2026-03-03 — V2.1.4 COMPLETADO
+# Última actualización: 2026-03-14 — V2.1.6 COMPLETADO
 
 # ══════════════════════════════════════════════════════════════
 
@@ -15,7 +15,7 @@
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.1.4
+**Versión módulo:** 19.0.2.1.6
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -218,7 +218,7 @@ tms/
 | 2.1.4e | Wizard desde lista, no desde form            | ✅                |
 | 2.1.4f | Cierre V2.1.4 (fix direcciones + botón form) | 🚧 En Claude Code |
 | 2.1.5  | Onboarding wizard 6 pasos                    | 📋                |
-| 2.1.6  | PDF pre-cotización + email                   | 📋                |
+| 2.1.6  | PDF pre-cotización + email                   | ✅                |
 
 ### 📋 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales
 

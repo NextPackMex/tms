@@ -704,6 +704,47 @@ class TmsCotizacionWizard(models.TransientModel):
         self.write({'step': '1'})
         return self._reopen_wizard()
 
+    def action_download_pdf(self):
+        """
+        Genera y descarga el PDF de pre-cotización.
+        No es un CFDI — es un documento comercial.
+        """
+        self.ensure_one()
+        if not self.partner_invoice_id:
+            raise UserError(_('Selecciona un cliente antes de descargar la pre-cotización.'))
+        return self.env.ref('tms.action_report_tms_cotizacion').report_action(self)
+
+    def action_send_email(self):
+        """
+        Envía la pre-cotización por email al cliente.
+        Adjunta el PDF automáticamente via el mail.template.
+        Abre el composer para que el usuario pueda editar antes de enviar.
+        """
+        self.ensure_one()
+        if not self.partner_invoice_id:
+            raise UserError(_('Selecciona un cliente antes de enviar la cotización.'))
+        if not self.partner_invoice_id.email:
+            raise UserError(_(
+                'El cliente no tiene email configurado. '
+                'Agrega un email al contacto antes de enviar la cotización.'
+            ))
+        template = self.env.ref('tms.mail_template_tms_cotizacion', raise_if_not_found=False)
+        if not template:
+            raise UserError(_('No se encontró la plantilla de email para cotización.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'mail.compose.message',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_model': 'tms.cotizacion.wizard',
+                'default_res_ids': self.ids,
+                'default_template_id': template.id,
+                'default_composition_mode': 'comment',
+                'force_email': True,
+            },
+        }
+
     # ============================================================
     # ACCIONES — PASO 2
     # ============================================================

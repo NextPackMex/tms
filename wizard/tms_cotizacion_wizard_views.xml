@@ -247,6 +247,8 @@
                     <button name="action_calcular_ruta" type="object" string="Calcular Ruta y Propuestas" class="btn-primary" invisible="step != '1' or manual_route_entry"/>
                     <button name="action_manual_route_confirm" type="object" string="Confirmar Datos Manuales" class="btn-warning" invisible="step != '1' or not manual_route_entry"/>
                     <button name="action_aprobar_propuesta" type="object" string="Aprobar y Continuar" class="btn-success" invisible="step != '1' or not ruta_calculada or not selected_proposal"/>
+                    <button name="action_download_pdf" type="object" string="Descargar PDF" class="btn-secondary" icon="fa-file-pdf-o" invisible="distance_km == 0"/>
+                    <button name="action_send_email" type="object" string="Enviar por Email" class="btn-primary" icon="fa-envelope" invisible="distance_km == 0"/>
 
                     <!-- Paso 2 -->
                     <button name="action_crear_waybill" type="object" string="🚚 Crear Viaje" class="btn-primary" invisible="step != '2'"/>

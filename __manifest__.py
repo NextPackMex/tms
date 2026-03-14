@@ -124,7 +124,10 @@
 
         # 10. Reportes PDF
         'reports/tms_waybill_report.xml',
+        'reports/tms_cotizacion_report.xml',
+        'reports/tms_cotizacion_report_template.xml',
         'data/mail_template_data.xml',
+        'data/mail_template_cotizacion.xml',
 
         # 11. Menús (AL FINAL para que todas las acciones estén disponibles)
         # IMPORTANTE: tms_menus.xml ANTES de sat_menus.xml

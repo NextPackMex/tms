@@ -1008,9 +1008,6 @@ class TmsWaybill(models.Model):
     def action_preview_waybill(self):
         """Abre la cotización en el portal en una NUEVA pestaña"""
         self.ensure_one()
-        # Validar antes de generar preview (si se requiere estricto)
-        self._check_waybill_validity()
-
         return {
             'type': 'ir.actions.act_url',
             'target': 'new',  # <--- 'new' fuerza la nueva pestaña
@@ -2043,9 +2040,6 @@ class TmsWaybill(models.Model):
     def action_send_email(self):
         """ Abre el wizard de correo con la plantilla pre-cargada """
         self.ensure_one()
-        # Validar antes de enviar
-        self._check_waybill_validity()
-
         # Referencia a la plantilla creada en data/mail_template_data.xml
         template = self.env.ref('tms.email_template_tms_waybill')
 

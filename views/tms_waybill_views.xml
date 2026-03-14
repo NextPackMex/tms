@@ -281,37 +281,67 @@
 
                     <div class="row mb-3">
                         <div class="col-lg-6">
-                            <!-- ORIGEN CARD — readonly cuando el viaje ya está operando -->
+                            <!-- ORIGEN CARD -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Origen" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
+                                <div class="d-flex align-items-center mb-2" style="border-left: 4px solid #28a745; padding-left: 8px;">
+                                    <strong style="font-size: 1.1em;">Origen</strong>
+                                </div>
+                                <!-- Info mínima: CP + ciudad (visible cuando hay CP) -->
+                                <div invisible="not origin_zip" class="mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge text-bg-success me-2">
+                                            CP <field name="origin_zip" readonly="1" nolabel="1"/>
+                                        </span>
+                                        <span class="text-muted">
+                                            <field name="origin_city_name" readonly="1" nolabel="1"/>
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Datos completos: siempre visibles, readonly en estados operativos -->
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
                                     <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <label for="origin_zip"/>
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center" invisible="False">
                                         <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="origin_rfc"/>
                                 </group>
-                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
+                                <div class="text-end mt-2" invisible="state in ['cotizado', 'in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_origen" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <!-- DESTINO CARD — readonly cuando el viaje ya está operando -->
+                            <!-- DESTINO CARD -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group string="Destino" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
+                                <div class="d-flex align-items-center mb-2" style="border-left: 4px solid #dc3545; padding-left: 8px;">
+                                    <strong style="font-size: 1.1em;">Destino</strong>
+                                </div>
+                                <!-- Info mínima: CP + ciudad (visible cuando hay CP) -->
+                                <div invisible="not dest_zip" class="mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge text-bg-danger me-2">
+                                            CP <field name="dest_zip" readonly="1" nolabel="1"/>
+                                        </span>
+                                        <span class="text-muted">
+                                            <field name="dest_city_name" readonly="1" nolabel="1"/>
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Datos completos: siempre visibles, readonly en estados operativos -->
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
                                     <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <label for="dest_zip"/>
-                                    <div class="d-flex align-items-center">
+                                    <div class="d-flex align-items-center" invisible="False">
                                         <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="dest_rfc"/>
                                 </group>
-                                <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
+                                <div class="text-end mt-2" invisible="state in ['cotizado', 'in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_destino" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
                                 </div>
                             </div>
