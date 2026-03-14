@@ -4,228 +4,220 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-call="web.external_layout">
-                    <div class="page">
+                    <div class="page" style="font-family: Arial, sans-serif;">
 
-                        <!-- Encabezado -->
-                        <div class="row mb-4">
+                        <!-- ===== ENCABEZADO ===== -->
+                        <div class="row mb-3">
                             <div class="col-8">
-                                <h2 style="color: #035d96;">
+                                <h2 style="color: #035d96; margin-bottom: 2px;">
                                     <strong>PRE-COTIZACIÓN DE FLETE</strong>
                                 </h2>
-                                <p style="color: #888; font-size: 12px;">
-                                    Documento comercial — No es un CFDI
+                                <p style="color: #999; font-size: 11px; margin: 0;">
+                                    Documento comercial informativo — No es un CFDI
                                 </p>
                             </div>
                             <div class="col-4 text-end">
-                                <p><strong>Fecha:</strong>
+                                <p style="margin: 0;">
+                                    <strong>Fecha:</strong>
                                     <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/>
                                 </p>
                             </div>
                         </div>
 
-                        <!-- Datos del cliente -->
-                        <div class="row mb-4">
+                        <hr style="border-top: 3px solid #e1a13e; margin: 8px 0 16px 0;"/>
+
+                        <!-- ===== DATOS DEL CLIENTE ===== -->
+                        <div class="row mb-3">
                             <div class="col-12">
-                                <h4 style="border-bottom: 2px solid #e1a13e; padding-bottom: 4px;">
-                                    Datos del Cliente
-                                </h4>
+                                <h5 style="color: #035d96; margin-bottom: 8px;">
+                                    <i class="fa fa-building"/> Datos del Cliente
+                                </h5>
                             </div>
                             <div class="col-6">
-                                <p>
-                                    <strong>Cliente:</strong>
-                                    <span t-field="doc.partner_invoice_id.name"/>
-                                </p>
-                                <p t-if="doc.partner_invoice_id.vat">
-                                    <strong>RFC:</strong>
-                                    <span t-field="doc.partner_invoice_id.vat"/>
-                                </p>
+                                <table style="font-size: 12px; line-height: 1.8;">
+                                    <tr>
+                                        <td style="width: 80px;"><strong>Cliente:</strong></td>
+                                        <td><span t-field="doc.partner_invoice_id.name"/></td>
+                                    </tr>
+                                    <tr t-if="doc.partner_invoice_id.vat">
+                                        <td><strong>RFC:</strong></td>
+                                        <td><span t-field="doc.partner_invoice_id.vat"/></td>
+                                    </tr>
+                                </table>
                             </div>
                             <div class="col-6">
-                                <p t-if="doc.partner_invoice_id.email">
-                                    <strong>Email:</strong>
-                                    <span t-field="doc.partner_invoice_id.email"/>
-                                </p>
-                                <p t-if="doc.partner_invoice_id.phone">
-                                    <strong>Teléfono:</strong>
-                                    <span t-field="doc.partner_invoice_id.phone"/>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Datos de la ruta -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h4 style="border-bottom: 2px solid #e1a13e; padding-bottom: 4px;">
-                                    Datos de la Ruta
-                                </h4>
-                            </div>
-                            <div class="col-4">
-                                <p><strong>Origen (CP):</strong>
-                                    <span t-field="doc.origin_zip"/></p>
-                            </div>
-                            <div class="col-4">
-                                <p><strong>Destino (CP):</strong>
-                                    <span t-field="doc.dest_zip"/></p>
-                            </div>
-                            <div class="col-4">
-                                <p><strong>Ejes:</strong>
-                                    <span t-field="doc.num_axles"/></p>
-                            </div>
-                        </div>
-
-                        <!-- Resultados de ruta -->
-                        <div class="row mb-4">
-                            <div class="col-4 text-center"
-                                 style="background: #f0f5fa; padding: 12px; border-radius: 8px;">
-                                <h5 style="color: #035d96;">Distancia</h5>
-                                <p style="font-size: 20px; font-weight: bold;">
-                                    <span t-esc="'%.1f' % doc.distance_km"/> km
-                                </p>
-                            </div>
-                            <div class="col-4 text-center"
-                                 style="background: #f0f5fa; padding: 12px; border-radius: 8px;">
-                                <h5 style="color: #035d96;">Tiempo Estimado</h5>
-                                <p style="font-size: 20px; font-weight: bold;">
-                                    <span t-esc="'%.1f' % doc.duration_hours"/> hrs
-                                </p>
-                            </div>
-                            <div class="col-4 text-center"
-                                 style="background: #f0f5fa; padding: 12px; border-radius: 8px;">
-                                <h5 style="color: #035d96;">Casetas</h5>
-                                <p style="font-size: 20px; font-weight: bold;">
-                                    $ <span t-esc="'%.2f' % doc.toll_cost"/>
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Propuesta seleccionada -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h4 style="border-bottom: 2px solid #e1a13e; padding-bottom: 4px;">
-                                    Cotización de Flete
-                                </h4>
-                            </div>
-                        </div>
-
-                        <table class="table table-bordered" style="font-size: 13px;">
-                            <thead style="background: #035d96; color: white;">
-                                <tr>
-                                    <th>Método</th>
-                                    <th class="text-end">Subtotal</th>
-                                    <th class="text-end">IVA 16%</th>
-                                    <th class="text-end" t-if="doc.partner_invoice_id.is_company">
-                                        Ret. IVA 4%
-                                    </th>
-                                    <th class="text-end" style="background: #e1a13e; color: #333;">
-                                        Total
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Propuesta A — Por KM -->
-                                <tr t-if="doc.selected_proposal == 'km'">
-                                    <td>Por Kilómetro</td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % doc.proposal_km_total"/>
-                                    </td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % (doc.proposal_km_total * 0.16)"/>
-                                    </td>
-                                    <td class="text-end" t-if="doc.partner_invoice_id.is_company">
-                                        $ <span t-esc="'%.2f' % (doc.proposal_km_total * 0.04)"/>
-                                    </td>
-                                    <td class="text-end" style="font-size: 15px;">
-                                        <strong>
-                                            $ <span t-esc="'%.2f' % (doc.proposal_km_total * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
-                                        </strong>
-                                    </td>
-                                </tr>
-                                <!-- Propuesta B — Por Viaje -->
-                                <tr t-if="doc.selected_proposal == 'trip'">
-                                    <td>Por Viaje (costos)</td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % doc.proposal_trip_total"/>
-                                    </td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % (doc.proposal_trip_total * 0.16)"/>
-                                    </td>
-                                    <td class="text-end" t-if="doc.partner_invoice_id.is_company">
-                                        $ <span t-esc="'%.2f' % (doc.proposal_trip_total * 0.04)"/>
-                                    </td>
-                                    <td class="text-end" style="font-size: 15px;">
-                                        <strong>
-                                            $ <span t-esc="'%.2f' % (doc.proposal_trip_total * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
-                                        </strong>
-                                    </td>
-                                </tr>
-                                <!-- Propuesta C — Precio Directo -->
-                                <tr t-if="doc.selected_proposal == 'direct'">
-                                    <td>Precio Directo</td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % doc.direct_price"/>
-                                    </td>
-                                    <td class="text-end">
-                                        $ <span t-esc="'%.2f' % (doc.direct_price * 0.16)"/>
-                                    </td>
-                                    <td class="text-end" t-if="doc.partner_invoice_id.is_company">
-                                        $ <span t-esc="'%.2f' % (doc.direct_price * 0.04)"/>
-                                    </td>
-                                    <td class="text-end" style="font-size: 15px;">
-                                        <strong>
-                                            $ <span t-esc="'%.2f' % (doc.direct_price * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
-                                        </strong>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- Mercancía simplificada (si hay) -->
-                        <div t-if="doc.line_ids" class="row mb-4">
-                            <div class="col-12">
-                                <h4 style="border-bottom: 2px solid #e1a13e; padding-bottom: 4px;">
-                                    Carga a Transportar
-                                </h4>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Descripción</th>
-                                            <th class="text-end">Cantidad</th>
-                                            <th class="text-end">Peso (kg)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="doc.line_ids" t-as="line">
-                                            <tr>
-                                                <td><span t-field="line.description"/></td>
-                                                <td class="text-end">
-                                                    <span t-field="line.quantity"/>
-                                                </td>
-                                                <td class="text-end">
-                                                    <span t-field="line.weight_kg"/>
-                                                </td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
+                                <table style="font-size: 12px; line-height: 1.8;">
+                                    <tr t-if="doc.partner_invoice_id.email">
+                                        <td style="width: 80px;"><strong>Email:</strong></td>
+                                        <td><span t-field="doc.partner_invoice_id.email"/></td>
+                                    </tr>
+                                    <tr t-if="doc.partner_invoice_id.phone">
+                                        <td><strong>Tel:</strong></td>
+                                        <td><span t-field="doc.partner_invoice_id.phone"/></td>
+                                    </tr>
                                 </table>
                             </div>
                         </div>
 
-                        <!-- Notas legales -->
-                        <div class="row mt-4"
-                             style="border-top: 1px solid #ccc; padding-top: 12px;">
-                            <div class="col-12" style="font-size: 10px; color: #888;">
-                                <p>
-                                    <strong>Nota:</strong> Esta pre-cotización es un documento
-                                    comercial informativo. No constituye un CFDI ni tiene
-                                    validez fiscal. Los precios pueden variar según condiciones
-                                    de mercado. Vigencia: 15 días a partir de la fecha de emisión.
-                                </p>
-                                <p>
-                                    <strong>Condiciones:</strong> Precios en MXN.
-                                    IVA 16% incluido. Retención IVA 4% aplica solo a personas morales.
-                                    Casetas calculadas con sistema de telepeaje (TAG).
-                                </p>
+                        <!-- ===== RUTA: ORIGEN → DESTINO ===== -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h5 style="color: #035d96; margin-bottom: 8px;">
+                                    <i class="fa fa-map-marker"/> Ruta
+                                </h5>
                             </div>
+                            <div class="col-5">
+                                <div style="background: #e8f4e8; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #28a745;">
+                                    <strong style="font-size: 11px; color: #666;">ORIGEN</strong><br/>
+                                    <span style="font-size: 16px; font-weight: bold;">
+                                        CP <span t-field="doc.origin_zip"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-2 text-center" style="padding-top: 14px;">
+                                <span style="font-size: 24px; color: #035d96;">→</span>
+                            </div>
+                            <div class="col-5">
+                                <div style="background: #fde8e8; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #dc3545;">
+                                    <strong style="font-size: 11px; color: #666;">DESTINO</strong><br/>
+                                    <span style="font-size: 16px; font-weight: bold;">
+                                        CP <span t-field="doc.dest_zip"/>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ===== MÉTRICAS DE RUTA ===== -->
+                        <div class="row mb-4">
+                            <div class="col-4 text-center">
+                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 11px; color: #666; display: block;">DISTANCIA</span>
+                                    <strong style="font-size: 22px; color: #035d96;">
+                                        <span t-esc="'%.0f' % doc.distance_km"/> km
+                                    </strong>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 11px; color: #666; display: block;">TIEMPO ESTIMADO</span>
+                                    <strong style="font-size: 22px; color: #035d96;">
+                                        <span t-esc="'%.1f' % doc.duration_hours"/> hrs
+                                    </strong>
+                                </div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 11px; color: #666; display: block;">CASETAS (TAG)</span>
+                                    <strong style="font-size: 22px; color: #035d96;">
+                                        $ <span t-esc="'%,.2f' % doc.toll_cost"/>
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ===== PROPUESTA DE PRECIO ===== -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h5 style="color: #035d96; margin-bottom: 8px;">
+                                    <i class="fa fa-money"/> Cotización de Flete
+                                </h5>
+                            </div>
+                        </div>
+
+                        <!-- Calcular variables para evitar repetir lógica -->
+                        <t t-set="subtotal"
+                           t-value="doc.proposal_km_total if doc.selected_proposal == 'km'
+                                    else (doc.proposal_trip_total if doc.selected_proposal == 'trip'
+                                    else doc.direct_price)"/>
+                        <t t-set="iva" t-value="subtotal * 0.16"/>
+                        <t t-set="retencion" t-value="subtotal * 0.04 if doc.partner_invoice_id.is_company else 0"/>
+                        <t t-set="total" t-value="subtotal + iva - retencion"/>
+                        <t t-set="metodo_nombre"
+                           t-value="'Por Kilómetro' if doc.selected_proposal == 'km'
+                                    else ('Por Viaje (costos operativos)' if doc.selected_proposal == 'trip'
+                                    else 'Precio Directo')"/>
+
+                        <table class="table" style="font-size: 13px; border: 1px solid #ddd;">
+                            <thead>
+                                <tr style="background: #035d96; color: white;">
+                                    <th style="padding: 10px;">Concepto</th>
+                                    <th class="text-end" style="padding: 10px; width: 180px;">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 8px 10px;">
+                                        <strong>Servicio de Flete</strong>
+                                        <br/>
+                                        <small style="color: #888;">
+                                            Método: <span t-esc="metodo_nombre"/>
+                                        </small>
+                                    </td>
+                                    <td class="text-end" style="padding: 8px 10px;">
+                                        $ <span t-esc="'%,.2f' % subtotal"/>
+                                    </td>
+                                </tr>
+                                <tr style="background: #f9f9f9;">
+                                    <td style="padding: 8px 10px;">IVA (16%)</td>
+                                    <td class="text-end" style="padding: 8px 10px;">
+                                        $ <span t-esc="'%,.2f' % iva"/>
+                                    </td>
+                                </tr>
+                                <tr t-if="doc.partner_invoice_id.is_company" style="color: #dc3545;">
+                                    <td style="padding: 8px 10px;">Retención IVA (4%)</td>
+                                    <td class="text-end" style="padding: 8px 10px;">
+                                        - $ <span t-esc="'%,.2f' % retencion"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: #e1a13e;">
+                                    <td style="padding: 12px 10px;">
+                                        <strong style="font-size: 16px; color: #333;">TOTAL</strong>
+                                    </td>
+                                    <td class="text-end" style="padding: 12px 10px;">
+                                        <strong style="font-size: 20px; color: #333;">
+                                            $ <span t-esc="'%,.2f' % total"/>
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <!-- ===== CARGA (si hay mercancías) ===== -->
+                        <div t-if="doc.line_ids" class="mb-3">
+                            <h5 style="color: #035d96; margin-bottom: 8px;">
+                                <i class="fa fa-cubes"/> Carga a Transportar
+                            </h5>
+                            <table class="table table-sm" style="font-size: 12px;">
+                                <thead>
+                                    <tr style="background: #f0f0f0;">
+                                        <th>Descripción</th>
+                                        <th class="text-end">Cantidad</th>
+                                        <th class="text-end">Peso (kg)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="doc.line_ids" t-as="line">
+                                        <tr>
+                                            <td><span t-field="line.description"/></td>
+                                            <td class="text-end"><span t-field="line.quantity"/></td>
+                                            <td class="text-end"><span t-field="line.weight_kg"/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- ===== NOTAS LEGALES ===== -->
+                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
+                            <p style="font-size: 9px; color: #999; margin: 0;">
+                                <strong>Nota:</strong> Esta pre-cotización es un documento comercial informativo.
+                                No constituye un CFDI ni tiene validez fiscal. Los precios pueden variar según
+                                condiciones de mercado. Vigencia: 15 días a partir de la fecha de emisión.
+                                Precios en MXN. IVA 16% incluido. Retención IVA 4% aplica solo a personas morales.
+                                Casetas calculadas con sistema de telepeaje (TAG).
+                            </p>
                         </div>
 
                     </div>
