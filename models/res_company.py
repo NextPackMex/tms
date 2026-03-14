@@ -55,9 +55,18 @@ class ResCompany(models.Model):
     tms_regimen_fiscal = fields.Selection(
         selection=[
             ('601', '601 - General de Ley Personas Morales'),
-            ('612', '612 - Actividades Empresariales y Profesionales'),
+            ('603', '603 - Personas Morales con Fines no Lucrativos'),
+            ('605', '605 - Sueldos y Salarios'),
+            ('606', '606 - Arrendamiento'),
+            ('612', '612 - Personas Físicas con Actividades Empresariales y Profesionales'),
+            ('616', '616 - Sin obligaciones fiscales'),
+            ('620', '620 - Sociedades Cooperativas de Producción'),
             ('621', '621 - Incorporación Fiscal'),
-            ('626', '626 - RESICO'),
+            ('622', '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras'),
+            ('623', '623 - Opcional para Grupos de Sociedades'),
+            ('624', '624 - Coordinados'),
+            ('625', '625 - Actividades Empresariales con ingresos vía Plataformas Tecnológicas'),
+            ('626', '626 - Régimen Simplificado de Confianza'),
         ],
         string='Régimen Fiscal SAT',
     )
