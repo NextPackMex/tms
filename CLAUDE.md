@@ -4,7 +4,7 @@
 
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
 
-# Última actualización: 2026-03-14 — V2.1.6 COMPLETADO
+# Última actualización: 2026-03-14 — V2.1.5 COMPLETADO
 
 # ══════════════════════════════════════════════════════════════
 
@@ -217,7 +217,7 @@ tms/
 | 2.1.4d | Mercancías simplificadas Paso 1              | ✅                |
 | 2.1.4e | Wizard desde lista, no desde form            | ✅                |
 | 2.1.4f | Cierre V2.1.4 (fix direcciones + botón form) | 🚧 En Claude Code |
-| 2.1.5  | Onboarding wizard 6 pasos                    | 📋                |
+| 2.1.5  | Onboarding wizard 6 pasos                    | ✅                |
 | 2.1.6  | PDF pre-cotización + email                   | ✅                |
 
 ### 📋 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales
