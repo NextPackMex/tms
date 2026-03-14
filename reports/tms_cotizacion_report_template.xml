@@ -98,11 +98,11 @@
                             </div>
                         </div>
 
-                        <!-- Las 3 propuestas -->
+                        <!-- Propuesta seleccionada -->
                         <div class="row mb-4">
                             <div class="col-12">
                                 <h4 style="border-bottom: 2px solid #e1a13e; padding-bottom: 4px;">
-                                    Propuestas de Precio
+                                    Cotización de Flete
                                 </h4>
                             </div>
                         </div>
@@ -110,7 +110,6 @@
                         <table class="table table-bordered" style="font-size: 13px;">
                             <thead style="background: #035d96; color: white;">
                                 <tr>
-                                    <th>Propuesta</th>
                                     <th>Método</th>
                                     <th class="text-end">Subtotal</th>
                                     <th class="text-end">IVA 16%</th>
@@ -124,12 +123,7 @@
                             </thead>
                             <tbody>
                                 <!-- Propuesta A — Por KM -->
-                                <tr t-att-style="'background: #e8f4e8; font-weight: bold;' if doc.selected_proposal == 'km' else ''">
-                                    <td>
-                                        A
-                                        <span t-if="doc.selected_proposal == 'km'"
-                                              style="color: green;"> ★ Seleccionada</span>
-                                    </td>
+                                <tr t-if="doc.selected_proposal == 'km'">
                                     <td>Por Kilómetro</td>
                                     <td class="text-end">
                                         $ <span t-esc="'%.2f' % doc.proposal_km_total"/>
@@ -140,19 +134,14 @@
                                     <td class="text-end" t-if="doc.partner_invoice_id.is_company">
                                         $ <span t-esc="'%.2f' % (doc.proposal_km_total * 0.04)"/>
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end" style="font-size: 15px;">
                                         <strong>
                                             $ <span t-esc="'%.2f' % (doc.proposal_km_total * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
                                         </strong>
                                     </td>
                                 </tr>
                                 <!-- Propuesta B — Por Viaje -->
-                                <tr t-att-style="'background: #e8f4e8; font-weight: bold;' if doc.selected_proposal == 'trip' else ''">
-                                    <td>
-                                        B
-                                        <span t-if="doc.selected_proposal == 'trip'"
-                                              style="color: green;"> ★ Seleccionada</span>
-                                    </td>
+                                <tr t-if="doc.selected_proposal == 'trip'">
                                     <td>Por Viaje (costos)</td>
                                     <td class="text-end">
                                         $ <span t-esc="'%.2f' % doc.proposal_trip_total"/>
@@ -163,20 +152,14 @@
                                     <td class="text-end" t-if="doc.partner_invoice_id.is_company">
                                         $ <span t-esc="'%.2f' % (doc.proposal_trip_total * 0.04)"/>
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end" style="font-size: 15px;">
                                         <strong>
                                             $ <span t-esc="'%.2f' % (doc.proposal_trip_total * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
                                         </strong>
                                     </td>
                                 </tr>
                                 <!-- Propuesta C — Precio Directo -->
-                                <tr t-if="doc.direct_price > 0"
-                                    t-att-style="'background: #e8f4e8; font-weight: bold;' if doc.selected_proposal == 'direct' else ''">
-                                    <td>
-                                        C
-                                        <span t-if="doc.selected_proposal == 'direct'"
-                                              style="color: green;"> ★ Seleccionada</span>
-                                    </td>
+                                <tr t-if="doc.selected_proposal == 'direct'">
                                     <td>Precio Directo</td>
                                     <td class="text-end">
                                         $ <span t-esc="'%.2f' % doc.direct_price"/>
@@ -187,7 +170,7 @@
                                     <td class="text-end" t-if="doc.partner_invoice_id.is_company">
                                         $ <span t-esc="'%.2f' % (doc.direct_price * 0.04)"/>
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end" style="font-size: 15px;">
                                         <strong>
                                             $ <span t-esc="'%.2f' % (doc.direct_price * (1.16 - (0.04 if doc.partner_invoice_id.is_company else 0)))"/>
                                         </strong>
