@@ -297,12 +297,12 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Datos completos: ocultos en estado cotizado -->
-                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="state in ['cotizado']">
+                                <!-- Datos completos: siempre visibles, readonly en estados operativos -->
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
                                     <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <label for="origin_zip" invisible="state in ['cotizado', 'aprobado']"/>
-                                    <div class="d-flex align-items-center" invisible="state in ['cotizado', 'aprobado']">
+                                    <label for="origin_zip"/>
+                                    <div class="d-flex align-items-center" invisible="False">
                                         <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
@@ -330,12 +330,12 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Datos completos: ocultos en estado cotizado -->
-                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="state in ['cotizado']">
+                                <!-- Datos completos: siempre visibles, readonly en estados operativos -->
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
                                     <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
                                     <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <label for="dest_zip" invisible="state in ['cotizado', 'aprobado']"/>
-                                    <div class="d-flex align-items-center" invisible="state in ['cotizado', 'aprobado']">
+                                    <label for="dest_zip"/>
+                                    <div class="d-flex align-items-center" invisible="False">
                                         <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
                                         <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>

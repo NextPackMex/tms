@@ -109,7 +109,7 @@
                                 <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
                                     <span style="font-size: 11px; color: #666; display: block;">CASETAS (TAG)</span>
                                     <strong style="font-size: 22px; color: #035d96;">
-                                        $ <span t-esc="'%,.2f' % doc.toll_cost"/>
+                                        $ <span t-esc="'%.2f' % doc.toll_cost"/>
                                     </strong>
                                 </div>
                             </div>
@@ -154,19 +154,19 @@
                                         </small>
                                     </td>
                                     <td class="text-end" style="padding: 8px 10px;">
-                                        $ <span t-esc="'%,.2f' % subtotal"/>
+                                        $ <span t-esc="'%.2f' % subtotal"/>
                                     </td>
                                 </tr>
                                 <tr style="background: #f9f9f9;">
                                     <td style="padding: 8px 10px;">IVA (16%)</td>
                                     <td class="text-end" style="padding: 8px 10px;">
-                                        $ <span t-esc="'%,.2f' % iva"/>
+                                        $ <span t-esc="'%.2f' % iva"/>
                                     </td>
                                 </tr>
                                 <tr t-if="doc.partner_invoice_id.is_company" style="color: #dc3545;">
                                     <td style="padding: 8px 10px;">Retención IVA (4%)</td>
                                     <td class="text-end" style="padding: 8px 10px;">
-                                        - $ <span t-esc="'%,.2f' % retencion"/>
+                                        - $ <span t-esc="'%.2f' % retencion"/>
                                     </td>
                                 </tr>
                             </tbody>
@@ -177,7 +177,7 @@
                                     </td>
                                     <td class="text-end" style="padding: 12px 10px;">
                                         <strong style="font-size: 20px; color: #333;">
-                                            $ <span t-esc="'%,.2f' % total"/>
+                                            $ <span t-esc="'%.2f' % total"/>
                                         </strong>
                                     </td>
                                 </tr>
