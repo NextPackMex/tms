@@ -53,8 +53,8 @@
                                 <t t-if="o.origin_city_name">
                                     <span t-esc="o.origin_city_name"/><br/>
                                 </t>
-                                <t t-elif="o.origin_zip">
-                                    CP <span t-field="o.origin_zip"/><br/>
+                                <t t-if="o.origin_zip">
+                                    <span>CP <span t-field="o.origin_zip"/></span><br/>
                                 </t>
                                 <small t-if="o.origin_address" t-field="o.origin_address"/>
                             </div>
@@ -67,8 +67,8 @@
                                 <t t-if="o.dest_city_name">
                                     <span t-esc="o.dest_city_name"/><br/>
                                 </t>
-                                <t t-elif="o.dest_zip">
-                                    CP <span t-field="o.dest_zip"/><br/>
+                                <t t-if="o.dest_zip">
+                                    <span>CP <span t-field="o.dest_zip"/></span><br/>
                                 </t>
                                 <small t-if="o.dest_address" t-field="o.dest_address"/>
                             </div>
