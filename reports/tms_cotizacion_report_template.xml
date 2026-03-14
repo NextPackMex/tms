@@ -4,127 +4,117 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-call="web.external_layout">
-                    <div class="page" style="font-family: Arial, sans-serif;">
+                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333;">
 
-                        <!-- ===== ENCABEZADO ===== -->
-                        <div class="row mb-3">
-                            <div class="col-8">
-                                <h2 style="color: #035d96; margin-bottom: 2px;">
-                                    <strong>PRE-COTIZACIÓN DE FLETE</strong>
-                                </h2>
-                                <p style="color: #999; font-size: 11px; margin: 0;">
-                                    Documento comercial informativo — No es un CFDI
-                                </p>
-                            </div>
-                            <div class="col-4 text-end">
-                                <p style="margin: 0;">
-                                    <strong>Fecha:</strong>
-                                    <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/>
-                                </p>
-                            </div>
-                        </div>
+                        <!-- ENCABEZADO -->
+                        <table style="width: 100%; margin-bottom: 16px;">
+                            <tr>
+                                <td style="width: 70%;">
+                                    <h2 style="color: #035d96; margin: 0 0 4px 0; font-size: 22px;">
+                                        PRE-COTIZACIÓN DE FLETE
+                                    </h2>
+                                    <p style="color: #999; font-size: 10px; margin: 0;">
+                                        Documento comercial informativo — No es un CFDI
+                                    </p>
+                                </td>
+                                <td style="width: 30%; text-align: right; vertical-align: top;">
+                                    <span style="font-size: 12px;">
+                                        <strong>Fecha:</strong>
+                                        <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y')"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
 
-                        <hr style="border-top: 3px solid #e1a13e; margin: 8px 0 16px 0;"/>
+                        <hr style="border: none; border-top: 3px solid #e1a13e; margin: 0 0 16px 0;"/>
 
-                        <!-- ===== DATOS DEL CLIENTE ===== -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <h5 style="color: #035d96; margin-bottom: 8px;">
-                                    <i class="fa fa-building"/> Datos del Cliente
-                                </h5>
-                            </div>
-                            <div class="col-6">
-                                <table style="font-size: 12px; line-height: 1.8;">
-                                    <tr>
-                                        <td style="width: 80px;"><strong>Cliente:</strong></td>
-                                        <td><span t-field="doc.partner_invoice_id.name"/></td>
-                                    </tr>
-                                    <tr t-if="doc.partner_invoice_id.vat">
-                                        <td><strong>RFC:</strong></td>
-                                        <td><span t-field="doc.partner_invoice_id.vat"/></td>
-                                    </tr>
-                                </table>
-                            </div>
-                            <div class="col-6">
-                                <table style="font-size: 12px; line-height: 1.8;">
-                                    <tr t-if="doc.partner_invoice_id.email">
-                                        <td style="width: 80px;"><strong>Email:</strong></td>
-                                        <td><span t-field="doc.partner_invoice_id.email"/></td>
-                                    </tr>
-                                    <tr t-if="doc.partner_invoice_id.phone">
-                                        <td><strong>Tel:</strong></td>
-                                        <td><span t-field="doc.partner_invoice_id.phone"/></td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
+                        <!-- DATOS DEL CLIENTE -->
+                        <h4 style="color: #035d96; font-size: 14px; margin: 0 0 8px 0; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                            Datos del Cliente
+                        </h4>
+                        <table style="width: 100%; font-size: 12px; margin-bottom: 16px;">
+                            <tr>
+                                <td style="width: 50%; padding: 2px 0;">
+                                    <strong>Cliente:</strong>
+                                    <span t-if="doc.partner_invoice_id" t-field="doc.partner_invoice_id.name"/>
+                                    <span t-else="">Sin cliente seleccionado</span>
+                                </td>
+                                <td style="width: 50%; padding: 2px 0;">
+                                    <t t-if="doc.partner_invoice_id and doc.partner_invoice_id.vat">
+                                        <strong>RFC:</strong>
+                                        <span t-field="doc.partner_invoice_id.vat"/>
+                                    </t>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 0;">
+                                    <t t-if="doc.partner_invoice_id and doc.partner_invoice_id.email">
+                                        <strong>Email:</strong>
+                                        <span t-field="doc.partner_invoice_id.email"/>
+                                    </t>
+                                </td>
+                                <td style="padding: 2px 0;">
+                                    <t t-if="doc.partner_invoice_id and doc.partner_invoice_id.phone">
+                                        <strong>Tel:</strong>
+                                        <span t-field="doc.partner_invoice_id.phone"/>
+                                    </t>
+                                </td>
+                            </tr>
+                        </table>
 
-                        <!-- ===== RUTA: ORIGEN → DESTINO ===== -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <h5 style="color: #035d96; margin-bottom: 8px;">
-                                    <i class="fa fa-map-marker"/> Ruta
-                                </h5>
-                            </div>
-                            <div class="col-5">
-                                <div style="background: #e8f4e8; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #28a745;">
-                                    <strong style="font-size: 11px; color: #666;">ORIGEN</strong><br/>
+                        <!-- RUTA: ORIGEN → DESTINO -->
+                        <h4 style="color: #035d96; font-size: 14px; margin: 0 0 8px 0; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                            Ruta
+                        </h4>
+                        <table style="width: 100%; margin-bottom: 12px;">
+                            <tr>
+                                <td style="width: 40%; padding: 8px; background: #e8f4e8; border-left: 4px solid #28a745; font-size: 12px;">
+                                    <strong style="color: #666; font-size: 10px;">ORIGEN</strong><br/>
                                     <span style="font-size: 16px; font-weight: bold;">
                                         CP <span t-field="doc.origin_zip"/>
                                     </span>
-                                </div>
-                            </div>
-                            <div class="col-2 text-center" style="padding-top: 14px;">
-                                <span style="font-size: 24px; color: #035d96;">→</span>
-                            </div>
-                            <div class="col-5">
-                                <div style="background: #fde8e8; padding: 10px 14px; border-radius: 6px; border-left: 4px solid #dc3545;">
-                                    <strong style="font-size: 11px; color: #666;">DESTINO</strong><br/>
+                                </td>
+                                <td style="width: 20%; text-align: center; font-size: 24px; color: #035d96; vertical-align: middle;">
+                                    &#x2192;
+                                </td>
+                                <td style="width: 40%; padding: 8px; background: #fde8e8; border-left: 4px solid #dc3545; font-size: 12px;">
+                                    <strong style="color: #666; font-size: 10px;">DESTINO</strong><br/>
                                     <span style="font-size: 16px; font-weight: bold;">
                                         CP <span t-field="doc.dest_zip"/>
                                     </span>
-                                </div>
-                            </div>
-                        </div>
+                                </td>
+                            </tr>
+                        </table>
 
-                        <!-- ===== MÉTRICAS DE RUTA ===== -->
-                        <div class="row mb-4">
-                            <div class="col-4 text-center">
-                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
-                                    <span style="font-size: 11px; color: #666; display: block;">DISTANCIA</span>
-                                    <strong style="font-size: 22px; color: #035d96;">
+                        <!-- MÉTRICAS DE RUTA -->
+                        <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 8px 0;">
+                            <tr>
+                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Distancia</span>
+                                    <strong style="font-size: 20px; color: #035d96;">
                                         <span t-esc="'%.0f' % doc.distance_km"/> km
                                     </strong>
-                                </div>
-                            </div>
-                            <div class="col-4 text-center">
-                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
-                                    <span style="font-size: 11px; color: #666; display: block;">TIEMPO ESTIMADO</span>
-                                    <strong style="font-size: 22px; color: #035d96;">
+                                </td>
+                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Tiempo Estimado</span>
+                                    <strong style="font-size: 20px; color: #035d96;">
                                         <span t-esc="'%.1f' % doc.duration_hours"/> hrs
                                     </strong>
-                                </div>
-                            </div>
-                            <div class="col-4 text-center">
-                                <div style="background: #f0f5fa; padding: 10px; border-radius: 6px;">
-                                    <span style="font-size: 11px; color: #666; display: block;">CASETAS (TAG)</span>
-                                    <strong style="font-size: 22px; color: #035d96;">
+                                </td>
+                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                    <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Casetas (TAG)</span>
+                                    <strong style="font-size: 20px; color: #035d96;">
                                         $ <span t-esc="'%.2f' % doc.toll_cost"/>
                                     </strong>
-                                </div>
-                            </div>
-                        </div>
+                                </td>
+                            </tr>
+                        </table>
 
-                        <!-- ===== PROPUESTA DE PRECIO ===== -->
-                        <div class="row mb-3">
-                            <div class="col-12">
-                                <h5 style="color: #035d96; margin-bottom: 8px;">
-                                    <i class="fa fa-money"/> Cotización de Flete
-                                </h5>
-                            </div>
-                        </div>
+                        <!-- COTIZACIÓN DE FLETE -->
+                        <h4 style="color: #035d96; font-size: 14px; margin: 0 0 8px 0; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                            Cotización de Flete
+                        </h4>
 
-                        <!-- Calcular variables para evitar repetir lógica -->
                         <t t-set="subtotal"
                            t-value="doc.proposal_km_total if doc.selected_proposal == 'km'
                                     else (doc.proposal_trip_total if doc.selected_proposal == 'trip'
@@ -133,85 +123,82 @@
                         <t t-set="retencion" t-value="subtotal * 0.04 if doc.partner_invoice_id.is_company else 0"/>
                         <t t-set="total" t-value="subtotal + iva - retencion"/>
                         <t t-set="metodo_nombre"
-                           t-value="'Por Kilómetro' if doc.selected_proposal == 'km'
+                           t-value="'Por Kilometro' if doc.selected_proposal == 'km'
                                     else ('Por Viaje (costos operativos)' if doc.selected_proposal == 'trip'
                                     else 'Precio Directo')"/>
 
-                        <table class="table" style="font-size: 13px; border: 1px solid #ddd;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;">
                             <thead>
                                 <tr style="background: #035d96; color: white;">
-                                    <th style="padding: 10px;">Concepto</th>
-                                    <th class="text-end" style="padding: 10px; width: 180px;">Importe</th>
+                                    <th style="padding: 10px 12px; text-align: left;">Concepto</th>
+                                    <th style="padding: 10px 12px; text-align: right; width: 160px;">Importe</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td style="padding: 8px 10px;">
-                                        <strong>Servicio de Flete</strong>
-                                        <br/>
-                                        <small style="color: #888;">
-                                            Método: <span t-esc="metodo_nombre"/>
-                                        </small>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px 12px;">
+                                        <strong>Servicio de Flete</strong><br/>
+                                        <span style="color: #888; font-size: 11px;">
+                                            Metodo: <span t-esc="metodo_nombre"/>
+                                        </span>
                                     </td>
-                                    <td class="text-end" style="padding: 8px 10px;">
+                                    <td style="padding: 10px 12px; text-align: right;">
                                         $ <span t-esc="'%.2f' % subtotal"/>
                                     </td>
                                 </tr>
-                                <tr style="background: #f9f9f9;">
-                                    <td style="padding: 8px 10px;">IVA (16%)</td>
-                                    <td class="text-end" style="padding: 8px 10px;">
+                                <tr style="background: #f9f9f9; border-bottom: 1px solid #eee;">
+                                    <td style="padding: 8px 12px;">IVA (16%)</td>
+                                    <td style="padding: 8px 12px; text-align: right;">
                                         $ <span t-esc="'%.2f' % iva"/>
                                     </td>
                                 </tr>
-                                <tr t-if="doc.partner_invoice_id.is_company" style="color: #dc3545;">
-                                    <td style="padding: 8px 10px;">Retención IVA (4%)</td>
-                                    <td class="text-end" style="padding: 8px 10px;">
+                                <tr t-if="retencion > 0" style="color: #dc3545; border-bottom: 1px solid #eee;">
+                                    <td style="padding: 8px 12px;">Retención IVA (4%)</td>
+                                    <td style="padding: 8px 12px; text-align: right;">
                                         - $ <span t-esc="'%.2f' % retencion"/>
                                     </td>
                                 </tr>
                             </tbody>
                             <tfoot>
                                 <tr style="background: #e1a13e;">
-                                    <td style="padding: 12px 10px;">
-                                        <strong style="font-size: 16px; color: #333;">TOTAL</strong>
+                                    <td style="padding: 12px; font-size: 16px; font-weight: bold; color: #333;">
+                                        TOTAL
                                     </td>
-                                    <td class="text-end" style="padding: 12px 10px;">
-                                        <strong style="font-size: 20px; color: #333;">
-                                            $ <span t-esc="'%.2f' % total"/>
-                                        </strong>
+                                    <td style="padding: 12px; text-align: right; font-size: 20px; font-weight: bold; color: #333;">
+                                        $ <span t-esc="'%.2f' % total"/>
                                     </td>
                                 </tr>
                             </tfoot>
                         </table>
 
-                        <!-- ===== CARGA (si hay mercancías) ===== -->
-                        <div t-if="doc.line_ids" class="mb-3">
-                            <h5 style="color: #035d96; margin-bottom: 8px;">
-                                <i class="fa fa-cubes"/> Carga a Transportar
-                            </h5>
-                            <table class="table table-sm" style="font-size: 12px;">
+                        <!-- CARGA -->
+                        <div t-if="doc.line_ids">
+                            <h4 style="color: #035d96; font-size: 14px; margin: 0 0 8px 0; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
+                                Carga a Transportar
+                            </h4>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px;">
                                 <thead>
                                     <tr style="background: #f0f0f0;">
-                                        <th>Descripción</th>
-                                        <th class="text-end">Cantidad</th>
-                                        <th class="text-end">Peso (kg)</th>
+                                        <th style="padding: 6px 10px; text-align: left;">Descripción</th>
+                                        <th style="padding: 6px 10px; text-align: right;">Cantidad</th>
+                                        <th style="padding: 6px 10px; text-align: right;">Peso (kg)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <t t-foreach="doc.line_ids" t-as="line">
-                                        <tr>
-                                            <td><span t-field="line.description"/></td>
-                                            <td class="text-end"><span t-field="line.quantity"/></td>
-                                            <td class="text-end"><span t-field="line.weight_kg"/></td>
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 6px 10px;"><span t-field="line.description"/></td>
+                                            <td style="padding: 6px 10px; text-align: right;"><span t-field="line.quantity"/></td>
+                                            <td style="padding: 6px 10px; text-align: right;"><span t-field="line.weight_kg"/></td>
                                         </tr>
                                     </t>
                                 </tbody>
                             </table>
                         </div>
 
-                        <!-- ===== NOTAS LEGALES ===== -->
-                        <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
-                            <p style="font-size: 9px; color: #999; margin: 0;">
+                        <!-- NOTAS LEGALES -->
+                        <div style="border-top: 1px solid #ddd; padding-top: 8px; margin-top: 20px;">
+                            <p style="font-size: 8px; color: #aaa; margin: 0; line-height: 1.4;">
                                 <strong>Nota:</strong> Esta pre-cotización es un documento comercial informativo.
                                 No constituye un CFDI ni tiene validez fiscal. Los precios pueden variar según
                                 condiciones de mercado. Vigencia: 15 días a partir de la fecha de emisión.
