@@ -139,29 +139,30 @@
                                             <h5 class="mb-0"><i class="fa fa-map-marker"/> Origen</h5>
                                         </div>
                                         <div class="card-body">
+                                            <!-- Fallback: CP + ciudad cuando no hay partner -->
+                                            <t t-if="not waybill.partner_origin_id and waybill.origin_zip">
+                                                <div class="p-2">
+                                                    <span class="badge text-bg-success">CP <t t-esc="waybill.origin_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.origin_city_name" t-esc="waybill.origin_city_name"/>
+                                                </div>
+                                            </t>
                                             <t t-if="waybill.partner_origin_id">
                                                 <p class="mb-2">
-                                                    <strong>Cliente:</strong><br/>
+                                                    <strong>Remitente:</strong><br/>
                                                     <span t-esc="waybill.partner_origin_id.name"/>
                                                 </p>
                                             </t>
-                                            <t t-if="waybill.origin_city_id">
+                                            <t t-if="waybill.origin_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.origin_city_id.name"/>
-                                                </p>
-                                            </t>
-                                            <t t-if="waybill.partner_origin_id.state_id">
-                                                <p class="mb-2">
-                                                    <strong>Estado:</strong><br/>
-                                                    <span t-esc="waybill.partner_origin_id.state_id.name"/>
+                                                    <span t-esc="waybill.origin_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
                                                     <span t-esc="waybill.origin_address"/>
-                                                    <t t-if="waybill.origin_zip">, <span t-esc="waybill.origin_zip"/></t>
+                                                    <t t-if="waybill.origin_zip">, CP <span t-esc="waybill.origin_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
@@ -175,29 +176,30 @@
                                             <h5 class="mb-0"><i class="fa fa-flag-checkered"/> Destino</h5>
                                         </div>
                                         <div class="card-body">
+                                            <!-- Fallback: CP + ciudad cuando no hay partner -->
+                                            <t t-if="not waybill.partner_dest_id and waybill.dest_zip">
+                                                <div class="p-2">
+                                                    <span class="badge text-bg-danger">CP <t t-esc="waybill.dest_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.dest_city_name" t-esc="waybill.dest_city_name"/>
+                                                </div>
+                                            </t>
                                             <t t-if="waybill.partner_dest_id">
                                                 <p class="mb-2">
-                                                    <strong>Cliente:</strong><br/>
+                                                    <strong>Destinatario:</strong><br/>
                                                     <span t-esc="waybill.partner_dest_id.name"/>
                                                 </p>
                                             </t>
-                                            <t t-if="waybill.dest_city_id">
+                                            <t t-if="waybill.dest_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.dest_city_id.name"/>
-                                                </p>
-                                            </t>
-                                            <t t-if="waybill.partner_dest_id.state_id">
-                                                <p class="mb-2">
-                                                    <strong>Estado:</strong><br/>
-                                                    <span t-esc="waybill.partner_dest_id.state_id.name"/>
+                                                    <span t-esc="waybill.dest_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
                                                     <span t-esc="waybill.dest_address"/>
-                                                    <t t-if="waybill.dest_zip">, <span t-esc="waybill.dest_zip"/></t>
+                                                    <t t-if="waybill.dest_zip">, CP <span t-esc="waybill.dest_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
