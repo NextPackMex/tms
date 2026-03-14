@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="mail_template_tms_cotizacion" model="mail.template">
+        <field name="name">TMS - Pre-cotización de Flete</field>
+        <field name="model_id" ref="model_tms_cotizacion_wizard"/>
+        <field name="subject">Pre-cotización de Flete — {{ object.partner_invoice_id.name or 'Cliente' }}</field>
+        <field name="email_from">{{ (object.env.company.email or user.email) }}</field>
+        <field name="email_to">{{ object.partner_invoice_id.email or '' }}</field>
+        <field name="body_html"><![CDATA[
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="background: #035d96; color: white; padding: 20px; text-align: center;">
+        <h2 style="margin: 0;">Pre-cotización de Flete</h2>
+    </div>
+    <div style="padding: 20px;">
+        <p>Estimado/a <strong>{{ object.partner_invoice_id.name or 'Cliente' }}</strong>,</p>
+        <p>Le compartimos la cotización del servicio de transporte solicitado:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+            <tr style="background: #f0f5fa;">
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Origen (CP):</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ object.origin_zip or '-' }}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Destino (CP):</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ object.dest_zip or '-' }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Distancia:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ '%.1f' % object.distance_km }} km</td>
+                <td style="padding: 8px; border: 1px solid #ddd;"><strong>Tiempo est.:</strong></td>
+                <td style="padding: 8px; border: 1px solid #ddd;">{{ '%.1f' % object.duration_hours }} hrs</td>
+            </tr>
+        </table>
+
+        <p>Adjuntamos el detalle completo de las propuestas en PDF.</p>
+        <p>Quedamos a sus órdenes para cualquier duda.</p>
+
+        <p style="margin-top: 24px;">
+            <strong>{{ object.env.company.name or 'Empresa' }}</strong><br/>
+            {{ object.env.company.phone or '' }}<br/>
+            {{ object.env.company.email or '' }}
+        </p>
+    </div>
+    <div style="background: #e1a13e; padding: 8px; text-align: center; font-size: 12px;">
+        <span style="color: #333;">Cotización comercial — No es un CFDI</span>
+    </div>
+</div>
+        ]]></field>
+        <field name="report_template_ids"
+               eval="[(4, ref('tms.action_report_tms_cotizacion'))]"/>
+        <field name="auto_delete" eval="False"/>
+    </record>
+</odoo>

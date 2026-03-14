@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_report_tms_cotizacion" model="ir.actions.report">
+        <field name="name">Pre-cotización TMS</field>
+        <field name="model">tms.cotizacion.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms.report_cotizacion_template</field>
+        <field name="report_file">tms.report_cotizacion_template</field>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Pre-Cotizacion_%s' % (object.partner_invoice_id.name or 'SinCliente').replace(' ', '_')</field>
+    </record>
+</odoo>
