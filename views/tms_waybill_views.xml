@@ -514,7 +514,10 @@
                                     <field name="description" string="Descripción"/>
                                     <field name="quantity" string="Cant."/>
                                     <field name="uom_sat_id" string="Unidad"/>
-                                    <field name="dimensions" string="Dimens." widget="tms_dimensions" placeholder="000/000/000cm"/>
+                                    <field name="dim_largo" string="↔ Lrg"/>
+                                    <field name="dim_ancho" string="↕ Anc"/>
+                                    <field name="dim_alto"  string="↑ Alt"/>
+                                    <field name="dimensions" column_invisible="1"/>
                                     <field name="weight_kg" string="Peso Kg"/>
                                     <field name="is_dangerous" string="¿Pel.?"/>
                                     <field name="embalaje_id" string="Embalaje"/>

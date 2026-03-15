@@ -1022,11 +1022,73 @@ class TmsWaybill(models.Model):
         self.write({'state': 'aprobado'})
         return True
 
+    def _validate_before_confirm(self):
+        """
+        Valida que el waybill tenga todos los datos mínimos operativos
+        antes de confirmar el pedido (transición aprobado → draft → en_pedido).
+
+        Agrupa todos los errores y los muestra juntos para que el usuario
+        pueda corregirlos todos de una vez, en lugar de un error por vez.
+
+        NOTA: Los siguientes campos del task NO existen aún y se omiten:
+          - fecha_embarque (no definido en el modelo — agregar en V2.2)
+          - vehicle_status == 'blocked' (semilla V2.5 — fleet.vehicle)
+        """
+        errors = []
+
+        # ── GRUPO 1: RUTA ──────────────────────────────────────────────
+        if not self.partner_origin_id:
+            errors.append("• Remitente (origen del viaje)")
+        if not self.partner_dest_id:
+            errors.append("• Destinatario")
+        if not self.origin_zip:
+            errors.append("• Código Postal de origen")
+        if not self.dest_zip:
+            errors.append("• Código Postal de destino")
+
+        # ── GRUPO 2: VEHÍCULO Y CHOFER ──────────────────────────────────
+        if not self.vehicle_id:
+            errors.append("• Vehículo (tracto) asignado")
+        if not self.driver_id:
+            errors.append("• Chofer asignado")
+
+        # ── GRUPO 3: MERCANCÍAS ─────────────────────────────────────────
+        if not self.line_ids:
+            errors.append("• Al menos una línea de mercancía")
+        else:
+            for i, line in enumerate(self.line_ids, 1):
+                ref = line.description or f'Línea #{i}'
+                if not line.description:
+                    errors.append(f"• Mercancía #{i}: falta la descripción")
+                if not line.quantity or line.quantity <= 0:
+                    errors.append(f"• Mercancía #{i} ({ref}): falta la cantidad")
+                if not line.weight_kg or line.weight_kg <= 0:
+                    errors.append(f"• Mercancía #{i} ({ref}): falta el peso (kg)")
+                # product_sat_id = clave SAT del producto (requerida para Carta Porte)
+                if not line.product_sat_id:
+                    errors.append(
+                        f"• Mercancía #{i} ({ref}): falta la Clave SAT del producto"
+                    )
+                # Dimensiones obligatorias para Carta Porte 3.1
+                if line.dim_largo <= 0 or line.dim_ancho <= 0 or line.dim_alto <= 0:
+                    errors.append(
+                        f"• Mercancía #{i} ({ref}): "
+                        f"faltan dimensiones (Largo, Ancho y Alto en cm)"
+                    )
+
+        if errors:
+            raise UserError(
+                _("Para confirmar el pedido, completa los siguientes campos:\n\n")
+                + "\n".join(errors)
+            )
+
     def action_confirm_order(self):
         """Transición aprobado → draft. Datos completos, confirmar pedido."""
         self.ensure_one()
         if self.state != 'aprobado':
             raise UserError(_("Solo se pueden confirmar viajes en estado Aprobado."))
+        # Validar datos mínimos operativos antes de avanzar
+        self._validate_before_confirm()
         self.write({'state': 'draft'})
         return True
 
@@ -1572,16 +1634,14 @@ class TmsWaybill(models.Model):
     def action_confirm(self):
         """
         MANUAL: Confirmar Solicitud → En Pedido.
-        Se ejecuta al aprobar la cotización.
+        Se ejecuta desde el botón "Confirmar Pedido" en estado draft.
         """
         self.ensure_one()
 
-        # Validar que tenga cliente y ruta definidos
         if not self.partner_invoice_id:
             raise UserError(_('Debe seleccionar un cliente antes de confirmar.'))
-        # TEMPORARY MOCK BYPASS (QA Workflow 2.0.9)
-        # if not self.origin_city_id or not self.dest_city_id:
-        #    raise UserError(_('Debe definir origen y destino antes de confirmar.'))
+        # Validar datos mínimos operativos (ruta, vehículo, chofer, mercancías)
+        self._validate_before_confirm()
 
         self.write({'state': 'en_pedido'})
 
@@ -2172,13 +2232,43 @@ class TmsWaybillLine(models.Model):
         help='Peso total de la mercancía en kilogramos'
     )
 
-    # Char: dimensiones (opcional) — SAT Carta Porte 3.1
+    # Dimensiones (opcional) — SAT Carta Porte 3.1
     # Patrón XSD: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)
+    dim_largo = fields.Float(
+        string='Largo (cm)',
+        digits=(6, 0),
+        default=0,
+    )
+    dim_ancho = fields.Float(
+        string='Ancho (cm)',
+        digits=(6, 0),
+        default=0,
+    )
+    dim_alto = fields.Float(
+        string='Alto (cm)',
+        digits=(6, 0),
+        default=0,
+    )
     dimensions = fields.Char(
         string='Dimensiones',
-        size=15,
-        help='Largo/Alto/Ancho en cm o plg. Ej: 30/40/30cm (máx 999 por medida)'
+        compute='_compute_dimensions',
+        store=True,
+        help='Formato SAT: largo/ancho/alto en cm'
     )
+
+    @api.depends('dim_largo', 'dim_ancho', 'dim_alto')
+    def _compute_dimensions(self):
+        """
+        Calcula el campo dimensions en formato SAT
+        a partir de los 3 campos numéricos individuales.
+        Formato: 000/000/000cm (requerido por Carta Porte 3.1)
+        """
+        for rec in self:
+            rec.dimensions = '{:03.0f}/{:03.0f}/{:03.0f}cm'.format(
+                rec.dim_largo or 0,
+                rec.dim_ancho or 0,
+                rec.dim_alto or 0,
+            )
 
     # Boolean: es material peligroso
     is_dangerous = fields.Boolean(
@@ -2247,19 +2337,6 @@ class TmsWaybillLine(models.Model):
         help='Unidad de medida de la pureza.'
     )
 
-    @api.constrains('dimensions')
-    def _check_dimensions_format(self):
-        """Valida formato SAT Carta Porte 3.1: ([0-9]{1,3}[/]){2}([0-9]{1,3})(cm|plg)?"""
-        sat_pattern = re.compile(r'^([0-9]{1,3}/){2}[0-9]{1,3}(cm|plg)?$')
-        for line in self:
-            if line.dimensions and not sat_pattern.match(line.dimensions):
-                raise ValidationError(_(
-                    'Dimensiones "%(dim)s" no cumple formato SAT.\n'
-                    'Formato: Largo/Alto/Ancho (unidad opcional: cm o plg)\n'
-                    'Ejemplos: 9/9/9, 30/40/30cm, 120/80/50plg\n'
-                    'Máximo 999 por medida.',
-                    dim=line.dimensions,
-                ))
 
 
 class TmsWaybillCustomsRegime(models.Model):
