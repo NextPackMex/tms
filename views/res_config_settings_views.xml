@@ -74,6 +74,73 @@
                             </div>
                         </setting>
                     </block>
+
+                    <!-- ══════════════════════════════════════════════════════════
+                         PAC — Formas Digitales
+                         URL pruebas:    https://dev33.facturacfdi.mx
+                         URL producción: https://v33.facturacfdi.mx
+                         ══════════════════════════════════════════════════════════ -->
+                    <block title="PAC — Formas Digitales" name="tms_pac_fd_setting_container">
+                        <setting string="Credenciales Formas Digitales"
+                                 help="Cuenta de timbrado en Formas Digitales (forsedi.facturacfdi.mx). Usuario: demo / Password para pruebas.">
+                            <div class="row mt16">
+                                <label for="fd_ambiente" class="col-lg-3 o_light_label"/>
+                                <field name="fd_ambiente" widget="radio"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="fd_usuario" class="col-lg-3 o_light_label"/>
+                                <field name="fd_usuario" placeholder="usuario@correo.com"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="fd_password" class="col-lg-3 o_light_label"/>
+                                <field name="fd_password" password="True"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="fd_user_id" class="col-lg-3 o_light_label"/>
+                                <field name="fd_user_id" placeholder="ID proporcionado por Formas Digitales"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <!-- ══════════════════════════════════════════════════════════
+                         PAC — SW Sapien
+                         URL pruebas:    https://services.test.sw.com.mx
+                         URL producción: https://services.sw.com.mx
+                         ══════════════════════════════════════════════════════════ -->
+                    <block title="PAC — SW Sapien (Respaldo)" name="tms_pac_sw_setting_container">
+                        <setting string="Credenciales SW Sapien"
+                                 help="Cuenta de timbrado en SW Sapien (sw.com.mx). Se usa como PAC de respaldo si Formas Digitales falla.">
+                            <div class="row mt16">
+                                <label for="sw_ambiente" class="col-lg-3 o_light_label"/>
+                                <field name="sw_ambiente" widget="radio"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="sw_usuario" class="col-lg-3 o_light_label"/>
+                                <field name="sw_usuario" placeholder="demo@sw.com.mx"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="sw_password" class="col-lg-3 o_light_label"/>
+                                <field name="sw_password" password="True"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <!-- ══════════════════════════════════════════════════════════
+                         Control PAC Dual — Failover automático
+                         ══════════════════════════════════════════════════════════ -->
+                    <block title="Control PAC" name="tms_pac_control_setting_container">
+                        <setting string="PAC Primario y Failover"
+                                 help="Configura el orden de intento al timbrar. Si el PAC primario falla y el failover está activo, se intenta automáticamente con el secundario.">
+                            <div class="row mt16">
+                                <label for="pac_primario" class="col-lg-3 o_light_label"/>
+                                <field name="pac_primario" widget="radio"/>
+                            </div>
+                            <div class="row mt16">
+                                <label for="pac_failover" class="col-lg-3 o_light_label"/>
+                                <field name="pac_failover" widget="boolean_toggle"/>
+                            </div>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>
