@@ -72,7 +72,7 @@ class ResCompany(models.Model):
     )
     tms_csd_cer = fields.Binary(string='CSD Certificado (.cer)')
     tms_csd_key = fields.Binary(string='CSD Llave Privada (.key)')
-    tms_csd_password = fields.Char(string='Contraseña CSD')
+    tms_csd_password = fields.Char(string='Contraseña CSD', password=True)
 
     # --- Seguros Carta Porte ---
     tms_insurance_rc_company = fields.Char(string='Aseguradora RC')
@@ -93,7 +93,8 @@ class ResCompany(models.Model):
         help='Usuario de la cuenta en Formas Digitales (forsedi.facturacfdi.mx)'
     )
     fd_password = fields.Char(
-        string='Contraseña Formas Digitales'
+        string='Contraseña Formas Digitales',
+        password=True,
     )
     fd_user_id = fields.Char(
         string='User ID Formas Digitales',
@@ -112,7 +113,8 @@ class ResCompany(models.Model):
         help='Email de la cuenta en SW Sapien (sw.com.mx)'
     )
     sw_password = fields.Char(
-        string='Contraseña SW Sapien'
+        string='Contraseña SW Sapien',
+        password=True,
     )
     sw_ambiente = fields.Selection([
         ('pruebas',    'Pruebas — services.test.sw.com.mx'),
