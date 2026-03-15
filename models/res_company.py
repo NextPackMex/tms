@@ -84,3 +84,52 @@ class ResCompany(models.Model):
     tms_insurance_env_company = fields.Char(string='Aseguradora Ambiental')
     tms_insurance_env_policy = fields.Char(string='Póliza Ambiental')
     tms_insurance_env_expiry = fields.Date(string='Vigencia Ambiental')
+
+    # ============================================================
+    # PAC FORMAS DIGITALES — Credenciales y ambiente (V2.2)
+    # ============================================================
+    fd_usuario = fields.Char(
+        string='Usuario Formas Digitales',
+        help='Usuario de la cuenta en Formas Digitales (forsedi.facturacfdi.mx)'
+    )
+    fd_password = fields.Char(
+        string='Contraseña Formas Digitales'
+    )
+    fd_user_id = fields.Char(
+        string='User ID Formas Digitales',
+        help='ID de usuario proporcionado por Formas Digitales'
+    )
+    fd_ambiente = fields.Selection([
+        ('pruebas',    'Pruebas — dev33.facturacfdi.mx'),
+        ('produccion', 'Producción — v33.facturacfdi.mx'),
+    ], string='Ambiente FD', default='pruebas')
+
+    # ============================================================
+    # PAC SW SAPIEN — Credenciales y ambiente (V2.2)
+    # ============================================================
+    sw_usuario = fields.Char(
+        string='Usuario SW Sapien',
+        help='Email de la cuenta en SW Sapien (sw.com.mx)'
+    )
+    sw_password = fields.Char(
+        string='Contraseña SW Sapien'
+    )
+    sw_ambiente = fields.Selection([
+        ('pruebas',    'Pruebas — services.test.sw.com.mx'),
+        ('produccion', 'Producción — services.sw.com.mx'),
+    ], string='Ambiente SW', default='pruebas')
+
+    # ============================================================
+    # CONTROL DUAL PAC (V2.2)
+    # ============================================================
+    pac_primario = fields.Selection([
+        ('formas_digitales', 'Formas Digitales'),
+        ('sw_sapien',        'SW Sapien'),
+    ], string='PAC Primario', default='formas_digitales',
+       help='PAC que se intentará primero al timbrar'
+    )
+    pac_failover = fields.Boolean(
+        string='Activar failover automático',
+        default=True,
+        help='Si el PAC primario falla, intentar automáticamente con el secundario'
+    )
