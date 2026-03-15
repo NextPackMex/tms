@@ -136,8 +136,8 @@ class TMSCustomerPortal(CustomerPortal):
         if waybill_sudo.signature:
             return request.redirect(waybill_sudo.get_portal_url(query_string='&error=already_signed'))
 
-        # Validar que el estado permita firma (solo draft o estados iniciales)
-        if waybill_sudo.state not in ('draft', 'en_pedido'):
+        # Validar que el estado permita firma: cotizado, draft o en_pedido
+        if waybill_sudo.state not in ('cotizado', 'draft', 'en_pedido'):
             return request.redirect(waybill_sudo.get_portal_url(query_string='&error=invalid_state'))
 
         if not signature:
@@ -147,6 +147,10 @@ class TMSCustomerPortal(CustomerPortal):
             # Obtener IP
             client_ip = request.httprequest.remote_addr or ''
 
+            # Transición de estado: cotizado → aprobado (cliente aceptó precio)
+            # draft/en_pedido → en_pedido (confirmación formal)
+            new_state = 'aprobado' if waybill_sudo.state == 'cotizado' else 'en_pedido'
+
             # Guardar firma, nombre, fecha y datos de localización
             waybill_sudo.write({
                 'signature': signature,
@@ -155,7 +159,7 @@ class TMSCustomerPortal(CustomerPortal):
                 'signed_ip': client_ip,
                 'signed_latitude': float(latitude) if latitude else 0.0,
                 'signed_longitude': float(longitude) if longitude else 0.0,
-                'state': 'en_pedido',  # Cambiar estado a "En Pedido" (aceptado)
+                'state': new_state,
             })
 
             # Registrar mensaje en chatter si mail.thread existe
@@ -191,8 +195,8 @@ class TMSCustomerPortal(CustomerPortal):
         except (AccessError, MissingError):
             return request.redirect('/my')
 
-        # Validar que el estado permita rechazo (solo draft o estados iniciales)
-        if waybill_sudo.state not in ('draft', 'en_pedido'):
+        # Validar que el estado permita rechazo: cotizado, draft o en_pedido
+        if waybill_sudo.state not in ('cotizado', 'draft', 'en_pedido'):
             return request.redirect(waybill_sudo.get_portal_url(query_string='&error=invalid_state'))
 
         if not rejection_reason or not rejection_reason.strip():
