@@ -3,18 +3,31 @@
     <template id="report_cotizacion_template">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <t t-call="web.external_layout">
-                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333;">
-
-                        <!-- ENCABEZADO -->
+                <div class="header" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333;">
+                    <div class="row">
+                        <div class="col-12">
+                            <!-- ENCABEZADO -->
                         <table style="width: 100%; margin-bottom: 16px;">
                             <tr>
-                                <td style="width: 70%;">
+                                <td style="width: 15%; vertical-align: top; padding-right: 15px;">
+                                    <img t-if="doc.company_id.logo" t-att-src="image_data_uri(doc.company_id.logo)" style="max-height: 85px; max-width: 100%;" alt="Logo"/>
+                                </td>
+                                <td style="width: 55%; vertical-align: top;">
                                     <h2 style="color: #035d96; margin: 0 0 4px 0; font-size: 22px;">
                                         PRE-COTIZACIÓN DE FLETE
                                     </h2>
                                     <p style="color: #999; font-size: 10px; margin: 0;">
                                         Documento comercial informativo — No es un CFDI
+                                    </p>
+                                    <!-- Empresa emisora: siempre desde doc.company_id, nunca de la sesión -->
+                                    <p style="margin: 6px 0 0 0; font-size: 11px; color: #444; line-height: 1.5;">
+                                        <strong t-field="doc.company_id.name"/><br/>
+                                        <t t-if="doc.company_id.vat">
+                                            RFC: <span t-field="doc.company_id.vat"/><br/>
+                                        </t>
+                                        <t t-if="doc.company_id.country_id">
+                                            <span t-field="doc.company_id.country_id.name"/>
+                                        </t>
                                     </p>
                                 </td>
                                 <td style="width: 30%; text-align: right; vertical-align: top;">
@@ -27,6 +40,12 @@
                         </table>
 
                         <hr style="border: none; border-top: 3px solid #e1a13e; margin: 0 0 16px 0;"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="article o_report_layout_standard">
+                    <div class="page" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #333;">
 
                         <!-- DATOS DEL CLIENTE -->
                         <h4 style="color: #035d96; font-size: 14px; margin: 0 0 8px 0; border-bottom: 1px solid #ddd; padding-bottom: 4px;">
@@ -208,7 +227,7 @@
                         </div>
 
                     </div>
-                </t>
+                </div>
             </t>
         </t>
     </template>

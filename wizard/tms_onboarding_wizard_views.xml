@@ -9,7 +9,7 @@
             <form string="Configuración Inicial TMS">
 
                 <!-- Indicador de progreso -->
-                <div class="alert alert-info text-center" style="font-size: 16px; margin-bottom: 16px;">
+                <div class="alert alert-info text-center" role="status" style="font-size: 16px; margin-bottom: 16px;">
                     <span invisible="step != 1"><strong>Paso 1 de 6</strong> — 🏢 Tu Empresa</span>
                     <span invisible="step != 2"><strong>Paso 2 de 6</strong> — 🚛 Tu Vehículo</span>
                     <span invisible="step != 3"><strong>Paso 3 de 6</strong> — 🛡️ Tus Seguros</span>
@@ -32,10 +32,10 @@
                         <field name="company_logo" widget="image" class="oe_avatar"/>
                     </group>
                     <separator string="Certificado de Sello Digital (CSD)"/>
-                    <div class="alert alert-warning" colspan="2">
+                    <div class="alert alert-warning" role="status" colspan="2">
                         <strong>💡 Tip:</strong> El CSD lo descargas del portal del SAT.
                         Lo necesitas para timbrar tus Cartas Porte. Si no lo tienes aún,
-                        puedes saltarte este paso y agregarlo después en Configuración.
+                        puedes saltarte este paso y aggregarlo después en Configuración.
                     </div>
                     <group>
                         <field name="csd_cer_file" filename="csd_cer_filename"/>
@@ -79,7 +79,7 @@
 
                 <!-- ===== PASO 3 — SEGUROS ===== -->
                 <group invisible="step != 3" string="Seguros de tu Operación">
-                    <div class="alert alert-info" colspan="2">
+                    <div class="alert alert-info" role="status" colspan="2">
                         <strong>📋 Nota:</strong> La Carta Porte 3.1 requiere mínimo el seguro de
                         Responsabilidad Civil. El seguro de Carga es recomendado y el Ambiental
                         solo aplica si transportas materiales peligrosos.
@@ -137,7 +137,7 @@
 
                 <!-- ===== PASO 6 — RESUMEN ===== -->
                 <group invisible="step != 6" string="¡Todo Listo!">
-                    <div class="alert alert-success text-center" colspan="2">
+                    <div class="alert alert-success text-center" role="status" colspan="2">
                         <h3>🎉 ¡Felicidades! Tu TMS está configurado</h3>
                         <p>Aquí el resumen de lo que configuraste:</p>
                     </div>
@@ -148,7 +148,7 @@
                         <field name="summary_driver" readonly="1"/>
                         <field name="summary_client" readonly="1"/>
                     </group>
-                    <div class="alert alert-info text-center" colspan="2">
+                    <div class="alert alert-info text-center" role="status" colspan="2">
                         <p>Puedes modificar cualquier dato después en <strong>Configuración</strong>.</p>
                         <p>¡Ahora crea tu primer viaje!</p>
                     </div>

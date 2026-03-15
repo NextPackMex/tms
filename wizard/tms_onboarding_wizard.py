@@ -306,46 +306,108 @@ class TmsOnboardingWizard(models.TransientModel):
             vals['tms_csd_key'] = self.csd_key_file
         if self.csd_password:
             vals['tms_csd_password'] = self.csd_password
+        # País México por defecto (requerido para CFDI y Carta Porte)
+        mx = self.env.ref('base.mx', raise_if_not_found=False)
+        if mx:
+            vals['country_id'] = mx.id
+        # Moneda MXN por defecto
+        mxn = self.env.ref('base.MXN', raise_if_not_found=False)
+        if mxn:
+            vals['currency_id'] = mxn.id
         if vals:
             company.write(vals)
         return self.action_next_step()
+
+    def _get_or_create_vehicle_model(self, name):
+        """
+        Busca o crea un fleet.vehicle.model con el nombre dado.
+        fleet.vehicle.model requiere brand_id (fleet.vehicle.model.brand).
+        Busca o crea también la marca genérica 'TMS' (idempotente, no toca catálogos SAT).
+        """
+        # CORRECTO: el modelo de marca se llama 'fleet.vehicle.model.brand' (no 'fleet.vehicle.brand')
+        Brand = self.env['fleet.vehicle.model.brand']
+        Model = self.env['fleet.vehicle.model']
+
+        # Buscar o crear marca genérica TMS (una sola, compartida entre todas las unidades)
+        brand = Brand.search([('name', '=', 'TMS')], limit=1)
+        if not brand:
+            brand = Brand.create({'name': 'TMS'})
+
+        # Buscar o crear modelo con ese nombre bajo la marca TMS
+        model = Model.search([
+            ('name', '=', name),
+            ('brand_id', '=', brand.id)
+        ], limit=1)
+        if not model:
+            model = Model.create({
+                'name': name,
+                'brand_id': brand.id,
+            })
+        return model
+
+    def _get_vehicle_type(self, xml_ref, is_trailer):
+        """
+        Retorna el tms.vehicle.type indicado por xml_ref.
+        Si no existe, hace fallback al primer tipo disponible con el is_trailer indicado.
+        Esto garantiza que tms_vehicle_type_id (required=True) siempre tenga valor.
+        """
+        vtype = self.env.ref(xml_ref, raise_if_not_found=False)
+        if not vtype:
+            # Fallback: buscar primer tipo con la clasificación correcta
+            vtype = self.env['tms.vehicle.type'].search(
+                [('is_trailer', '=', is_trailer)], limit=1
+            )
+        return vtype
 
     def action_save_step_2(self):
         """Crea el vehículo principal (tracto) y opcionalmente remolque y dolly en fleet.vehicle."""
         self.ensure_one()
         Vehicle = self.env['fleet.vehicle']
         if self.vehicle_name:
+            tractor_type = self._get_vehicle_type('tms.tms_vehicle_type_tractor', False)
+            # 'name' es campo computed en fleet.vehicle → no incluir en vals (se genera automáticamente)
+            # 'no_economico' captura el nombre descriptivo ingresado por el usuario
             tracto_vals = {
-                'name': self.vehicle_name,
+                'no_economico': self.vehicle_name,
+                'model_id': self._get_or_create_vehicle_model(self.vehicle_name).id,
                 'license_plate': self.vehicle_plate or '',
-                'model_year': self.vehicle_year or '',
-                'tms_is_trailer': False,
                 'company_id': self.company_id.id,
             }
+            # model_year es Selection → solo incluir si hay valor ('' es inválido)
+            if self.vehicle_year:
+                tracto_vals['model_year'] = self.vehicle_year
+            if tractor_type:
+                tracto_vals['tms_vehicle_type_id'] = tractor_type.id
             if self.vehicle_config_id:
-                tracto_vals['tms_vehicle_config_id'] = self.vehicle_config_id.id
+                tracto_vals['sat_config_id'] = self.vehicle_config_id.id
             if self.vehicle_permit_type_id:
-                tracto_vals['tms_permit_type_id'] = self.vehicle_permit_type_id.id
+                tracto_vals['sat_permiso_sct_id'] = self.vehicle_permit_type_id.id
             if self.vehicle_permit_number:
-                tracto_vals['tms_permit_number'] = self.vehicle_permit_number
+                tracto_vals['permiso_sct_number'] = self.vehicle_permit_number
             Vehicle.create(tracto_vals)
         if self.has_trailer and self.trailer_name:
+            trailer_type = self._get_vehicle_type('tms.tms_vehicle_type_trailer', True)
             trailer_vals = {
-                'name': self.trailer_name,
+                'no_economico': self.trailer_name,
+                'model_id': self._get_or_create_vehicle_model(self.trailer_name).id,
                 'license_plate': self.trailer_plate or '',
-                'tms_is_trailer': True,
                 'company_id': self.company_id.id,
             }
+            if trailer_type:
+                trailer_vals['tms_vehicle_type_id'] = trailer_type.id
             if self.trailer_sub_type:
-                trailer_vals['tms_vehicle_config_id'] = self.trailer_sub_type.id
+                trailer_vals['sat_config_id'] = self.trailer_sub_type.id
             Vehicle.create(trailer_vals)
         if self.has_dolly and self.dolly_name:
+            dolly_type = self._get_vehicle_type('tms.tms_vehicle_type_dolly', True)
             dolly_vals = {
-                'name': self.dolly_name,
+                'no_economico': self.dolly_name,
+                'model_id': self._get_or_create_vehicle_model(self.dolly_name).id,
                 'license_plate': self.dolly_plate or '',
-                'tms_is_trailer': True,
                 'company_id': self.company_id.id,
             }
+            if dolly_type:
+                dolly_vals['tms_vehicle_type_id'] = dolly_type.id
             Vehicle.create(dolly_vals)
         return self.action_next_step()
 
