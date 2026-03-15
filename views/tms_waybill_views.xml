@@ -180,6 +180,45 @@
                     <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
                     <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['draft','en_pedido','assigned']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
+                    <!-- ═══════════════════════════════════════════════════
+                         BOTONES CFDI — Timbrado, cancelación y estatus SAT
+                         ═══════════════════════════════════════════════════ -->
+                    <!-- Timbrar: visible cuando la CP está lista y aún no está timbrada -->
+                    <button name="action_stamp_cfdi"
+                            string="Timbrar Carta Porte"
+                            type="object"
+                            class="oe_highlight"
+                            icon="fa-stamp"
+                            invisible="state != 'waybill' or cfdi_status == 'timbrado'"
+                            help="Genera y sella el CFDI 4.0 con Complemento Carta Porte 3.1"/>
+                    <!-- Cancelar CFDI: solo cuando ya está timbrado -->
+                    <button name="action_cancel_cfdi"
+                            string="Cancelar CFDI"
+                            type="object"
+                            class="btn-danger"
+                            icon="fa-times-circle"
+                            invisible="cfdi_status != 'timbrado'"
+                            confirm="¿Cancelar el CFDI ante el SAT? Esta acción no se puede deshacer."/>
+                    <!-- Estatus SAT: disponible cuando hay CFDI (timbrado o cancelado) -->
+                    <button name="action_check_cfdi_status"
+                            string="Estatus SAT"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-refresh"
+                            invisible="cfdi_status == 'none'"
+                            help="Consulta el estatus del CFDI en el SAT"/>
+                    <!-- Descargar XML: solo cuando está timbrado -->
+                    <button name="action_download_cfdi_xml"
+                            string="Descargar XML"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-download"
+                            invisible="cfdi_status != 'timbrado'"
+                            help="Descarga el XML del CFDI timbrado"/>
+
+                    <!-- Campo invisible para usar en condiciones de visibilidad -->
+                    <field name="cfdi_status" invisible="1"/>
+
                     <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
                 </header>
 
@@ -500,6 +539,27 @@
                                         <field name="regimen_aduanero"/>
                                     </list>
                                 </field>
+                            </group>
+
+                            <!-- ════════════════════════════════════════════════════
+                                 TIMBRE FISCAL DIGITAL — Visible cuando se ha timbrado
+                                 ════════════════════════════════════════════════════ -->
+                            <group string="Timbre Fiscal Digital" invisible="cfdi_status == 'none'">
+                                <group>
+                                    <field name="cfdi_uuid"        string="UUID CFDI"            readonly="1"/>
+                                    <field name="cfdi_fecha"       string="Fecha de timbrado"     readonly="1"/>
+                                    <field name="cfdi_pac"         string="PAC"                   readonly="1"/>
+                                    <field name="cfdi_no_cert_sat" string="No. Certificado SAT"   readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="cfdi_status"      string="Estatus CFDI"          readonly="1"
+                                           widget="badge"
+                                           decoration-success="cfdi_status == 'timbrado'"
+                                           decoration-danger="cfdi_status in ('cancelado','error')"
+                                           decoration-muted="cfdi_status == 'none'"/>
+                                    <field name="cfdi_error_msg"   string="Último error"          readonly="1"
+                                           invisible="cfdi_status not in ('error',)"/>
+                                </group>
                             </group>
                         </page>
 

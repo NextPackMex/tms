@@ -31,3 +31,24 @@ class ResConfigSettings(models.TransientModel):
 
     # CFDI 4.0
     tms_def_l10n_mx_edi_tax_object = fields.Selection(related='company_id.tms_def_l10n_mx_edi_tax_object', readonly=False, string="Objeto de Impuesto por Defecto (CFDI 4.0)")
+
+    # ============================================================
+    # PAC — Formas Digitales (relacionados a res.company)
+    # ============================================================
+    fd_usuario   = fields.Char(related='company_id.fd_usuario',   readonly=False, string='Usuario FD')
+    fd_password  = fields.Char(related='company_id.fd_password',  readonly=False, string='Contraseña FD', password=True)
+    fd_user_id   = fields.Char(related='company_id.fd_user_id',   readonly=False, string='User ID FD')
+    fd_ambiente  = fields.Selection(related='company_id.fd_ambiente', readonly=False, string='Ambiente FD')
+
+    # ============================================================
+    # PAC — SW Sapien (relacionados a res.company)
+    # ============================================================
+    sw_usuario   = fields.Char(related='company_id.sw_usuario',   readonly=False, string='Usuario SW')
+    sw_password  = fields.Char(related='company_id.sw_password',  readonly=False, string='Contraseña SW', password=True)
+    sw_ambiente  = fields.Selection(related='company_id.sw_ambiente', readonly=False, string='Ambiente SW')
+
+    # ============================================================
+    # Control PAC dual (relacionados a res.company)
+    # ============================================================
+    pac_primario  = fields.Selection(related='company_id.pac_primario', readonly=False, string='PAC Primario')
+    pac_failover  = fields.Boolean(related='company_id.pac_failover',   readonly=False, string='Failover automático')
