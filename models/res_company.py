@@ -50,3 +50,37 @@ class ResCompany(models.Model):
         default='02',
         help='Valor por defecto para las líneas de viaje en CFDI 4.0.'
     )
+
+    # --- CSD para timbrado CFDI ---
+    tms_regimen_fiscal = fields.Selection(
+        selection=[
+            ('601', '601 - General de Ley Personas Morales'),
+            ('603', '603 - Personas Morales con Fines no Lucrativos'),
+            ('605', '605 - Sueldos y Salarios'),
+            ('606', '606 - Arrendamiento'),
+            ('612', '612 - Personas Físicas con Actividades Empresariales y Profesionales'),
+            ('616', '616 - Sin obligaciones fiscales'),
+            ('620', '620 - Sociedades Cooperativas de Producción'),
+            ('621', '621 - Incorporación Fiscal'),
+            ('622', '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras'),
+            ('623', '623 - Opcional para Grupos de Sociedades'),
+            ('624', '624 - Coordinados'),
+            ('625', '625 - Actividades Empresariales con ingresos vía Plataformas Tecnológicas'),
+            ('626', '626 - Régimen Simplificado de Confianza'),
+        ],
+        string='Régimen Fiscal SAT',
+    )
+    tms_csd_cer = fields.Binary(string='CSD Certificado (.cer)')
+    tms_csd_key = fields.Binary(string='CSD Llave Privada (.key)')
+    tms_csd_password = fields.Char(string='Contraseña CSD')
+
+    # --- Seguros Carta Porte ---
+    tms_insurance_rc_company = fields.Char(string='Aseguradora RC')
+    tms_insurance_rc_policy = fields.Char(string='Póliza RC')
+    tms_insurance_rc_expiry = fields.Date(string='Vigencia RC')
+    tms_insurance_cargo_company = fields.Char(string='Aseguradora Carga')
+    tms_insurance_cargo_policy = fields.Char(string='Póliza Carga')
+    tms_insurance_cargo_expiry = fields.Date(string='Vigencia Carga')
+    tms_insurance_env_company = fields.Char(string='Aseguradora Ambiental')
+    tms_insurance_env_policy = fields.Char(string='Póliza Ambiental')
+    tms_insurance_env_expiry = fields.Date(string='Vigencia Ambiental')

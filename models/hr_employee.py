@@ -70,8 +70,6 @@ class HrEmployee(models.Model):
     # ============================================================
     # CAMPOS RELACIONADOS (RFC y Domicilio desde el Partner)
     # ============================================================
-    # Carta Porte exige RFC y Domicilio Fiscal del Operador.
-    # En Odoo 18, usamos "work_contact_id" (Partner vinculado).
 
     tms_driver_rfc = fields.Char(
         string='RFC Operador',
@@ -101,34 +99,47 @@ class HrEmployee(models.Model):
                 rec.tms_driver_address = False
 
     def validate_carta_porte_compliance(self):
-        """
-        Valida que el chofer (operador) cumpla con los requisitos para Carta Porte 3.1.
-        Retorna una lista de errores (strings) si falta algo.
-        """
+        """Valida que el chofer cumpla con los requisitos para Carta Porte 3.1."""
         self.ensure_one()
         errors = []
         prefix = f"Chofer {self.name}:"
 
         if not self.work_contact_id:
-            errors.append(f"{prefix} No tiene Contacto vinculado (work_contact_id). Es necesario para obtener RFC y domicilio fiscal.")
-            return errors # No podemos seguir validando sin contact
+            errors.append(f"{prefix} No tiene Contacto vinculado. Es necesario para obtener RFC y domicilio fiscal.")
+            return errors
 
         if not self.tms_driver_rfc:
             errors.append(f"{prefix} Falta el RFC (vat) en el contacto vinculado.")
-        
+
         if not self.tms_driver_license:
             errors.append(f"{prefix} Falta el Número de Licencia (NumLicencia).")
 
-        # Tipo de Licencia es teóricamente opcional en XSD si no se especifica, pero 
-        # para Carta Porte SIEMPRE se pide permiso y licencia. Lo hacemos obligatorio para consistencia.
         if not self.tms_driver_license_type:
             errors.append(f"{prefix} Falta el Tipo de Licencia.")
 
         if not self.l10n_mx_edi_fiscal_regime:
-             errors.append(f"{prefix} Falta el Régimen Fiscal de la figura de transporte.")
+            errors.append(f"{prefix} Falta el Régimen Fiscal de la figura de transporte.")
 
-        # Domicilio Fiscal (CP)
         if not self.work_contact_id.zip:
-             errors.append(f"{prefix} Falta el Código Postal (Domicilio) en el contacto vinculado.")
+            errors.append(f"{prefix} Falta el Código Postal (Domicilio) en el contacto vinculado.")
 
         return errors
+
+    # ============================================================
+    # CAMPOS ONBOARDING WIZARD (V2.1.5)
+    # ============================================================
+
+    tms_rfc = fields.Char(string='RFC del chofer', size=13)
+    tms_curp = fields.Char(string='CURP del chofer', size=18)
+    tms_license_number = fields.Char(string='Número licencia federal')
+    tms_license_type = fields.Selection(
+        selection=[
+            ('A', 'Tipo A - Vehículos ligeros'),
+            ('B', 'Tipo B - Vehículos pesados'),
+            ('C', 'Tipo C - Doble articulado'),
+            ('D', 'Tipo D - Materiales peligrosos'),
+            ('E', 'Tipo E - Doble articulado + peligrosos'),
+        ],
+        string='Tipo licencia federal',
+    )
+    tms_license_expiry = fields.Date(string='Vigencia licencia')

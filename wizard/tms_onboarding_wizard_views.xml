@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Vista form del onboarding wizard -->
+    <record id="view_tms_onboarding_wizard_form" model="ir.ui.view">
+        <field name="name">tms.onboarding.wizard.form</field>
+        <field name="model">tms.onboarding.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Configuración Inicial TMS">
+
+                <!-- Indicador de progreso -->
+                <div class="alert alert-info text-center" role="status" style="font-size: 16px; margin-bottom: 16px;">
+                    <span invisible="step != 1"><strong>Paso 1 de 6</strong> — 🏢 Tu Empresa</span>
+                    <span invisible="step != 2"><strong>Paso 2 de 6</strong> — 🚛 Tu Vehículo</span>
+                    <span invisible="step != 3"><strong>Paso 3 de 6</strong> — 🛡️ Tus Seguros</span>
+                    <span invisible="step != 4"><strong>Paso 4 de 6</strong> — 👷 Tu Chofer</span>
+                    <span invisible="step != 5"><strong>Paso 5 de 6</strong> — 🤝 Tu Primer Cliente</span>
+                    <span invisible="step != 6"><strong>Paso 6 de 6</strong> — ✅ ¡Todo Listo!</span>
+                </div>
+
+                <field name="step" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+
+                <!-- ===== PASO 1 — EMPRESA ===== -->
+                <group invisible="step != 1" string="Datos de tu Empresa">
+                    <group>
+                        <field name="company_name" placeholder="Ej: Transportes García SA de CV"/>
+                        <field name="company_rfc" placeholder="Ej: TGA200101ABC"/>
+                        <field name="regimen_fiscal"/>
+                    </group>
+                    <group>
+                        <field name="company_logo" widget="image" class="oe_avatar"/>
+                    </group>
+                    <separator string="Certificado de Sello Digital (CSD)"/>
+                    <div class="alert alert-warning" role="status" colspan="2">
+                        <strong>💡 Tip:</strong> El CSD lo descargas del portal del SAT.
+                        Lo necesitas para timbrar tus Cartas Porte. Si no lo tienes aún,
+                        puedes saltarte este paso y aggregarlo después en Configuración.
+                    </div>
+                    <group>
+                        <field name="csd_cer_file" filename="csd_cer_filename"/>
+                        <field name="csd_cer_filename" invisible="1"/>
+                        <field name="csd_key_file" filename="csd_key_filename"/>
+                        <field name="csd_key_filename" invisible="1"/>
+                        <field name="csd_password" password="True"/>
+                    </group>
+                </group>
+
+                <!-- ===== PASO 2 — VEHÍCULO ===== -->
+                <group invisible="step != 2" string="Tu Vehículo Principal">
+                    <group>
+                        <field name="vehicle_name" placeholder="Ej: Kenworth T680 2022"/>
+                        <field name="vehicle_plate" placeholder="Ej: ABC-123-A"/>
+                        <field name="vehicle_year" placeholder="Ej: 2022"/>
+                    </group>
+                    <group>
+                        <field name="vehicle_config_id"/>
+                        <field name="vehicle_permit_type_id"/>
+                        <field name="vehicle_permit_number" placeholder="Ej: PERM-12345"/>
+                    </group>
+                    <separator string="Remolque"/>
+                    <group>
+                        <field name="has_trailer"/>
+                    </group>
+                    <group invisible="not has_trailer">
+                        <field name="trailer_name" placeholder="Ej: Remolque Utility 53ft"/>
+                        <field name="trailer_plate"/>
+                        <field name="trailer_sub_type"/>
+                    </group>
+                    <separator string="Dolly (doble articulado)" invisible="not has_trailer"/>
+                    <group invisible="not has_trailer">
+                        <field name="has_dolly"/>
+                    </group>
+                    <group invisible="not has_dolly">
+                        <field name="dolly_name"/>
+                        <field name="dolly_plate"/>
+                    </group>
+                </group>
+
+                <!-- ===== PASO 3 — SEGUROS ===== -->
+                <group invisible="step != 3" string="Seguros de tu Operación">
+                    <div class="alert alert-info" role="status" colspan="2">
+                        <strong>📋 Nota:</strong> La Carta Porte 3.1 requiere mínimo el seguro de
+                        Responsabilidad Civil. El seguro de Carga es recomendado y el Ambiental
+                        solo aplica si transportas materiales peligrosos.
+                    </div>
+                    <separator string="Seguro de Responsabilidad Civil (obligatorio)"/>
+                    <group>
+                        <field name="insurance_rc_company" placeholder="Ej: Qualitas, HDI, GNP"/>
+                        <field name="insurance_rc_policy" placeholder="Ej: POL-2024-12345"/>
+                        <field name="insurance_rc_expiry"/>
+                    </group>
+                    <separator string="Seguro de Carga (recomendado)"/>
+                    <group>
+                        <field name="insurance_cargo_company"/>
+                        <field name="insurance_cargo_policy"/>
+                        <field name="insurance_cargo_expiry"/>
+                    </group>
+                    <separator string="Seguro Ambiental (solo materiales peligrosos)"/>
+                    <group>
+                        <field name="insurance_env_company"/>
+                        <field name="insurance_env_policy"/>
+                        <field name="insurance_env_expiry"/>
+                    </group>
+                </group>
+
+                <!-- ===== PASO 4 — CHOFER ===== -->
+                <group invisible="step != 4" string="Datos de tu Chofer">
+                    <group>
+                        <field name="driver_name" placeholder="Ej: Juan Pérez López"/>
+                        <field name="driver_rfc" placeholder="Ej: PELJ850101ABC"/>
+                        <field name="driver_curp" placeholder="Ej: PELJ850101HJCRZN09"/>
+                    </group>
+                    <group>
+                        <field name="driver_license_number" placeholder="Ej: LIC-FED-12345"/>
+                        <field name="driver_license_type"/>
+                        <field name="driver_license_expiry"/>
+                    </group>
+                </group>
+
+                <!-- ===== PASO 5 — PRIMER CLIENTE ===== -->
+                <group invisible="step != 5" string="Tu Primer Cliente">
+                    <group>
+                        <field name="client_name" placeholder="Ej: Industrias ABC SA de CV"/>
+                        <field name="client_rfc" placeholder="Ej: IAB200101XYZ"/>
+                        <field name="client_is_company"/>
+                        <field name="client_email" placeholder="facturacion@cliente.com"/>
+                        <field name="client_phone" placeholder="33 1234 5678"/>
+                    </group>
+                    <group>
+                        <field name="client_street" placeholder="Av. Vallarta 1234"/>
+                        <field name="client_city" placeholder="Guadalajara"/>
+                        <field name="client_state_id"/>
+                        <field name="client_zip" placeholder="44100"/>
+                    </group>
+                </group>
+
+                <!-- ===== PASO 6 — RESUMEN ===== -->
+                <group invisible="step != 6" string="¡Todo Listo!">
+                    <div class="alert alert-success text-center" role="status" colspan="2">
+                        <h3>🎉 ¡Felicidades! Tu TMS está configurado</h3>
+                        <p>Aquí el resumen de lo que configuraste:</p>
+                    </div>
+                    <group>
+                        <field name="summary_company" readonly="1"/>
+                        <field name="summary_vehicle" readonly="1"/>
+                        <field name="summary_insurance" readonly="1"/>
+                        <field name="summary_driver" readonly="1"/>
+                        <field name="summary_client" readonly="1"/>
+                    </group>
+                    <div class="alert alert-info text-center" role="status" colspan="2">
+                        <p>Puedes modificar cualquier dato después en <strong>Configuración</strong>.</p>
+                        <p>¡Ahora crea tu primer viaje!</p>
+                    </div>
+                </group>
+
+                <!-- FOOTER — botones de navegación -->
+                <footer>
+                    <button string="← Anterior"
+                            type="object"
+                            name="action_prev_step"
+                            class="btn-secondary"
+                            invisible="step == 1"/>
+                    <button string="Guardar y Siguiente →"
+                            type="object"
+                            name="action_save_step_1"
+                            class="btn-primary"
+                            invisible="step != 1"/>
+                    <button string="Guardar y Siguiente →"
+                            type="object"
+                            name="action_save_step_2"
+                            class="btn-primary"
+                            invisible="step != 2"/>
+                    <button string="Guardar y Siguiente →"
+                            type="object"
+                            name="action_save_step_3"
+                            class="btn-primary"
+                            invisible="step != 3"/>
+                    <button string="Guardar y Siguiente →"
+                            type="object"
+                            name="action_save_step_4"
+                            class="btn-primary"
+                            invisible="step != 4"/>
+                    <button string="Guardar y Siguiente →"
+                            type="object"
+                            name="action_save_step_5"
+                            class="btn-primary"
+                            invisible="step != 5"/>
+                    <button string="🚛 Crear mi primer viaje"
+                            type="object"
+                            name="action_create_first_trip"
+                            class="btn-primary"
+                            invisible="step != 6"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el onboarding -->
+    <record id="action_tms_onboarding_wizard" model="ir.actions.act_window">
+        <field name="name">Configuración Inicial TMS</field>
+        <field name="res_model">tms.onboarding.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menuitem en Configuración -->
+    <menuitem
+        id="menu_tms_onboarding"
+        name="Configuración Inicial"
+        parent="menu_tms_config"
+        action="action_tms_onboarding_wizard"
+        sequence="1"
+        groups="tms.group_tms_manager"/>
+
+</odoo>
