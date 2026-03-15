@@ -199,6 +199,52 @@ class TmsWaybill(models.Model):
                 raise ValidationError(_("El IdCCP no tiene un formato UUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)."))
 
     # ============================================================
+    # CFDI — Campos post-timbrado (V2.2)
+    # ============================================================
+    cfdi_uuid = fields.Char(
+        string='UUID CFDI',
+        readonly=True,
+        copy=False,
+        help='Folio fiscal del CFDI timbrado por el SAT'
+    )
+    cfdi_xml = fields.Binary(
+        string='XML Timbrado',
+        readonly=True,
+        copy=False,
+        attachment=True,
+        help='XML del CFDI con el Timbre Fiscal Digital'
+    )
+    cfdi_xml_fname = fields.Char(
+        string='Nombre XML',
+        readonly=True
+    )
+    cfdi_fecha = fields.Datetime(
+        string='Fecha timbrado',
+        readonly=True
+    )
+    cfdi_pac = fields.Char(
+        string='PAC usado',
+        readonly=True,
+        help='Nombre del PAC que realizó el timbrado'
+    )
+    cfdi_no_cert_sat = fields.Char(
+        string='No. Certificado SAT',
+        readonly=True
+    )
+    cfdi_status = fields.Selection([
+        ('none',      'Sin timbrar'),
+        ('timbrado',  'Timbrado'),
+        ('cancelado', 'Cancelado'),
+        ('error',     'Error'),
+    ], string='Estatus CFDI', default='none', readonly=True,
+       tracking=True
+    )
+    cfdi_error_msg = fields.Text(
+        string='Último error CFDI',
+        readonly=True
+    )
+
+    # ============================================================
     # ACCIONES: Clear (Limpieza de Campos)
     # ============================================================
 
@@ -1752,6 +1798,170 @@ class TmsWaybill(models.Model):
         self.write({'state': 'waybill'})
 
     # ============================================================
+    # TIMBRADO CFDI — Acciones (V2.2)
+    # ============================================================
+
+    def action_stamp_cfdi(self):
+        """
+        Timbra la Carta Porte 3.1 del waybill.
+        Solo ejecutable en estado 'waybill'.
+
+        Flujo:
+        1. Construir XML con CartaPorteXmlBuilder
+        2. Firmar XML con CfdiSigner usando CSD de la empresa
+        3. Enviar a PAC via PacManager (con failover automático)
+        4. Guardar UUID, XML, fecha, PAC en campos cfdi_*
+        5. Registrar en chatter: UUID + PAC usado
+        6. Cambiar cfdi_status a 'timbrado'
+        """
+        self.ensure_one()
+        if self.state != 'waybill':
+            raise UserError(_('Solo se puede timbrar una Carta Porte en estado "Carta Porte".'))
+        if self.cfdi_status == 'timbrado':
+            raise UserError(_('Este CFDI ya fue timbrado. UUID: %s') % self.cfdi_uuid)
+
+        company = self.company_id
+        if not company.tms_csd_cer or not company.tms_csd_key or not company.tms_csd_password:
+            raise UserError(_(
+                'Falta el Certificado de Sello Digital (CSD) en la configuración de la empresa.\n'
+                'Ve a: Ajustes → TMS → CSD Certificado / Llave / Contraseña.'
+            ))
+
+        try:
+            from odoo.addons.tms.services.xml_builder import CartaPorteXmlBuilder
+            from odoo.addons.tms.services.xml_signer import CfdiSigner
+            from odoo.addons.tms.services.pac_manager import PacManager
+            import base64
+
+            # 1. Construir XML
+            builder = CartaPorteXmlBuilder()
+            xml_sin_sellar = builder.build(self)
+
+            # 2. Firmar XML con CSD
+            signer = CfdiSigner()
+            xml_sellado = signer.sign(
+                xml_sin_sellar,
+                company.tms_csd_cer,
+                company.tms_csd_key,
+                company.tms_csd_password,
+            )
+
+            # 3. Timbrar via PAC (con failover)
+            manager = PacManager(self.env)
+            resultado = manager.timbrar(xml_sellado, company)
+
+            # 4. Guardar resultado
+            xml_fname = 'CFDI-%s-%s.xml' % (self.name, resultado['uuid'][:8])
+            self.write({
+                'cfdi_uuid':        resultado['uuid'],
+                'cfdi_xml':         base64.b64encode(resultado['xml_timbrado']),
+                'cfdi_xml_fname':   xml_fname,
+                'cfdi_fecha':       resultado['fecha_timbrado'],
+                'cfdi_pac':         resultado['pac_usado'],
+                'cfdi_no_cert_sat': resultado.get('no_cert_sat', ''),
+                'cfdi_status':      'timbrado',
+                'cfdi_error_msg':   False,
+            })
+
+            # 5. Registrar en chatter
+            if hasattr(self, 'message_post'):
+                self.message_post(
+                    body=_(
+                        'Carta Porte timbrada correctamente.\n'
+                        'UUID: %(uuid)s\nPAC: %(pac)s'
+                    ) % {'uuid': resultado['uuid'], 'pac': resultado['pac_usado']},
+                    subject=_('CFDI Timbrado'),
+                )
+
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error('TMS TIMBRADO ERROR waybill %s: %s', self.id, str(e))
+            self.write({
+                'cfdi_status':    'error',
+                'cfdi_error_msg': str(e),
+            })
+            raise UserError(_('Error al timbrar: %s') % str(e))
+
+    def action_cancel_cfdi(self):
+        """
+        Cancela el CFDI timbrado.
+        Solo ejecutable cuando cfdi_status='timbrado'.
+        V2.3: agregar wizard para seleccionar motivo.
+        """
+        self.ensure_one()
+        if self.cfdi_status != 'timbrado':
+            raise UserError(_('Solo se puede cancelar un CFDI en estado "Timbrado".'))
+
+        try:
+            from odoo.addons.tms.services.pac_manager import PacManager
+            manager = PacManager(self.env)
+            # Motivo 03 = no se llevó a cabo la operación (default)
+            manager.cancelar(self.cfdi_uuid, '03', self.company_id)
+
+            self.write({'cfdi_status': 'cancelado'})
+
+            if hasattr(self, 'message_post'):
+                self.message_post(
+                    body=_('CFDI cancelado. UUID: %s') % self.cfdi_uuid,
+                    subject=_('CFDI Cancelado'),
+                )
+
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error('TMS CANCELACION ERROR waybill %s: %s', self.id, str(e))
+            raise UserError(_('Error al cancelar CFDI: %s') % str(e))
+
+    def action_check_cfdi_status(self):
+        """
+        Consulta el estatus del CFDI en el SAT.
+        Actualiza cfdi_status según respuesta y muestra notificación.
+        """
+        self.ensure_one()
+        if self.cfdi_status == 'none':
+            raise UserError(_('Este waybill no tiene CFDI timbrado.'))
+
+        try:
+            from odoo.addons.tms.services.pac_manager import PacManager
+            manager = PacManager(self.env)
+            estatus = manager.consultar_estatus(self.cfdi_uuid, self.company_id)
+
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title':   _('Estatus CFDI'),
+                    'message': estatus.get('descripcion', 'Sin información'),
+                    'type':    'info',
+                    'sticky':  False,
+                }
+            }
+
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error('TMS ESTATUS ERROR waybill %s: %s', self.id, str(e))
+            raise UserError(_('Error al consultar estatus: %s') % str(e))
+
+    def action_download_cfdi_xml(self):
+        """
+        Descarga el XML timbrado como archivo adjunto.
+        Solo disponible cuando cfdi_status='timbrado'.
+        """
+        self.ensure_one()
+        if self.cfdi_status != 'timbrado' or not self.cfdi_xml:
+            raise UserError(_('No hay XML timbrado disponible para descargar.'))
+
+        return {
+            'type':   'ir.actions.act_url',
+            'url':    '/web/content/%s/%s/cfdi_xml/%s?download=true' % (
+                self._name, self.id, self.cfdi_xml_fname or 'cfdi.xml'
+            ),
+            'target': 'self',
+        }
+
+    # ============================================================
     # TOLLGURU API INTEGRATION (Smart Route)
     # ============================================================
 
@@ -2133,7 +2343,11 @@ class TmsWaybill(models.Model):
                 'dolly_id': False,
                 'trailer2_id': False,
             })
-        return super(TmsWaybill, self).write(vals)
+        res = super(TmsWaybill, self).write(vals)
+        # SEMILLA V2.3: activar cuando se implemente tms.route.analytics
+        # if vals.get('state') == 'closed':
+        #     self.env['tms.route.analytics']._update_from_waybill(self)
+        return res
 
     @api.model_create_multi
     def create(self, vals_list):
