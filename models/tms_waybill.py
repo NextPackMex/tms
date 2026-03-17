@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import base64
+import io
 import logging
 import re
 import requests
 import json
 import uuid
+from lxml import etree as lxml_etree
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, AccessError, MissingError, ValidationError
 from datetime import timedelta
@@ -2000,6 +2003,144 @@ class TmsWaybill(models.Model):
             ),
             'target': 'self',
         }
+
+    # ============================================================
+    # PDF CARTA PORTE — Helpers para reporte QWeb
+    # ============================================================
+
+    def _parse_cfdi_xml(self):
+        """
+        Parsea el XML timbrado almacenado en cfdi_xml y extrae los datos fiscales
+        del CFDI 4.0 y del Timbre Fiscal Digital (TFD).
+
+        Retorna dict con:
+          sello_cfdi, sello_sat, no_cert_emisor, no_cert_sat,
+          fecha_timbrado, cadena_tfd, rfc_emisor, nombre_emisor,
+          regimen_emisor, rfc_receptor, nombre_receptor, uso_cfdi.
+        Retorna {} si no hay XML o hay error al parsear.
+        """
+        self.ensure_one()
+        if not self.cfdi_xml:
+            return {}
+        try:
+            xml_bytes = base64.b64decode(self.cfdi_xml)
+            root = lxml_etree.fromstring(xml_bytes)
+
+            ns = {
+                'cfdi': 'http://www.sat.gob.mx/cfd/4',
+                'tfd':  'http://www.sat.gob.mx/TimbreFiscalDigital',
+            }
+
+            sello_cfdi    = root.get('Sello', '')
+            no_cert_emisor = root.get('NoCertificado', '')
+
+            emisor   = root.find('.//cfdi:Emisor', ns)
+            receptor = root.find('.//cfdi:Receptor', ns)
+            tfd      = root.find('.//tfd:TimbreFiscalDigital', ns)
+
+            sello_sat     = ''
+            no_cert_sat   = ''
+            fecha_timbrado = ''
+            cadena_tfd    = ''
+
+            if tfd is not None:
+                sello_sat      = tfd.get('SelloSAT', '')
+                no_cert_sat    = tfd.get('NoCertificadoSAT', '')
+                fecha_timbrado = tfd.get('FechaTimbrado', '')
+                # Cadena original del TFD según especificación SAT
+                cadena_tfd = (
+                    '||1.1|{uuid}|{fecha}|{rfc_pac}|{sello_cfdi}|{no_cert_sat}||'
+                ).format(
+                    uuid=tfd.get('UUID', ''),
+                    fecha=fecha_timbrado,
+                    rfc_pac=tfd.get('RfcProvCertif', ''),
+                    sello_cfdi=sello_cfdi,
+                    no_cert_sat=no_cert_sat,
+                )
+
+            return {
+                'sello_cfdi':     sello_cfdi,
+                'sello_sat':      sello_sat,
+                'no_cert_emisor': no_cert_emisor,
+                'no_cert_sat':    no_cert_sat,
+                'fecha_timbrado': fecha_timbrado,
+                'cadena_tfd':     cadena_tfd,
+                'rfc_emisor':     emisor.get('Rfc', '')    if emisor   is not None else '',
+                'nombre_emisor':  emisor.get('Nombre', '') if emisor   is not None else '',
+                'regimen_emisor': emisor.get('RegimenFiscal', '') if emisor is not None else '',
+                'rfc_receptor':   receptor.get('Rfc', '') if receptor is not None else '',
+                'nombre_receptor': receptor.get('Nombre', '') if receptor is not None else '',
+                'uso_cfdi':       receptor.get('UsoCFDI', '') if receptor is not None else '',
+            }
+        except Exception as exc:
+            _logger.error('Error parseando XML timbrado en waybill %s: %s', self.name, exc)
+            return {}
+
+    def _get_cfdi_qr_url(self):
+        """
+        Genera la URL de verificación SAT para el código QR del CFDI.
+
+        Formato oficial SAT:
+        https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx
+        ?id=UUID&re=RFC_EMISOR&rr=RFC_RECEPTOR&tt=0.00&fe=ULTIMOS8_SELLO
+        """
+        self.ensure_one()
+        if not self.cfdi_uuid or not self.cfdi_xml:
+            return ''
+        datos = self._parse_cfdi_xml()
+        if not datos:
+            return ''
+        sello = datos.get('sello_cfdi', '')
+        fe = sello[-8:] if len(sello) >= 8 else sello
+        return (
+            'https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx'
+            '?id={uuid}&re={re}&rr={rr}&tt=0.00&fe={fe}'
+        ).format(
+            uuid=self.cfdi_uuid,
+            re=datos.get('rfc_emisor', ''),
+            rr=datos.get('rfc_receptor', ''),
+            fe=fe,
+        )
+
+    def _get_cfdi_qr_image(self):
+        """
+        Genera imagen QR en base64 (PNG) con la URL de verificación SAT.
+        Usa la librería qrcode[pil]. Si no está instalada, retorna ''.
+        """
+        self.ensure_one()
+        url = self._get_cfdi_qr_url()
+        if not url:
+            return ''
+        try:
+            import qrcode
+            qr = qrcode.QRCode(version=1, box_size=4, border=2)
+            qr.add_data(url)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color='black', back_color='white')
+            buffer = io.BytesIO()
+            img.save(buffer, format='PNG')
+            return base64.b64encode(buffer.getvalue()).decode('utf-8')
+        except ImportError:
+            _logger.warning(
+                'Librería qrcode no instalada — QR omitido en PDF Carta Porte. '
+                'Instalar con: pip install qrcode[pil]'
+            )
+            return ''
+        except Exception as exc:
+            _logger.warning('Error generando imagen QR para waybill %s: %s', self.name, exc)
+            return ''
+
+    def action_print_carta_porte(self):
+        """
+        Genera el PDF de Carta Porte timbrada.
+        Solo disponible cuando cfdi_status='timbrado'.
+        """
+        self.ensure_one()
+        if self.cfdi_status != 'timbrado':
+            raise UserError(_('No hay CFDI timbrado para generar el PDF.'))
+        return self.env.ref(
+            'tms.action_report_carta_porte_timbrada'
+        ).report_action(self)
 
     # ============================================================
     # TOLLGURU API INTEGRATION (Smart Route)

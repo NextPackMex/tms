@@ -215,6 +215,14 @@
                             icon="fa-download"
                             invisible="cfdi_status != 'timbrado'"
                             help="Descarga el XML del CFDI timbrado"/>
+                    <!-- PDF Carta Porte timbrada: solo cuando está timbrado -->
+                    <button name="action_print_carta_porte"
+                            string="Carta Porte PDF"
+                            type="object"
+                            class="btn-primary"
+                            icon="fa-file-pdf-o"
+                            invisible="cfdi_status != 'timbrado'"
+                            help="Genera el PDF de la Carta Porte timbrada con QR de verificación SAT"/>
 
                     <!-- Campo invisible para usar en condiciones de visibilidad -->
                     <field name="cfdi_status" invisible="1"/>

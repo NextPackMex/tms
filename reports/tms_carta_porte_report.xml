@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción del reporte: PDF Carta Porte Timbrada -->
+    <record id="action_report_carta_porte_timbrada" model="ir.actions.report">
+        <field name="name">Carta Porte Timbrada</field>
+        <field name="model">tms.waybill</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms.report_carta_porte_timbrada</field>
+        <field name="report_file">tms.report_carta_porte_timbrada</field>
+        <field name="binding_model_id" ref="model_tms_waybill"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_us"/>
+    </record>
+</odoo>
