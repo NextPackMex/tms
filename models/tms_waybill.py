@@ -1864,6 +1864,13 @@ class TmsWaybill(models.Model):
                     'en Ajustes → TMS → Certificados SAT.'
                 ))
 
+            # Asegurar que el waybill tenga IdCCP antes de construir el XML.
+            # El campo tiene default=_generate_id_ccp, pero registros creados antes
+            # de añadir el campo — o cuyo campo fue borrado — pueden llegar vacíos.
+            # Persistirlo aquí garantiza que el mismo IdCCP se use en cancelación/retimbrado.
+            if not self.tms_id_ccp:
+                self.tms_id_ccp = _generate_id_ccp()
+
             # 1. Construir XML
             builder = CartaPorteXmlBuilder()
             xml_sin_sellar = builder.build(self)

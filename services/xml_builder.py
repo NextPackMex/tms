@@ -10,10 +10,14 @@ Namespaces:
   cartaporte31: http://www.sat.gob.mx/CartaPorte31
   xsi:          http://www.w3.org/2001/XMLSchema-instance
 """
+import base64
 import logging
+import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from lxml import etree
 
 # Zona horaria oficial del SAT — CFDI debe usar hora del centro de México
@@ -65,12 +69,25 @@ class CartaPorteXmlBuilder:
         """
         _logger.info('Construyendo XML CFDI 4.0 para waybill %s', waybill.name)
 
+        company = waybill.company_id
+        # Resolver datos fiscales según ambiente (pruebas vs producción)
+        datos = self._get_datos_fiscales(company, waybill)
+
+        # Advertencia explícita cuando se sustituyen datos fiscales en pruebas
+        if company.fd_ambiente == 'pruebas':
+            _logger.warning(
+                'AMBIENTE PRUEBAS — Sustituyendo datos fiscales genéricos para timbrado. '
+                'RFC Emisor: %s → %s, RFC Receptor: %s → %s',
+                (company.vat or ''), datos['rfc_emisor'],
+                (company.partner_id.vat or ''), datos['rfc_receptor'],
+            )
+
         # Nodo raíz con namespaces
-        comprobante = self._build_comprobante(waybill)
+        comprobante = self._build_comprobante(waybill, datos)
 
         # Subnodos obligatorios CFDI 4.0
-        comprobante.append(self._build_emisor(waybill.company_id))
-        comprobante.append(self._build_receptor(waybill))
+        comprobante.append(self._build_emisor(company, datos))
+        comprobante.append(self._build_receptor(waybill, datos))
         comprobante.append(self._build_conceptos(waybill))
         # cfdi:Impuestos está PROHIBIDO para TipoDeComprobante="T" (Traslado)
         # CFDI40201: "Cuando TipoDeComprobante sea T o P, Impuestos no debe existir"
@@ -79,7 +96,7 @@ class CartaPorteXmlBuilder:
         # Complemento Carta Porte 3.1
         complemento = etree.SubElement(
             comprobante, etree.QName(NS_CFDI, 'Complemento'))
-        complemento.append(self._build_complemento_carta_porte(waybill))
+        complemento.append(self._build_complemento_carta_porte(waybill, datos))
 
         xml_bytes = etree.tostring(
             comprobante,
@@ -97,12 +114,13 @@ class CartaPorteXmlBuilder:
     # Nodo raíz: cfdi:Comprobante
     # ------------------------------------------------------------------
 
-    def _build_comprobante(self, waybill):
+    def _build_comprobante(self, waybill, datos):
         """
         Construye el nodo raíz cfdi:Comprobante con atributos CFDI 4.0.
         TipoDeComprobante='T' (Traslado) porque Carta Porte no es ingreso.
+        LugarExpedicion viene de datos['lugar_expedicion'] — en pruebas usa
+        el CP del certificado de pruebas en lugar del CP real de la empresa.
         """
-        company = waybill.company_id
         # SAT exige fecha en zona horaria del centro de México (sin offset)
         fecha = datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -122,7 +140,7 @@ class CartaPorteXmlBuilder:
         comp.set('Moneda',              'XXX')       # XXX = no aplica (traslado)
         comp.set('TipoDeComprobante',   'T')         # T = Traslado
         comp.set('Exportacion',         '01')        # 01 = No aplica
-        comp.set('LugarExpedicion',     company.zip or '00000')
+        comp.set('LugarExpedicion',     datos['lugar_expedicion'])
 
         return comp
 
@@ -130,23 +148,23 @@ class CartaPorteXmlBuilder:
     # cfdi:Emisor
     # ------------------------------------------------------------------
 
-    def _build_emisor(self, company):
+    def _build_emisor(self, company, datos):
         """
-        Construye cfdi:Emisor con RFC, Nombre y RegimenFiscal de la empresa.
-        RFC se toma de company.vat (campo estándar Odoo).
+        Construye cfdi:Emisor con RFC, Nombre y RegimenFiscal.
+        En pruebas usa el RFC del certificado de pruebas (datos['rfc_emisor']).
+        En producción usa company.vat.
         """
         emisor = etree.Element(etree.QName(NS_CFDI, 'Emisor'))
-        emisor.set('Rfc',            (company.vat or '').upper().strip())
-        emisor.set('Nombre',         (company.name or '').upper()[:254])
-        # tms_regimen_fiscal tiene solo el código (ej. '612')
-        emisor.set('RegimenFiscal',  company.tms_regimen_fiscal or '612')
+        emisor.set('Rfc',           datos['rfc_emisor'])
+        emisor.set('Nombre',        datos['nombre_emisor'])
+        emisor.set('RegimenFiscal', datos['regimen_fiscal'])
         return emisor
 
     # ------------------------------------------------------------------
     # cfdi:Receptor
     # ------------------------------------------------------------------
 
-    def _build_receptor(self, waybill):
+    def _build_receptor(self, waybill, datos):
         """
         Construye cfdi:Receptor.
 
@@ -154,15 +172,15 @@ class CartaPorteXmlBuilder:
         DEBE ser el mismo que el Emisor — el transportista se emite la Carta
         Porte a sí mismo. El cliente real va en las Ubicaciones del complemento.
 
+        En pruebas usa el RFC del certificado de pruebas (datos['rfc_receptor']).
         UsoCFDI = 'S01' (Sin efectos fiscales) es el correcto para traslado.
         """
-        company  = waybill.company_id
         receptor = etree.Element(etree.QName(NS_CFDI, 'Receptor'))
-        receptor.set('Rfc',                     (company.partner_id.vat or '').upper().strip())
-        receptor.set('Nombre',                  (company.name or '').upper()[:254])
-        receptor.set('DomicilioFiscalReceptor', company.zip or '00000')
-        receptor.set('RegimenFiscalReceptor',   company.tms_regimen_fiscal or '612')
-        receptor.set('UsoCFDI',                 'S01')
+        receptor.set('Rfc',                     datos['rfc_receptor'])
+        receptor.set('Nombre',                  datos['nombre_receptor'])
+        receptor.set('DomicilioFiscalReceptor', datos['domicilio_fiscal_receptor'])
+        receptor.set('RegimenFiscalReceptor',   datos['regimen_receptor'])
+        receptor.set('UsoCFDI',                 datos['uso_cfdi'])
         return receptor
 
     # ------------------------------------------------------------------
@@ -208,7 +226,7 @@ class CartaPorteXmlBuilder:
     # Complemento Carta Porte 3.1
     # ------------------------------------------------------------------
 
-    def _build_complemento_carta_porte(self, waybill):
+    def _build_complemento_carta_porte(self, waybill, datos):
         """
         Construye el nodo cartaporte31:CartaPorte Version='3.1'.
 
@@ -217,9 +235,13 @@ class CartaPorteXmlBuilder:
           2. Mercancias  ← Autotransporte va DENTRO de Mercancias, no al mismo nivel
           3. FiguraTransporte
         """
+        # Usar el IdCCP del waybill. Si llegó vacío por algún motivo inesperado,
+        # generar uno temporal para este XML (la capa primaria ya persiste en action_stamp_cfdi).
+        id_ccp = waybill.tms_id_ccp or self._generate_id_ccp()
+
         cp = etree.Element(etree.QName(NS_CP31, 'CartaPorte'))
         cp.set('Version',              '3.1')
-        cp.set('IdCCP',                waybill.tms_id_ccp or '')
+        cp.set('IdCCP',                id_ccp)
         cp.set('TranspInternac',       'No')
         cp.set('TotalDistRec',         str(int(waybill.distance_km or 0)))
 
@@ -230,7 +252,8 @@ class CartaPorteXmlBuilder:
         mercancias_node.append(self._build_autotransporte(waybill))
         cp.append(mercancias_node)
 
-        cp.append(self._build_figura_transporte(waybill))
+        # datos se pasa para poder sustituir RFC del chofer en pruebas
+        cp.append(self._build_figura_transporte(waybill, datos))
 
         return cp
 
@@ -327,10 +350,18 @@ class CartaPorteXmlBuilder:
             merc.set('PesoEnKg',      '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
             merc.set('Dimensiones',   line.dimensions or '000/000/000cm')
 
-            # MaterialPeligroso SOLO cuando is_dangerous=True.
-            # Si no aplica → NO incluir el atributo (ni "Sí" ni "No").
-            # El SAT CP155 rechaza el atributo para claves con 0 en su catálogo.
-            if line.is_dangerous:
+            # MaterialPeligroso SOLO cuando is_dangerous=True Y el catálogo SAT lo permite.
+            # Regla CP155: si la clave del catálogo c_ClaveProdServCP NO contiene '1'
+            # en su columna MaterialPeligroso, el atributo NO DEBE existir en el XML.
+            # Valores de catálogo: '0'=prohibido, '1'=obligatorio, '0,1'=opcional.
+            # Si es_peligroso=True pero el catálogo dice '0', se omite el atributo
+            # y se emite un WARNING para corregir los datos.
+            clave_mp_catalogo = ''
+            if line.product_sat_id:
+                clave_mp_catalogo = (line.product_sat_id.material_peligroso or '').strip()
+            catalogo_permite_peligroso = '1' in clave_mp_catalogo.split(',')
+
+            if line.is_dangerous and catalogo_permite_peligroso:
                 merc.set('MaterialPeligroso', 'Sí')
                 mat_pel = getattr(line, 'material_peligroso_id', None)
                 if mat_pel and getattr(mat_pel, 'code', None):
@@ -338,6 +369,18 @@ class CartaPorteXmlBuilder:
                 embalaje = getattr(line, 'embalaje_id', None)
                 if embalaje and getattr(embalaje, 'code', None):
                     merc.set('Embalaje', embalaje.code)
+            elif line.is_dangerous and not catalogo_permite_peligroso:
+                # Dato inconsistente: is_dangerous=True pero el catálogo lo prohíbe.
+                # Se omite el atributo para evitar CP155 — corregir el waybill.
+                _logger.warning(
+                    'CP155 PREVENIDO — Línea %s: is_dangerous=True pero la clave SAT '
+                    '"%s" tiene "%s" en catálogo (no permite MaterialPeligroso). '
+                    'Atributo omitido del XML. Corrija is_dangerous en el waybill.',
+                    line.id,
+                    line.product_sat_id.code if line.product_sat_id else 'sin clave',
+                    clave_mp_catalogo or 'vacío',
+                )
+            # Si is_dangerous=False → NO se agrega el atributo en ningún caso.
 
         _logger.warning(
             'Mercancias XML generado:\n%s',
@@ -414,32 +457,36 @@ class CartaPorteXmlBuilder:
     # FiguraTransporte
     # ------------------------------------------------------------------
 
-    def _build_figura_transporte(self, waybill):
+    def _build_figura_transporte(self, waybill, datos):
         """
         Construye cartaporte31:FiguraTransporte con el operador (chofer).
         TipoFigura='01' (Operador).
         RFC, Nombre y NumLicencia son obligatorios.
+
+        En ambiente pruebas, sustituye el RFC del chofer por el valor de
+        datos['rfc_chofer'] para que el PAC no rechace con CP132.
+        El nombre y la licencia se mantienen reales en ambos ambientes.
         """
         driver = waybill.driver_id
         figura_root = etree.Element(etree.QName(NS_CP31, 'FiguraTransporte'))
 
         if driver:
-            # tms_rfc es el campo activo en BD (tms_driver_rfc nunca se migró)
-            rfc_valor     = (driver.tms_rfc or '').upper().strip()
+            # RFC: en pruebas se usa el RFC de pruebas; en producción el RFC real del chofer
+            rfc_override  = datos.get('rfc_chofer', '')
+            rfc_real      = (driver.tms_rfc or '').upper().strip()
+            rfc_valor     = rfc_override if rfc_override else (rfc_real or 'XEXX010101000')
             nombre_valor  = (driver.name or '').upper()[:254]
             licencia_valor = driver.tms_driver_license or driver.tms_license_number or ''
             _logger.warning(
-                'FiguraTransporte — RFC: %r, Nombre: %r, Licencia: %r | '
-                'work_contact_id: %s, contact.vat: %r',
+                'FiguraTransporte — RFC real: %r → RFC usado: %r, Nombre: %r, Licencia: %r',
+                rfc_real,
                 rfc_valor,
                 nombre_valor,
                 licencia_valor,
-                driver.work_contact_id.id if driver.work_contact_id else 'SIN CONTACTO',
-                driver.work_contact_id.vat if driver.work_contact_id else 'N/A',
             )
             figura = etree.SubElement(figura_root, etree.QName(NS_CP31, 'TiposFigura'))
             figura.set('TipoFigura', '01')
-            figura.set('RFCFigura',   rfc_valor or 'XEXX010101000')
+            figura.set('RFCFigura',   rfc_valor)
             figura.set('NombreFigura', nombre_valor)
             figura.set('NumLicencia',  licencia_valor or '000000000000')
         else:
@@ -455,3 +502,100 @@ class CartaPorteXmlBuilder:
             etree.tostring(figura_root, pretty_print=True).decode('utf-8'),
         )
         return figura_root
+
+    # ------------------------------------------------------------------
+    # Helpers de ambiente fiscal
+    # ------------------------------------------------------------------
+
+    def _generate_id_ccp(self):
+        """
+        Genera un IdCCP con el formato requerido por el SAT para Carta Porte 3.1.
+
+        Patrón: CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]
+        Ejemplo: CCC1a2b3-4c5d-6e7f-8a9b-0c1d2e3f4a5b
+
+        Este método es el fallback del builder. La capa primaria de generación
+        es action_stamp_cfdi en tms_waybill.py, que persiste el IdCCP en BD
+        antes de llamar a build(), garantizando consistencia entre timbrado y cancelación.
+        """
+        raw = uuid.uuid4().hex  # 32 chars hex sin guiones
+        return f"CCC{raw[0:5]}-{raw[5:9]}-{raw[9:13]}-{raw[13:17]}-{raw[17:29]}"
+
+    def _get_rfc_from_cer(self, company):
+        """
+        Extrae el RFC del certificado CSD (.cer) cargado en la empresa.
+
+        El SAT almacena el RFC en el Subject del X.509 bajo OID 2.5.4.45
+        (uniqueIdentifier). Algunos certificados lo incluyen también en el CN.
+
+        Retorna el RFC en mayúsculas o None si no se puede extraer.
+        """
+        if not company.tms_csd_cer:
+            return None
+        try:
+            cer_bytes = base64.b64decode(company.tms_csd_cer)
+            cert = x509.load_der_x509_certificate(cer_bytes, default_backend())
+            # OID 2.5.4.45 (uniqueIdentifier) — donde el SAT pone el RFC en sus CSD
+            oid_uid = x509.ObjectIdentifier('2.5.4.45')
+            attrs = cert.subject.get_attributes_for_oid(oid_uid)
+            if attrs:
+                rfc_raw = attrs[0].value
+                # El SAT puede incluir formato "XXXXXXXXXXXXXXXX / CURP" — tomar solo RFC
+                rfc = rfc_raw.split('/')[0].strip().upper()
+                _logger.info('RFC extraído del .cer: %s', rfc)
+                return rfc
+        except Exception as exc:
+            _logger.warning('No se pudo extraer RFC del .cer: %s', exc)
+        return None
+
+    def _get_datos_fiscales(self, company, waybill):
+        """
+        Retorna diccionario con datos fiscales para los nodos CFDI.
+
+        En ambiente 'pruebas':
+          - RFC emisor/receptor: extraído del .cer cargado (o EKU9003173C9 como fallback)
+          - Régimen fiscal: '616' (Sin obligaciones fiscales)
+          - LugarExpedicion: CP de la empresa (debe ser 44970 para dev33)
+          - RFC chofer: 'CACX7605101P8' (RFC de persona física válido en pruebas)
+
+        En ambiente 'produccion':
+          - Todos los valores provienen de los registros reales de la empresa.
+          - RFC chofer: vacío aquí — _build_figura_transporte usa driver.tms_rfc.
+
+        NOTA: En Carta Porte (TipoDeComprobante='T'), el Receptor es la misma
+        empresa emisora (regla CP107 del SAT), no el cliente del waybill.
+        """
+        es_pruebas = (company.fd_ambiente == 'pruebas')
+
+        if es_pruebas:
+            # Intentar extraer RFC real del certificado de pruebas cargado
+            rfc_pruebas = self._get_rfc_from_cer(company) or 'EKU9003173C9'
+            # CP de la empresa — debe coincidir con el del certificado (44970 para dev33)
+            cp_pruebas  = company.zip or '44970'
+            return {
+                'rfc_emisor':               rfc_pruebas,
+                'nombre_emisor':            (company.name or '').upper()[:254],
+                'regimen_fiscal':           '616',
+                'rfc_receptor':             rfc_pruebas,    # receptor = emisor (CP107)
+                'nombre_receptor':          (company.name or '').upper()[:254],
+                'regimen_receptor':         '616',
+                'uso_cfdi':                 'S01',
+                'lugar_expedicion':         cp_pruebas,
+                'domicilio_fiscal_receptor': cp_pruebas,
+                'rfc_chofer':               'CACX7605101P8',  # persona física válida en dev33
+            }
+        else:
+            # PRODUCCIÓN — datos reales, sin sustituciones
+            rfc_real = (company.vat or '').upper().strip()
+            return {
+                'rfc_emisor':               rfc_real,
+                'nombre_emisor':            (company.name or '').upper()[:254],
+                'regimen_fiscal':           company.tms_regimen_fiscal or '612',
+                'rfc_receptor':             (company.partner_id.vat or rfc_real).upper().strip(),
+                'nombre_receptor':          (company.name or '').upper()[:254],
+                'regimen_receptor':         company.tms_regimen_fiscal or '612',
+                'uso_cfdi':                 'S01',
+                'lugar_expedicion':         company.zip or '00000',
+                'domicilio_fiscal_receptor': company.zip or '00000',
+                'rfc_chofer':               '',  # vacío → _build_figura_transporte usa driver.tms_rfc
+            }
