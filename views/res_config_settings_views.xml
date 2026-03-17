@@ -84,19 +84,19 @@
                         <setting string="Credenciales Formas Digitales"
                                  help="Cuenta de timbrado en Formas Digitales (forsedi.facturacfdi.mx). Usuario: demo / Password para pruebas.">
                             <div class="row mt16">
-                                <label for="fd_ambiente" class="col-lg-3 o_light_label"/>
+                                <label for="fd_ambiente" string="Ambiente" class="col-lg-4 o_light_label"/>
                                 <field name="fd_ambiente" widget="radio"/>
                             </div>
                             <div class="row mt16">
-                                <label for="fd_usuario" class="col-lg-3 o_light_label"/>
+                                <label for="fd_usuario" string="Usuario" class="col-lg-4 o_light_label"/>
                                 <field name="fd_usuario" placeholder="usuario@correo.com"/>
                             </div>
                             <div class="row mt16">
-                                <label for="fd_password" class="col-lg-3 o_light_label"/>
+                                <label for="fd_password" string="Contraseña" class="col-lg-4 o_light_label"/>
                                 <field name="fd_password" password="True"/>
                             </div>
                             <div class="row mt16">
-                                <label for="fd_user_id" class="col-lg-3 o_light_label"/>
+                                <label for="fd_user_id" string="User ID" class="col-lg-4 o_light_label"/>
                                 <field name="fd_user_id" placeholder="ID proporcionado por Formas Digitales"/>
                             </div>
                         </setting>
@@ -111,15 +111,15 @@
                         <setting string="Credenciales SW Sapien"
                                  help="Cuenta de timbrado en SW Sapien (sw.com.mx). Se usa como PAC de respaldo si Formas Digitales falla.">
                             <div class="row mt16">
-                                <label for="sw_ambiente" class="col-lg-3 o_light_label"/>
+                                <label for="sw_ambiente" string="Ambiente" class="col-lg-4 o_light_label"/>
                                 <field name="sw_ambiente" widget="radio"/>
                             </div>
                             <div class="row mt16">
-                                <label for="sw_usuario" class="col-lg-3 o_light_label"/>
+                                <label for="sw_usuario" string="Usuario" class="col-lg-4 o_light_label"/>
                                 <field name="sw_usuario" placeholder="demo@sw.com.mx"/>
                             </div>
                             <div class="row mt16">
-                                <label for="sw_password" class="col-lg-3 o_light_label"/>
+                                <label for="sw_password" string="Contraseña" class="col-lg-4 o_light_label"/>
                                 <field name="sw_password" password="True"/>
                             </div>
                         </setting>

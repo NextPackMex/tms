@@ -109,14 +109,19 @@ class SwSapienPac:
     def _authenticate(self):
         """
         Autentica con SW Sapien y retorna el Bearer token.
+
+        SW Sapien requiere las credenciales como HEADERS HTTP en un GET:
+          GET /security/authenticate
+          Headers: user: <usuario>
+                   password: <contraseña>
+
         NO registrar usuario/password en logs.
         """
         url = f'{self.base_url}/security/authenticate'
         try:
-            resp = requests.post(
+            resp = requests.get(
                 url,
-                headers={'Content-Type': 'application/json'},
-                json={
+                headers={
                     'user':     self.company.sw_usuario or '',
                     'password': self.company.sw_password or '',
                 },

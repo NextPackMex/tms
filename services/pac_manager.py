@@ -19,6 +19,7 @@ import logging
 
 from odoo.exceptions import UserError
 
+from .cfdi_errors import traducir_error
 from .formas_digitales import FormasDigitalesPac
 from .sw_sapien import SwSapienPac
 
@@ -96,17 +97,19 @@ class PacManager:
                 # Continuar con el siguiente PAC si hay failover
 
         if resultado is None:
-            # Todos los PACs fallaron
-            detalle = '\n'.join(
-                f'• {pac}: {msg}' for pac, msg in errores.items()
-            )
+            # Todos los PACs fallaron — loggear mensaje RAW completo para diagnóstico
             _logger.error(
-                'Todos los PACs fallaron para empresa %s:\n%s',
-                company.name, detalle
+                'Todos los PACs fallaron para empresa %s. '
+                'Mensajes RAW del PAC (sin truncar): %s',
+                company.name,
+                {pac: msg for pac, msg in errores.items()},
             )
+            errores_traducidos = [
+                f'• {traducir_error(msg)}' for msg in errores.values()
+            ]
             raise UserError(
-                f'No fue posible timbrar el CFDI. '
-                f'Todos los PACs configurados reportaron error:\n\n{detalle}'
+                'No se pudo timbrar la Carta Porte:\n\n'
+                + '\n'.join(errores_traducidos)
             )
 
         return resultado
@@ -148,7 +151,7 @@ class PacManager:
                 return pac_instance.cancelar(uuid, motivo)
         except Exception as e:
             raise UserError(
-                f'Error al cancelar el CFDI con {pac_type}:\n{e}'
+                f'Error al cancelar el CFDI:\n{traducir_error(str(e))}'
             )
 
     # ------------------------------------------------------------------
@@ -174,7 +177,7 @@ class PacManager:
             return pac_instance.consultar_estatus(uuid)
         except Exception as e:
             raise UserError(
-                f'Error al consultar estatus del CFDI:\n{e}'
+                f'Error al consultar estatus del CFDI:\n{traducir_error(str(e))}'
             )
 
     # ------------------------------------------------------------------

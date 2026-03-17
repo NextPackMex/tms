@@ -12,8 +12,12 @@ Namespaces:
 """
 import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from lxml import etree
+
+# Zona horaria oficial del SAT — CFDI debe usar hora del centro de México
+_TZ_MEXICO = ZoneInfo('America/Mexico_City')
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +72,9 @@ class CartaPorteXmlBuilder:
         comprobante.append(self._build_emisor(waybill.company_id))
         comprobante.append(self._build_receptor(waybill))
         comprobante.append(self._build_conceptos(waybill))
-        comprobante.append(self._build_impuestos(waybill))
+        # cfdi:Impuestos está PROHIBIDO para TipoDeComprobante="T" (Traslado)
+        # CFDI40201: "Cuando TipoDeComprobante sea T o P, Impuestos no debe existir"
+        # _build_impuestos() queda disponible para facturas de ingreso (V2.3)
 
         # Complemento Carta Porte 3.1
         complemento = etree.SubElement(
@@ -80,6 +86,10 @@ class CartaPorteXmlBuilder:
             xml_declaration=True,
             encoding='UTF-8',
             pretty_print=False,
+        )
+        _logger.warning(
+            'XML COMPLETO generado (sin sellar):\n%s',
+            etree.tostring(comprobante, pretty_print=True, encoding='unicode'),
         )
         return xml_bytes
 
@@ -93,7 +103,8 @@ class CartaPorteXmlBuilder:
         TipoDeComprobante='T' (Traslado) porque Carta Porte no es ingreso.
         """
         company = waybill.company_id
-        fecha = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+        # SAT exige fecha en zona horaria del centro de México (sin offset)
+        fecha = datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S')
 
         comp = etree.Element(
             etree.QName(NS_CFDI, 'Comprobante'),
@@ -137,17 +148,21 @@ class CartaPorteXmlBuilder:
 
     def _build_receptor(self, waybill):
         """
-        Construye cfdi:Receptor con los datos del cliente factura.
-        UsoCFDI siempre CP01 para Carta Porte.
-        DomicilioFiscalReceptor: CP del cliente (tms.sat.codigo.postal).
+        Construye cfdi:Receptor.
+
+        Regla SAT CP107: en TipoDeComprobante='T' (Traslado), el Receptor
+        DEBE ser el mismo que el Emisor — el transportista se emite la Carta
+        Porte a sí mismo. El cliente real va en las Ubicaciones del complemento.
+
+        UsoCFDI = 'S01' (Sin efectos fiscales) es el correcto para traslado.
         """
-        partner = waybill.partner_invoice_id
+        company  = waybill.company_id
         receptor = etree.Element(etree.QName(NS_CFDI, 'Receptor'))
-        receptor.set('Rfc',                      (partner.vat or 'XAXX010101000').upper().strip())
-        receptor.set('Nombre',                   (partner.name or '').upper()[:254])
-        receptor.set('DomicilioFiscalReceptor',  partner.zip or '00000')
-        receptor.set('RegimenFiscalReceptor',    partner.l10n_mx_edi_fiscal_regime or '616')
-        receptor.set('UsoCFDI',                  'CP01')
+        receptor.set('Rfc',                     (company.partner_id.vat or '').upper().strip())
+        receptor.set('Nombre',                  (company.name or '').upper()[:254])
+        receptor.set('DomicilioFiscalReceptor', company.zip or '00000')
+        receptor.set('RegimenFiscalReceptor',   company.tms_regimen_fiscal or '612')
+        receptor.set('UsoCFDI',                 'S01')
         return receptor
 
     # ------------------------------------------------------------------
@@ -196,16 +211,25 @@ class CartaPorteXmlBuilder:
     def _build_complemento_carta_porte(self, waybill):
         """
         Construye el nodo cartaporte31:CartaPorte Version='3.1'.
-        Incluye: Ubicaciones, Mercancias, Autotransporte, FiguraTransporte.
+
+        Orden de nodos según XSD del SAT (CartaPorte31):
+          1. Ubicaciones
+          2. Mercancias  ← Autotransporte va DENTRO de Mercancias, no al mismo nivel
+          3. FiguraTransporte
         """
         cp = etree.Element(etree.QName(NS_CP31, 'CartaPorte'))
         cp.set('Version',              '3.1')
+        cp.set('IdCCP',                waybill.tms_id_ccp or '')
         cp.set('TranspInternac',       'No')
-        cp.set('TotalDistRec',         str(int(waybill.distance_loaded_km or 0)))
+        cp.set('TotalDistRec',         str(int(waybill.distance_km or 0)))
 
         cp.append(self._build_ubicaciones(waybill))
-        cp.append(self._build_mercancias(waybill))
-        cp.append(self._build_autotransporte(waybill))
+
+        # Mercancias contiene Autotransporte como hijo (no al nivel de CartaPorte)
+        mercancias_node = self._build_mercancias(waybill)
+        mercancias_node.append(self._build_autotransporte(waybill))
+        cp.append(mercancias_node)
+
         cp.append(self._build_figura_transporte(waybill))
 
         return cp
@@ -231,11 +255,11 @@ class CartaPorteXmlBuilder:
         origen.set('NombreRemitenteDestinatario',
                    (waybill.partner_origin_id.name or '').upper()[:254])
         origen.set('FechaHoraSalidaLlegada',
-                   datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+                   datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
 
         dom_origen = etree.SubElement(origen, etree.QName(NS_CP31, 'Domicilio'))
-        dom_origen.set('CodigoPostal', waybill.origin_zip.cp if waybill.origin_zip else '00000')
-        dom_origen.set('Estado',       (waybill.origin_zip.estado or 'CDMX') if waybill.origin_zip else 'CDMX')
+        dom_origen.set('CodigoPostal', waybill.origin_zip or '00000')
+        dom_origen.set('Estado',       self._get_estado_from_zip(waybill, waybill.origin_zip) or 'CDMX')
         dom_origen.set('Pais',         'MEX')
 
         # Destino
@@ -246,16 +270,32 @@ class CartaPorteXmlBuilder:
                     (waybill.partner_dest_id.vat or 'XAXX010101000').upper())
         destino.set('NombreRemitenteDestinatario',
                     (waybill.partner_dest_id.name or '').upper()[:254])
-        destino.set('DistanciaRecorrida', str(int(waybill.distance_loaded_km or 0)))
+        destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
         destino.set('FechaHoraSalidaLlegada',
-                    datetime.now().strftime('%Y-%m-%dT%H:%M:%S'))
+                    datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
 
         dom_destino = etree.SubElement(destino, etree.QName(NS_CP31, 'Domicilio'))
-        dom_destino.set('CodigoPostal', waybill.dest_zip.cp if waybill.dest_zip else '00000')
-        dom_destino.set('Estado',       (waybill.dest_zip.estado or 'JAL') if waybill.dest_zip else 'JAL')
+        dom_destino.set('CodigoPostal', waybill.dest_zip or '00000')
+        dom_destino.set('Estado',       self._get_estado_from_zip(waybill, waybill.dest_zip) or 'JAL')
         dom_destino.set('Pais',         'MEX')
 
         return ubicaciones
+
+    # ------------------------------------------------------------------
+    # Helper: estado SAT desde código postal
+    # ------------------------------------------------------------------
+
+    def _get_estado_from_zip(self, waybill, zip_code):
+        """
+        Obtiene el código de estado SAT a partir del CP via catálogo tms.sat.codigo.postal.
+        Retorna '' si el CP no está en el catálogo — el caller aplica el default.
+        origin_zip / dest_zip son fields.Char (no Many2one), así que hay que buscar.
+        """
+        if not zip_code:
+            return ''
+        sat_cp = waybill.env['tms.sat.codigo.postal'].search(
+            [('code', '=', zip_code)], limit=1)
+        return sat_cp.estado if sat_cp else ''
 
     # ------------------------------------------------------------------
     # Mercancias
@@ -287,9 +327,22 @@ class CartaPorteXmlBuilder:
             merc.set('PesoEnKg',      '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
             merc.set('Dimensiones',   line.dimensions or '000/000/000cm')
 
+            # MaterialPeligroso SOLO cuando is_dangerous=True.
+            # Si no aplica → NO incluir el atributo (ni "Sí" ni "No").
+            # El SAT CP155 rechaza el atributo para claves con 0 en su catálogo.
             if line.is_dangerous:
                 merc.set('MaterialPeligroso', 'Sí')
+                mat_pel = getattr(line, 'material_peligroso_id', None)
+                if mat_pel and getattr(mat_pel, 'code', None):
+                    merc.set('CveMaterialPeligroso', mat_pel.code)
+                embalaje = getattr(line, 'embalaje_id', None)
+                if embalaje and getattr(embalaje, 'code', None):
+                    merc.set('Embalaje', embalaje.code)
 
+        _logger.warning(
+            'Mercancias XML generado:\n%s',
+            etree.tostring(mercancias, pretty_print=True).decode('utf-8'),
+        )
         return mercancias
 
     # ------------------------------------------------------------------
@@ -308,36 +361,52 @@ class CartaPorteXmlBuilder:
 
         auto = etree.Element(etree.QName(NS_CP31, 'Autotransporte'))
         auto.set('PermSCT',
-                 vehicle.tms_tipo_permiso_id.code if (vehicle and vehicle.tms_tipo_permiso_id) else 'TPAF10')
+                 vehicle.sat_permiso_sct_id.code if (vehicle and vehicle.sat_permiso_sct_id) else 'TPAF10')
         auto.set('NumPermisoSCT',
-                 vehicle.tms_num_permiso_sct or '000000')
+                 vehicle.permiso_sct_number or '000000')
 
         # IdentificacionVehicular
+        # PesoBrutoVehicular es REQUERIDO por el XSLT del SAT (en toneladas métricas)
+        peso_bruto = round(
+            (vehicle.tms_gross_vehicle_weight if vehicle else 0.0) or 20.0, 3
+        )
         id_veh = etree.SubElement(auto, etree.QName(NS_CP31, 'IdentificacionVehicular'))
         id_veh.set('ConfigVehicular',
-                   vehicle.tms_config_autotransporte_id.code if (vehicle and vehicle.tms_config_autotransporte_id) else 'C2')
-        id_veh.set('PlacaVM',    (vehicle.license_plate or 'XXX000').upper() if vehicle else 'XXX000')
+                   vehicle.sat_config_id.code if (vehicle and vehicle.sat_config_id) else 'C2')
+        id_veh.set('PesoBrutoVehicular', f'{peso_bruto:.3f}')
+        # SAT exige PlacaVM sin guiones ni espacios, entre 5 y 7 caracteres alfanuméricos
+        placa_raw = (vehicle.license_plate if vehicle else '') or ''
+        placa = placa_raw.replace('-', '').replace(' ', '').upper()[:7]
+        id_veh.set('PlacaVM', placa or 'SINPLA')
         id_veh.set('AnioModeloVM', str(vehicle.model_year or '2020') if vehicle else '2020')
 
-        # Seguros
+        # Seguros — mapeo correcto según XSLT SAT CP 3.1:
+        #   RC      → AseguraRespCivil / PolizaRespCivil  (obligatorio)
+        #   Carga   → AseguraCarga     / PolizaCarga       (opcional)
+        #   Ambiental → AseguraMedAmbiente / PolizaMedAmbiente (opcional)
         seguros = etree.SubElement(auto, etree.QName(NS_CP31, 'Seguros'))
-        seguros.set('AseguraRespCivil',  company.tms_insurance_rc_company or 'NO INFORMADO')
-        seguros.set('PolizaRespCivil',   company.tms_insurance_rc_policy  or '0000000')
+        seguros.set('AseguraRespCivil', company.tms_insurance_rc_company or 'NO INFORMADO')
+        seguros.set('PolizaRespCivil',  company.tms_insurance_rc_policy  or '0000000')
         if company.tms_insurance_cargo_policy:
-            seguros.set('AseguraMedAmbiente', company.tms_insurance_cargo_company or '')
-            seguros.set('PolizaMedAmbiente',  company.tms_insurance_cargo_policy  or '')
+            seguros.set('AseguraCarga', company.tms_insurance_cargo_company or '')
+            seguros.set('PolizaCarga',  company.tms_insurance_cargo_policy  or '')
+        if company.tms_insurance_env_policy:
+            seguros.set('AseguraMedAmbiente', company.tms_insurance_env_company or '')
+            seguros.set('PolizaMedAmbiente',  company.tms_insurance_env_policy  or '')
 
-        # Remolques (si aplica)
+        # Remolques (si aplica) — misma limpieza de placa que PlacaVM (sin guiones/espacios, máx 7)
         if waybill.trailer1_id:
             remolques_node = etree.SubElement(auto, etree.QName(NS_CP31, 'Remolques'))
             rem1 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
-            rem1.set('SubTipoRem', waybill.trailer1_id.tms_subtipo_remolque or 'CTR007')
-            rem1.set('Placa',     (waybill.trailer1_id.license_plate or 'REM000').upper())
+            rem1.set('SubTipoRem', getattr(waybill.trailer1_id, 'tms_subtipo_remolque', None) or 'CTR007')
+            placa_rem1 = (waybill.trailer1_id.license_plate or '').replace('-', '').replace(' ', '').upper()[:7]
+            rem1.set('Placa', placa_rem1 or 'SINREM')
 
             if waybill.trailer2_id:
                 rem2 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
-                rem2.set('SubTipoRem', waybill.trailer2_id.tms_subtipo_remolque or 'CTR007')
-                rem2.set('Placa',     (waybill.trailer2_id.license_plate or 'REM001').upper())
+                rem2.set('SubTipoRem', getattr(waybill.trailer2_id, 'tms_subtipo_remolque', None) or 'CTR007')
+                placa_rem2 = (waybill.trailer2_id.license_plate or '').replace('-', '').replace(' ', '').upper()[:7]
+                rem2.set('Placa', placa_rem2 or 'SINREM')
 
         return auto
 
@@ -355,11 +424,24 @@ class CartaPorteXmlBuilder:
         figura_root = etree.Element(etree.QName(NS_CP31, 'FiguraTransporte'))
 
         if driver:
+            # tms_rfc es el campo activo en BD (tms_driver_rfc nunca se migró)
+            rfc_valor     = (driver.tms_rfc or '').upper().strip()
+            nombre_valor  = (driver.name or '').upper()[:254]
+            licencia_valor = driver.tms_driver_license or driver.tms_license_number or ''
+            _logger.warning(
+                'FiguraTransporte — RFC: %r, Nombre: %r, Licencia: %r | '
+                'work_contact_id: %s, contact.vat: %r',
+                rfc_valor,
+                nombre_valor,
+                licencia_valor,
+                driver.work_contact_id.id if driver.work_contact_id else 'SIN CONTACTO',
+                driver.work_contact_id.vat if driver.work_contact_id else 'N/A',
+            )
             figura = etree.SubElement(figura_root, etree.QName(NS_CP31, 'TiposFigura'))
             figura.set('TipoFigura', '01')
-            figura.set('RFCFigura',   (driver.rfc or 'XEXX010101000').upper().strip())
-            figura.set('NombreFigura', (driver.name or '').upper()[:254])
-            figura.set('NumLicencia',  driver.tms_licencia_federal or '000000000000')
+            figura.set('RFCFigura',   rfc_valor or 'XEXX010101000')
+            figura.set('NombreFigura', nombre_valor)
+            figura.set('NumLicencia',  licencia_valor or '000000000000')
         else:
             # Figura vacía de relleno para cumplir XSD
             figura = etree.SubElement(figura_root, etree.QName(NS_CP31, 'TiposFigura'))
@@ -368,4 +450,8 @@ class CartaPorteXmlBuilder:
             figura.set('NombreFigura', 'OPERADOR NO ASIGNADO')
             figura.set('NumLicencia',  '000000000000')
 
+        _logger.warning(
+            'FiguraTransporte XML generado:\n%s',
+            etree.tostring(figura_root, pretty_print=True).decode('utf-8'),
+        )
         return figura_root

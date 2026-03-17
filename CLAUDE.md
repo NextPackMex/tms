@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-14 — V2.1.4f COMPLETADO
+# Última actualización: 2026-03-15 — V2.2 EN PROGRESO (contratos A/B/C completados)
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -249,12 +249,13 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 | **2.1.5** | **Onboarding wizard 6 pasos** | **📋 SIGUIENTE** |
 | 2.1.6 | PDF pre-cotización + email | 📋 |
 
-### 📋 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales
-**PAC:** Formas Digitales (forsedi.facturacfdi.mx)
-- Radio button ambiente pruebas `dev33.facturacfdi.mx` / producción `v33.facturacfdi.mx`
-- Timbrado CFDI 4.0 + Complemento Carta Porte 3.1
-- Cancelación método 1 (con .cer + .key)
-- Campos nuevos `res.company`: `fd_usuario`, `fd_password`, `fd_user_id`, `csd_cer`, `csd_key`, `csd_password`, `rfc_emisor`, `regimen_fiscal`
+### 🚧 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales (EN PROGRESO)
+**PAC:** Formas Digitales (forsedi.facturacfdi.mx) + SW Sapien (respaldo)
+**Contratos completados 2026-03-15:**
+- ✅ A — `res.company` PAC dual + `tms.waybill` cfdi_* + métodos stamp/cancel/check
+- ✅ B — `services/`: xml_builder, xml_signer, pac_manager, formas_digitales, sw_sapien
+- ✅ C — vistas: botones CFDI en header + sección TFD en tab CP + config PAC en settings
+**Pendiente:** merge ramas → feat/etapa-2.2-carta-porte + QA E2E con CSD FUNK671228PH6
 - ⚠️ SEMILLA: crear modelo vacío `tms.route.analytics` aquí
 
 ### 📋 V2.3 — Facturación Real

@@ -98,6 +98,7 @@
         'views/sat_tipo_permiso_views.xml',
 
         # 3.1 Extensiones de modelos base SAT
+        'views/res_company_views.xml',
         'views/res_partner_tms_view.xml',
         'views/res_partner_tms_modals_view.xml',
         'views/hr_employee_views.xml',

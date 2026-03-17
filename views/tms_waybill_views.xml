@@ -520,11 +520,8 @@
                         <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']">
                             <group>
                                 <group string="Identificación">
-                                    <label for="tms_id_ccp"/>
-                                    <div class="d-flex gap-2">
-                                        <field name="tms_id_ccp" placeholder="Automático al timbrar"/>
-                                        <button name="action_generate_id_ccp" type="object" string="Generar ID" class="btn-secondary" invisible="tms_id_ccp" help="Genera el UUID requerido para el IdCCP"/>
-                                    </div>
+                                    <!-- IdCCP: campo interno, se genera automáticamente, no se muestra al usuario -->
+                                    <field name="tms_id_ccp" invisible="1"/>
                                     <field name="l10n_mx_edi_is_international" widget="boolean_toggle"/>
                                     <field name="l10n_mx_edi_logistica_inversa" widget="boolean_toggle"/>
                                 </group>

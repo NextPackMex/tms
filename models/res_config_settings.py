@@ -36,7 +36,7 @@ class ResConfigSettings(models.TransientModel):
     # PAC — Formas Digitales (relacionados a res.company)
     # ============================================================
     fd_usuario   = fields.Char(related='company_id.fd_usuario',   readonly=False, string='Usuario FD')
-    fd_password  = fields.Char(related='company_id.fd_password',  readonly=False, string='Contraseña FD', password=True)
+    fd_password  = fields.Char(related='company_id.fd_password',  readonly=False, string='Contraseña FD')
     fd_user_id   = fields.Char(related='company_id.fd_user_id',   readonly=False, string='User ID FD')
     fd_ambiente  = fields.Selection(related='company_id.fd_ambiente', readonly=False, string='Ambiente FD')
 
@@ -44,7 +44,7 @@ class ResConfigSettings(models.TransientModel):
     # PAC — SW Sapien (relacionados a res.company)
     # ============================================================
     sw_usuario   = fields.Char(related='company_id.sw_usuario',   readonly=False, string='Usuario SW')
-    sw_password  = fields.Char(related='company_id.sw_password',  readonly=False, string='Contraseña SW', password=True)
+    sw_password  = fields.Char(related='company_id.sw_password',  readonly=False, string='Contraseña SW')
     sw_ambiente  = fields.Selection(related='company_id.sw_ambiente', readonly=False, string='Ambiente SW')
 
     # ============================================================

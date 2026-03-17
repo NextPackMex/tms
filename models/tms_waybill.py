@@ -11,6 +11,20 @@ from datetime import timedelta
 _logger = logging.getLogger(__name__)
 
 
+def _generate_id_ccp():
+    """
+    Genera un IdCCP válido según el formato del SAT para Carta Porte 3.1.
+
+    Patrón requerido: CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]
+    Ejemplo:          CCC12345-abcd-1234-abcd-123456789012
+
+    Se define a nivel de módulo (no como lambda) para que Odoo
+    pueda serializarla correctamente en default de fields.Char.
+    """
+    raw = uuid.uuid4().hex  # 32 caracteres hex sin guiones
+    return f"CCC{raw[0:5]}-{raw[5:9]}-{raw[9:13]}-{raw[13:17]}-{raw[17:29]}"
+
+
 class TmsWaybill(models.Model):
     """
     Modelo Maestro: Viaje / Carta Porte (SINGLE DOCUMENT FLOW).
@@ -132,7 +146,10 @@ class TmsWaybill(models.Model):
         string='IdCCP',
         copy=False,
         readonly=True,
-        help='Identificador único del Complemento Carta Porte (especificación 3.1).'
+        default=_generate_id_ccp,
+        help='Identificador único del Complemento Carta Porte (especificación 3.1). '
+             'Formato SAT: CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]. '
+             'Se genera automáticamente al crear el waybill.',
     )
 
     l10n_mx_edi_is_international = fields.Boolean(
@@ -180,23 +197,27 @@ class TmsWaybill(models.Model):
 
     def action_generate_id_ccp(self):
         """
-        Genera un identificador único IdCCP para Carta Porte 3.1.
+        (Re)genera el IdCCP con el formato oficial del SAT para Carta Porte 3.1.
+        Útil para corregir registros con IdCCP vacío o en formato antiguo.
         """
         for rec in self:
-            if not rec.tms_id_ccp:
-                rec.tms_id_ccp = str(uuid.uuid4()).upper()
+            rec.tms_id_ccp = _generate_id_ccp()
 
     @api.constrains('tms_id_ccp')
     def _check_id_ccp_format(self):
         """
-        Valida el formato del IdCCP (UUID v4) según el estándar SAT para 3.1:
-        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        Valida el formato del IdCCP según el patrón del SAT para Carta Porte 3.1:
+        CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]
+        Ejemplo: CCC12345-abcd-1234-abcd-123456789012
         """
-        import re
-        regex = r'^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$'
+        regex = r'^CCC[a-fA-F0-9]{5}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$'
         for rec in self:
             if rec.tms_id_ccp and not re.match(regex, rec.tms_id_ccp, re.IGNORECASE):
-                raise ValidationError(_("El IdCCP no tiene un formato UUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)."))
+                raise ValidationError(_(
+                    "El IdCCP no cumple el formato requerido por el SAT: "
+                    "CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]. "
+                    "Ejemplo: CCC12345-abcd-1234-abcd-123456789012"
+                ))
 
     # ============================================================
     # CFDI — Campos post-timbrado (V2.2)
@@ -276,9 +297,9 @@ class TmsWaybill(models.Model):
         ('traslado','Traslado (Sin Cobro)'),
     ], string="Tipo de Carta Porte", default='ingreso', tracking=True)
 
-    # Mantener waybill_type por compatibilidad o usar cp_type como principal
+    # Mantener waybill_type por compatibilidad — cp_type es el campo principal CP 3.1
     waybill_type = fields.Selection(
-        string='Tipo de Carta Porte',
+        string='Tipo de Viaje',
         selection=[
             ('income', 'Ingreso (Flete Cobrado)'),
             ('transfer', 'Traslado (Sin Cobro)'),
@@ -1833,16 +1854,26 @@ class TmsWaybill(models.Model):
             from odoo.addons.tms.services.pac_manager import PacManager
             import base64
 
+            # fields.Binary en Odoo retorna base64 (str o bytes) o False.
+            # Decodificar aquí — el signer recibe DER bytes puros.
+            csd_cer_bytes = base64.b64decode(company.tms_csd_cer)
+            csd_key_bytes = base64.b64decode(company.tms_csd_key)
+            if not csd_cer_bytes or not csd_key_bytes:
+                raise UserError(_(
+                    'No se pudo leer el CSD. Vuelve a cargar el .cer y .key '
+                    'en Ajustes → TMS → Certificados SAT.'
+                ))
+
             # 1. Construir XML
             builder = CartaPorteXmlBuilder()
             xml_sin_sellar = builder.build(self)
 
-            # 2. Firmar XML con CSD
+            # 2. Firmar XML con CSD (bytes DER ya decodificados)
             signer = CfdiSigner()
             xml_sellado = signer.sign(
                 xml_sin_sellar,
-                company.tms_csd_cer,
-                company.tms_csd_key,
+                csd_cer_bytes,
+                csd_key_bytes,
                 company.tms_csd_password,
             )
 
@@ -1856,7 +1887,8 @@ class TmsWaybill(models.Model):
                 'cfdi_uuid':        resultado['uuid'],
                 'cfdi_xml':         base64.b64encode(resultado['xml_timbrado']),
                 'cfdi_xml_fname':   xml_fname,
-                'cfdi_fecha':       resultado['fecha_timbrado'],
+                # Normalizar ISO 8601 con T al formato Odoo Datetime (sin T)
+                'cfdi_fecha':       (resultado.get('fecha_timbrado') or resultado.get('fecha', '')).replace('T', ' '),
                 'cfdi_pac':         resultado['pac_usado'],
                 'cfdi_no_cert_sat': resultado.get('no_cert_sat', ''),
                 'cfdi_status':      'timbrado',
@@ -1882,6 +1914,7 @@ class TmsWaybill(models.Model):
                 'cfdi_error_msg': str(e),
             })
             raise UserError(_('Error al timbrar: %s') % str(e))
+        return True
 
     def action_cancel_cfdi(self):
         """

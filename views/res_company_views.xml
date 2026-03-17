@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_tms_fiscal_form" model="ir.ui.view">
+        <field name="name">res.company.form.tms.fiscal</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[last()]" position="after">
+                <page string="Fiscal TMS" name="tms_fiscal">
+
+                    <!-- Certificado de Sello Digital -->
+                    <group string="Certificado de Sello Digital (CSD)">
+                        <field name="tms_csd_cer"
+                               string="Certificado .cer"
+                               widget="binary"
+                               filename="tms_csd_cer_fname"/>
+                        <field name="tms_csd_cer_fname" invisible="1"/>
+                        <field name="tms_csd_key"
+                               string="Llave privada .key"
+                               widget="binary"
+                               filename="tms_csd_key_fname"/>
+                        <field name="tms_csd_key_fname" invisible="1"/>
+                        <field name="tms_csd_password"
+                               string="Contraseña CSD"
+                               password="True"/>
+                        <field name="tms_regimen_fiscal"
+                               string="Régimen Fiscal SAT"/>
+                    </group>
+
+                    <!-- Seguros Carta Porte -->
+                    <group string="Seguros Carta Porte 3.1">
+                        <group string="Responsabilidad Civil (Obligatorio)">
+                            <field name="tms_insurance_rc_company"
+                                   string="Aseguradora RC"/>
+                            <field name="tms_insurance_rc_policy"
+                                   string="Póliza RC"/>
+                            <field name="tms_insurance_rc_expiry"
+                                   string="Vigencia RC"/>
+                        </group>
+                        <group string="Carga (Opcional)">
+                            <field name="tms_insurance_cargo_company"
+                                   string="Aseguradora Carga"/>
+                            <field name="tms_insurance_cargo_policy"
+                                   string="Póliza Carga"/>
+                            <field name="tms_insurance_cargo_expiry"
+                                   string="Vigencia Carga"/>
+                        </group>
+                        <group string="Medio Ambiente (Opcional)">
+                            <field name="tms_insurance_env_company"
+                                   string="Aseguradora Ambiental"/>
+                            <field name="tms_insurance_env_policy"
+                                   string="Póliza Ambiental"/>
+                            <field name="tms_insurance_env_expiry"
+                                   string="Vigencia Ambiental"/>
+                        </group>
+                    </group>
+
+                    <!-- PAC para Timbrado -->
+                    <group string="PAC para Timbrado CFDI">
+                        <field name="pac_primario" string="PAC Primario"/>
+                        <field name="pac_failover" string="Failover automático"/>
+                    </group>
+                    <group string="Formas Digitales (forsedi.facturacfdi.mx)">
+                        <field name="fd_ambiente" string="Ambiente"/>
+                        <field name="fd_usuario"  string="Usuario"/>
+                        <field name="fd_password" string="Contraseña" password="True"/>
+                        <field name="fd_user_id"  string="User ID"/>
+                    </group>
+                    <group string="SW Sapien (sw.com.mx)">
+                        <field name="sw_ambiente"  string="Ambiente"/>
+                        <field name="sw_usuario"   string="Usuario"/>
+                        <field name="sw_password"  string="Contraseña" password="True"/>
+                    </group>
+
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

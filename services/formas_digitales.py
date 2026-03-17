@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Wrapper para la API REST de Formas Digitales (forsedi.facturacfdi.mx).
+Wrapper SOAP para el PAC Formas Digitales (forsedi.facturacfdi.mx).
 
 URLs por ambiente:
   Pruebas:    https://dev33.facturacfdi.mx
   Producción: https://v33.facturacfdi.mx
 
-Autenticación: usuario + password en cada request (query params o form data).
+Protocolo: SOAP Document/Literal sobre HTTP.
+  - Sin token:  /WSTimbradoCFDIService  → TimbrarCFDI(accesos, comprobante)
+  - Con token:  /WSForcogsaService      → Autenticar + Timbrar/TimbrarV2
+
 Timeout: 30 segundos en TODAS las llamadas HTTP.
 
 IMPORTANTE: NUNCA registrar en _logger el XML completo ni las credenciales.
 """
-import base64
 import logging
 
 import requests
+from lxml import etree as ET
 
 _logger = logging.getLogger(__name__)
 
@@ -22,6 +25,12 @@ BASE_URLS = {
     'pruebas':    'https://dev33.facturacfdi.mx',
     'produccion': 'https://v33.facturacfdi.mx',
 }
+
+# Namespaces SOAP y del servicio FD
+_SOAP_NS = 'http://schemas.xmlsoap.org/soap/envelope/'
+_WS_NS   = 'http://wservicios/'
+# Namespace del TFD para extraer UUID/fecha de la respuesta
+_TFD_NS  = 'http://www.sat.gob.mx/TimbreFiscalDigital'
 
 
 class FormasDigitalesPac:
@@ -53,39 +62,48 @@ class FormasDigitalesPac:
 
     def timbrar(self, xml_sellado_bytes):
         """
-        Envía el XML sellado a Formas Digitales para timbrado.
+        Envía el XML sellado a Formas Digitales para timbrado vía SOAP.
+
+        FD usa SOAP Document/Literal (no REST). El endpoint es:
+          /WSTimbradoCFDIService  → operación TimbrarCFDI
+        Parámetros: accesos.usuario, accesos.password, comprobante (XML string)
 
         Args:
             xml_sellado_bytes: XML firmado con CSD como bytes
 
         Returns:
             dict: {
-                'uuid':         str,  # UUID / folio fiscal
-                'xml_timbrado': bytes, # XML con TFD incrustado
-                'fecha':        str,  # fecha de timbrado ISO
-                'no_cert_sat':  str,  # número certificado SAT
+                'uuid':         str,   # UUID / folio fiscal del TFD
+                'xml_timbrado': bytes, # XML con TimbreFiscalDigital incrustado
+                'fecha':        str,   # fecha de timbrado ISO
+                'no_cert_sat':  str,   # NoCertificadoSAT del TFD
             }
 
         Raises:
             Exception: con mensaje descriptivo si el timbrado falla
         """
-        url = f'{self.base_url}/stamp'
+        url = f'{self.base_url}/WSTimbradoCFDIService'
         _logger.info(
-            'Timbrado FD — empresa: %s, ambiente: %s',
+            'Timbrado FD SOAP — empresa: %s, ambiente: %s',
             self.company.name, self.company.fd_ambiente
         )
 
+        # Construir el envelope SOAP con lxml para escaping correcto
+        xml_str  = xml_sellado_bytes.decode('utf-8')
+        envelope = self._build_soap_envelope('TimbrarCFDI', xml_str)
+        soap_bytes = ET.tostring(envelope, xml_declaration=True, encoding='UTF-8')
+
         try:
-            # Enviar XML en base64 como form data
-            xml_b64 = base64.b64encode(xml_sellado_bytes).decode('ascii')
-            payload = {
-                'Usuario':   self.company.fd_usuario or '',
-                'Password':  self.company.fd_password or '',
-                'xml':       xml_b64,
-            }
-            resp = requests.post(url, data=payload, timeout=30)
+            resp = requests.post(
+                url,
+                data=soap_bytes,
+                headers={
+                    'Content-Type': 'text/xml; charset=UTF-8',
+                    'SOAPAction':   '',
+                },
+                timeout=30,
+            )
             resp.raise_for_status()
-            data = resp.json()
         except requests.exceptions.Timeout:
             raise Exception(
                 'Formas Digitales: tiempo de espera agotado (30s). '
@@ -102,26 +120,42 @@ class FormasDigitalesPac:
                 f'Verifica la URL y la conectividad.'
             )
 
-        # Interpretar respuesta — estructura ejemplo FD
-        if not data.get('uuid') and not data.get('UUID'):
-            codigo  = data.get('codigo', data.get('error', 'SIN_CODIGO'))
-            mensaje = data.get('mensaje', data.get('message', 'Sin detalle'))
+        # Parsear respuesta SOAP → extraer acuseCFDI
+        return_el = self._parse_soap_response(resp.content, 'TimbrarCFDIResponse')
+
+        codigo_error = self._get_soap_text(return_el, 'codigoError')
+        error_msg    = self._get_soap_text(return_el, 'error')
+        xml_tim_str  = self._get_soap_text(return_el, 'xmlTimbrado')
+
+        # codigoError vacío o '0' = éxito
+        if codigo_error and codigo_error not in ('0', ''):
             raise Exception(
                 f'Formas Digitales rechazó el CFDI. '
-                f'Código: {codigo} — {mensaje}'
+                f'Código: {codigo_error} — {error_msg}'
+            )
+        if not xml_tim_str:
+            raise Exception(
+                f'Formas Digitales: no retornó xmlTimbrado. Detalle: {error_msg}'
             )
 
-        uuid        = data.get('uuid') or data.get('UUID', '')
-        xml_tim_b64 = data.get('xml')  or data.get('xmlTimbrado', '')
-        fecha       = data.get('fecha') or data.get('fechaTimbrado', '')
-        no_cert_sat = data.get('noCertificadoSAT') or data.get('noCertSAT', '')
+        xml_timbrado_bytes = xml_tim_str.encode('utf-8')
 
-        xml_timbrado = base64.b64decode(xml_tim_b64) if xml_tim_b64 else xml_sellado_bytes
+        # Extraer UUID, fecha y NoCertSAT del TFD dentro del XML timbrado
+        uuid = fecha = no_cert_sat = ''
+        try:
+            tfd_tree = ET.fromstring(xml_timbrado_bytes)
+            tfd = tfd_tree.find(f'.//{{{_TFD_NS}}}TimbreFiscalDigital')
+            if tfd is not None:
+                uuid        = tfd.get('UUID', '')
+                fecha       = tfd.get('FechaTimbrado', '')
+                no_cert_sat = tfd.get('NoCertificadoSAT', '')
+        except ET.XMLSyntaxError:
+            _logger.warning('FD: no se pudo parsear xmlTimbrado para extraer UUID')
 
         _logger.info('Timbrado FD OK — UUID: %s', uuid)
         return {
             'uuid':         uuid,
-            'xml_timbrado': xml_timbrado,
+            'xml_timbrado': xml_timbrado_bytes,
             'fecha':        fecha,
             'no_cert_sat':  no_cert_sat,
         }
@@ -132,7 +166,7 @@ class FormasDigitalesPac:
 
     def cancelar(self, uuid, motivo, cer_b64, key_b64, password):
         """
-        Cancela el CFDI usando el CSD (método 1 SAT).
+        Cancela el CFDI vía SOAP en WSTimbradoCFDIService → Cancelacion_1.
 
         Args:
             uuid     : UUID del CFDI a cancelar
@@ -144,38 +178,10 @@ class FormasDigitalesPac:
         Returns:
             dict: {'acuse': str, 'estatus': str}
         """
-        url = f'{self.base_url}/cancel'
-        _logger.info('Cancelación FD — UUID: %s, motivo: %s', uuid, motivo)
-
-        try:
-            payload = {
-                'Usuario':   self.company.fd_usuario or '',
-                'Password':  self.company.fd_password or '',
-                'uuid':      uuid,
-                'motivo':    motivo,
-                'cer':       cer_b64,
-                'key':       key_b64,
-                'password':  password,
-            }
-            resp = requests.post(url, data=payload, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-        except requests.exceptions.Timeout:
-            raise Exception('Formas Digitales: tiempo de espera agotado al cancelar.')
-        except Exception as e:
-            raise Exception(
-                f'Formas Digitales: error al cancelar ({type(e).__name__}).'
-            )
-
-        if data.get('error'):
-            raise Exception(
-                f'Formas Digitales cancelación rechazada: {data.get("error")}'
-            )
-
-        return {
-            'acuse':   data.get('acuse', ''),
-            'estatus': data.get('estatus', 'cancelado'),
-        }
+        # ⚠️ TODO V2.3: implementar SOAP Cancelacion_1/Cancelacion_2 en WSTimbradoCFDIService
+        # El WSDL de FD define Cancelacion_1 y Cancelacion_2 — pendiente consultar parámetros exactos.
+        _logger.warning('FD cancelar: implementación SOAP pendiente para V2.3')
+        return {'acuse': '', 'estatus': 'pendiente'}
 
     # ------------------------------------------------------------------
     # Consulta de estatus
@@ -188,24 +194,104 @@ class FormasDigitalesPac:
         Returns:
             dict: {'estatus': str, 'cancelable': str}
         """
-        url = f'{self.base_url}/status'
-        _logger.info('Consulta estatus FD — UUID: %s', uuid)
+        # ⚠️ TODO V2.3: implementar SOAP consulta estatus en WSTimbradoCFDIService
+        _logger.warning('FD consultar_estatus: implementación SOAP pendiente para V2.3')
+        return {'estatus': 'Desconocido', 'cancelable': 'No'}
 
+    # ------------------------------------------------------------------
+    # Helpers SOAP internos
+    # ------------------------------------------------------------------
+
+    def _build_soap_envelope(self, operation, xml_comprobante):
+        """
+        Construye el envelope SOAP para la operación TimbrarCFDI.
+
+        Args:
+            operation       : nombre de la operación SOAP ('TimbrarCFDI')
+            xml_comprobante : XML sellado como string (lxml escapa automáticamente)
+
+        Returns:
+            lxml.etree._Element: envelope SOAP listo para serializar
+        """
+        envelope = ET.Element(
+            f'{{{_SOAP_NS}}}Envelope',
+            nsmap={'soapenv': _SOAP_NS, 'wse': _WS_NS},
+        )
+        ET.SubElement(envelope, f'{{{_SOAP_NS}}}Header')
+        body = ET.SubElement(envelope, f'{{{_SOAP_NS}}}Body')
+        op   = ET.SubElement(body, f'{{{_WS_NS}}}{operation}')
+
+        # Elemento accesos con usuario y password
+        accesos  = ET.SubElement(op, 'accesos')
+        usr_el   = ET.SubElement(accesos, 'usuario')
+        usr_el.text = self.company.fd_usuario or ''
+        pwd_el   = ET.SubElement(accesos, 'password')
+        pwd_el.text = self.company.fd_password or ''
+
+        # El XML del comprobante va como texto (lxml escapa los caracteres XML)
+        comp_el  = ET.SubElement(op, 'comprobante')
+        comp_el.text = xml_comprobante
+
+        return envelope
+
+    def _parse_soap_response(self, resp_bytes, response_tag):
+        """
+        Parsea la respuesta SOAP y retorna el elemento <acuseCFDI> del Body.
+
+        La respuesta real de FD tiene esta estructura:
+          <S:Body>
+            <ns2:TimbrarCFDIResponse>
+              <acuseCFDI>          ← aquí están codigoError y xmlTimbrado
+                <codigoError>...</codigoError>
+                <xmlTimbrado>...</xmlTimbrado>
+              </acuseCFDI>
+
+        Args:
+            resp_bytes   : bytes del cuerpo HTTP de la respuesta
+            response_tag : tag esperado en el Body, ej. 'TimbrarCFDIResponse'
+
+        Returns:
+            lxml.etree._Element: elemento <acuseCFDI> con los campos del acuse
+
+        Raises:
+            Exception: si la respuesta es un Fault o no tiene formato esperado
+        """
         try:
-            params = {
-                'Usuario':  self.company.fd_usuario or '',
-                'Password': self.company.fd_password or '',
-                'uuid':     uuid,
-            }
-            resp = requests.get(url, params=params, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-        except Exception as e:
+            root = ET.fromstring(resp_bytes)
+        except ET.XMLSyntaxError as e:
             raise Exception(
-                f'Formas Digitales: error al consultar estatus ({type(e).__name__}).'
+                f'Formas Digitales: respuesta SOAP no es XML válido: {e}'
             )
 
-        return {
-            'estatus':    data.get('estatus', 'Desconocido'),
-            'cancelable': data.get('cancelable', 'No'),
-        }
+        # Detectar SOAP Fault
+        fault = root.find(f'.//{{{_SOAP_NS}}}Fault')
+        if fault is not None:
+            fault_str = fault.findtext('faultstring') or 'Sin detalle'
+            raise Exception(f'Formas Digitales SOAP Fault: {fault_str}')
+
+        # Buscar <acuseCFDI> — con namespace del servicio FD o sin él
+        acuse = root.find(f'.//{{{_WS_NS}}}acuseCFDI')
+        if acuse is None:
+            acuse = root.find('.//acuseCFDI')
+        if acuse is None:
+            raise Exception(
+                'Formas Digitales: respuesta SOAP sin elemento <acuseCFDI>. '
+                f'Respuesta cruda (primeros 300 chars): {resp_bytes[:300]}'
+            )
+        return acuse
+
+    def _get_soap_text(self, parent, tag):
+        """
+        Extrae el texto de un elemento hijo, buscando con y sin namespace WS.
+
+        Args:
+            parent : elemento padre lxml
+            tag    : nombre del tag hijo
+
+        Returns:
+            str: texto del elemento o '' si no existe
+        """
+        el = parent.find(f'{{{_WS_NS}}}{tag}')
+        if el is None:
+            el = parent.find(tag)
+        return (el.text or '').strip() if el is not None else ''

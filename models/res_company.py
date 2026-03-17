@@ -70,9 +70,11 @@ class ResCompany(models.Model):
         ],
         string='Régimen Fiscal SAT',
     )
+    tms_csd_cer_fname = fields.Char(string='Nombre .cer')
+    tms_csd_key_fname = fields.Char(string='Nombre .key')
     tms_csd_cer = fields.Binary(string='CSD Certificado (.cer)')
     tms_csd_key = fields.Binary(string='CSD Llave Privada (.key)')
-    tms_csd_password = fields.Char(string='Contraseña CSD', password=True)
+    tms_csd_password = fields.Char(string='Contraseña CSD', copy=False)
 
     # --- Seguros Carta Porte ---
     tms_insurance_rc_company = fields.Char(string='Aseguradora RC')
@@ -94,15 +96,15 @@ class ResCompany(models.Model):
     )
     fd_password = fields.Char(
         string='Contraseña Formas Digitales',
-        password=True,
+        copy=False,
     )
     fd_user_id = fields.Char(
         string='User ID Formas Digitales',
         help='ID de usuario proporcionado por Formas Digitales'
     )
     fd_ambiente = fields.Selection([
-        ('pruebas',    'Pruebas — dev33.facturacfdi.mx'),
-        ('produccion', 'Producción — v33.facturacfdi.mx'),
+        ('pruebas',    'Pruebas (dev33)'),
+        ('produccion', 'Producción (v33)'),
     ], string='Ambiente FD', default='pruebas')
 
     # ============================================================
@@ -114,11 +116,11 @@ class ResCompany(models.Model):
     )
     sw_password = fields.Char(
         string='Contraseña SW Sapien',
-        password=True,
+        copy=False,
     )
     sw_ambiente = fields.Selection([
-        ('pruebas',    'Pruebas — services.test.sw.com.mx'),
-        ('produccion', 'Producción — services.sw.com.mx'),
+        ('pruebas',    'Pruebas (test)'),
+        ('produccion', 'Producción'),
     ], string='Ambiente SW', default='pruebas')
 
     # ============================================================
