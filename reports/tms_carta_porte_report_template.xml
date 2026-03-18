@@ -1,332 +1,326 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-<template id="report_carta_porte_timbrada">
-<t t-name="tms.report_carta_porte_timbrada">
-  <t t-call="web.html_container">
-    <t t-foreach="docs" t-as="o">
-      <t t-call="web.external_layout">
+  <template id="report_carta_porte_timbrada">
+    <t t-name="tms.report_carta_porte_timbrada">
+      <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
 
-        <!-- Parsear XML timbrado y generar QR una sola vez -->
-        <t t-set="cfdi"   t-value="o._parse_cfdi_xml()"/>
-        <t t-set="qr_img" t-value="o._get_cfdi_qr_image()"/>
+          <t t-set="cfdi" t-value="o._parse_cfdi_xml()"/>
+          <t t-set="qr_img" t-value="o._get_cfdi_qr_image()"/>
 
-        <div style="font-family:Arial,sans-serif; font-size:10px; padding:8px;">
+          <meta charset="UTF-8"/>
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-          <!-- ══════════════════════════════════════════════════════
-               ENCABEZADO: Título + datos generales del CFDI
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr>
-              <td colspan="4" style="background:#035d96; color:white; padding:8px 10px;
-                  font-size:13px; font-weight:bold; letter-spacing:0.5px;">
-                CARTA PORTE — CFDI 4.0 + COMPLEMENTO CARTA PORTE 3.1
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #ddd; padding:5px; width:25%;">
-                <b>Folio:</b><br/>
-                <t t-out="o.name or ''"/>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:35%;">
-                <b>UUID:</b><br/>
-                <span style="font-size:9px; word-break:break-all;">
-                  <t t-out="o.cfdi_uuid or 'Sin timbrar'"/>
-                </span>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:20%;">
-                <b>Fecha Timbrado:</b><br/>
-                <t t-out="cfdi.get('fecha_timbrado', '') or str(o.cfdi_fecha or '')"/>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:20%;">
-                <b>PAC:</b><br/>
-                <t t-out="o.cfdi_pac or ''"/><br/>
-                <b>No. Cert. Emisor:</b><br/>
-                <span style="font-size:8px;">
-                  <t t-out="cfdi.get('no_cert_emisor', '') or o.cfdi_no_cert_sat or ''"/>
-                </span>
-              </td>
-            </tr>
-          </table>
+          <div class="page" style="font-family:Arial,Helvetica,sans-serif; font-size:16px;
+               padding:0; margin:0; line-height:1.4;">
 
-          <!-- ══════════════════════════════════════════════════════
-               EMISOR / RECEPTOR
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr>
-              <td colspan="2" style="background:#035d96; color:white; padding:6px 10px;
-                  font-size:11px; font-weight:bold;">
-                DATOS FISCALES
-              </td>
-            </tr>
-            <tr>
-              <td style="width:50%; vertical-align:top; border:1px solid #ddd; padding:6px;">
-                <b style="color:#035d96;">EMISOR</b><br/>
-                <b>RFC:</b> <t t-out="cfdi.get('rfc_emisor', '')"/><br/>
-                <b>Nombre:</b> <t t-out="cfdi.get('nombre_emisor', '') or o.company_id.name"/><br/>
-                <b>Régimen Fiscal:</b> <t t-out="cfdi.get('regimen_emisor', '') or o.company_id.tms_regimen_fiscal or ''"/><br/>
-                <b>Lugar Expedición:</b> <t t-out="o.company_id.zip or ''"/>
-              </td>
-              <td style="width:50%; vertical-align:top; border:1px solid #ddd; padding:6px;">
-                <b style="color:#035d96;">RECEPTOR</b><br/>
-                <b>RFC:</b> <t t-out="cfdi.get('rfc_receptor', '')"/><br/>
-                <b>Nombre:</b> <t t-out="cfdi.get('nombre_receptor', '') or o.company_id.name"/><br/>
-                <b>Uso CFDI:</b> <t t-out="cfdi.get('uso_cfdi', 'S01')"/><br/>
-                <b>Dom. Fiscal:</b> <t t-out="o.company_id.zip or ''"/>
-              </td>
-            </tr>
-          </table>
-
-          <!-- ══════════════════════════════════════════════════════
-               RUTA: ORIGEN / DESTINO
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr>
-              <td colspan="2" style="background:#035d96; color:white; padding:6px 10px;
-                  font-size:11px; font-weight:bold;">
-                RUTA DE TRANSPORTE
-              </td>
-            </tr>
-            <tr>
-              <td style="width:50%; vertical-align:top; border:1px solid #ddd; padding:6px;">
-                <b style="color:#035d96;">ORIGEN</b><br/>
-                <b>Remitente:</b>
-                <t t-out="o.partner_origin_id.name if o.partner_origin_id else ''"/><br/>
-                <b>RFC:</b>
-                <t t-out="o.partner_origin_id.vat if o.partner_origin_id else ''"/><br/>
-                <b>CP:</b> <t t-out="o.origin_zip or ''"/><br/>
-                <b>Ciudad:</b> <t t-out="o.origin_city_name or ''"/>
-              </td>
-              <td style="width:50%; vertical-align:top; border:1px solid #ddd; padding:6px;">
-                <b style="color:#035d96;">DESTINO</b><br/>
-                <b>Destinatario:</b>
-                <t t-out="o.partner_dest_id.name if o.partner_dest_id else ''"/><br/>
-                <b>RFC:</b>
-                <t t-out="o.partner_dest_id.vat if o.partner_dest_id else ''"/><br/>
-                <b>CP:</b> <t t-out="o.dest_zip or ''"/><br/>
-                <b>Ciudad:</b> <t t-out="o.dest_city_name or ''"/><br/>
-                <b>Distancia:</b>
-                <t t-out="str(int(o.distance_km or 0))"/> km
-              </td>
-            </tr>
-          </table>
-
-          <!-- ══════════════════════════════════════════════════════
-               MERCANCÍAS
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr>
-              <td colspan="6" style="background:#035d96; color:white; padding:6px 10px;
-                  font-size:11px; font-weight:bold;">
-                MERCANCÍAS TRANSPORTADAS
-              </td>
-            </tr>
-            <tr style="background:#e8f0fe;">
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px;">Clave SAT</th>
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px;">Descripción</th>
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px; text-align:right;">Cantidad</th>
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px;">Unidad</th>
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px; text-align:right;">Peso (kg)</th>
-              <th style="border:1px solid #ccc; padding:5px; font-size:9px;">Dimensiones</th>
-            </tr>
-            <t t-foreach="o.line_ids" t-as="line">
+            <!-- ============================================================ -->
+            <!-- 1. HEADER: Logo + Emisor + Datos CFDI                        -->
+            <!--    Emisor va aqui, NO se repite abajo                        -->
+            <!-- ============================================================ -->
+            <table style="width:100%; border-collapse:collapse; border:2px solid #035d96; margin-bottom:6px;">
               <tr>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px;">
-                  <t t-out="line.product_sat_id.code if line.product_sat_id else ''"/>
+                <td style="width:10%; vertical-align:middle; padding:6px; text-align:center; border-right:1px solid #ddd;">
+                  <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)" style="max-width:70px; max-height:70px;"/>
                 </td>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px;">
-                  <t t-out="line.description or ''"/>
+                <td style="width:44%; vertical-align:top; padding:6px 10px;">
+                  <div style="font-size:20px; font-weight:bold; color:#035d96; margin-bottom:3px;">
+                    <t t-out="o.company_id.name or ''"/>
+                  </div>
+                  <div style="font-size:14px;">
+                    <b>RFC:</b>
+                    <t t-out="cfdi.get('rfc_emisor') or o.company_id.vat or ''"/>
+ &#160; <b>R&#233;gimen:</b>
+                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal or ''"/>
+                  </div>
+                  <div t-if="o.company_id.street" style="font-size:14px;">
+                    <t t-out="o.company_id.street or ''"/>
+                  </div>
+                  <div style="font-size:14px;">
+                    <t t-out="o.company_id.city or ''"/>
+                    <t t-if="o.company_id.state_id">,                      <t t-out="o.company_id.state_id.name"/>
+                    </t>
+                    <t t-if="o.company_id.zip">, CP <t t-out="o.company_id.zip"/>
+                    </t>
+                  </div>
                 </td>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px; text-align:right;">
-                  <t t-out="'%.3f' % (line.quantity or 0)"/>
-                </td>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px;">
-                  <t t-out="line.uom_sat_id.code if line.uom_sat_id else ''"/>
-                </td>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px; text-align:right;">
-                  <t t-out="'%.3f' % ((line.weight_kg or 0) * (line.quantity or 1))"/>
-                </td>
-                <td style="border:1px solid #ddd; padding:4px; font-size:9px;">
-                  <t t-out="line.dimensions or ''"/>
-                </td>
-              </tr>
-            </t>
-            <!-- Fila de totales -->
-            <tr style="background:#f5f5f5; font-weight:bold;">
-              <td colspan="3" style="border:1px solid #ccc; padding:5px; font-size:9px;">
-                Total mercancías: <t t-out="str(len(o.line_ids))"/>
-              </td>
-              <td colspan="3" style="border:1px solid #ccc; padding:5px; font-size:9px; text-align:right;">
-                Peso bruto total:
-                <t t-out="'%.3f' % sum((l.weight_kg or 0) * (l.quantity or 1) for l in o.line_ids)"/> kg
-              </td>
-            </tr>
-          </table>
-
-          <!-- ══════════════════════════════════════════════════════
-               VEHÍCULO, SEGUROS Y REMOLQUES
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-            <tr>
-              <td colspan="4" style="background:#035d96; color:white; padding:6px 10px;
-                  font-size:11px; font-weight:bold;">
-                UNIDAD VEHICULAR Y SEGUROS
-              </td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #ddd; padding:5px; width:25%; vertical-align:top;">
-                <b>Config. Vehicular:</b><br/>
-                <t t-out="o.vehicle_id.sat_config_id.code if o.vehicle_id and o.vehicle_id.sat_config_id else ''"/>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:25%; vertical-align:top;">
-                <b>Placa:</b><br/>
-                <t t-out="o.vehicle_id.license_plate if o.vehicle_id else ''"/>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:25%; vertical-align:top;">
-                <b>Año Modelo:</b><br/>
-                <t t-out="str(o.vehicle_id.model_year or '') if o.vehicle_id else ''"/>
-              </td>
-              <td style="border:1px solid #ddd; padding:5px; width:25%; vertical-align:top;">
-                <b>Permiso SCT:</b><br/>
-                <t t-out="o.vehicle_id.sat_permiso_sct_id.code if o.vehicle_id and o.vehicle_id.sat_permiso_sct_id else ''"/><br/>
-                <b>No. Permiso:</b><br/>
-                <t t-out="o.vehicle_id.permiso_sct_number if o.vehicle_id else ''"/>
-              </td>
-            </tr>
-            <tr>
-              <td colspan="2" style="border:1px solid #ddd; padding:5px; vertical-align:top;">
-                <b>Aseguradora RC:</b>
-                <t t-out="o.company_id.tms_insurance_rc_company or ''"/><br/>
-                <b>Póliza RC:</b>
-                <t t-out="o.company_id.tms_insurance_rc_policy or ''"/>
-              </td>
-              <td colspan="2" style="border:1px solid #ddd; padding:5px; vertical-align:top;">
-                <!-- Remolques si existen -->
-                <t t-if="o.trailer1_id">
-                  <b>Remolque 1:</b>
-                  <t t-out="o.trailer1_id.license_plate or ''"/>
-                  (<t t-out="o.trailer1_id.tms_subtipo_remolque or ''"/>)<br/>
-                </t>
-                <t t-if="o.trailer2_id">
-                  <b>Remolque 2:</b>
-                  <t t-out="o.trailer2_id.license_plate or ''"/>
-                  (<t t-out="o.trailer2_id.tms_subtipo_remolque or ''"/>)
-                </t>
-              </td>
-            </tr>
-          </table>
-
-          <!-- ══════════════════════════════════════════════════════
-               CHOFER (FIGURA TRANSPORTE)
-               ══════════════════════════════════════════════════════ -->
-          <t t-if="o.driver_id">
-            <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
-              <tr>
-                <td colspan="3" style="background:#035d96; color:white; padding:6px 10px;
-                    font-size:11px; font-weight:bold;">
-                  OPERADOR (FIGURA TRANSPORTE — TIPO 01)
-                </td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #ddd; padding:5px; width:34%;">
-                  <b>Nombre:</b><br/>
-                  <t t-out="o.driver_id.name or ''"/>
-                </td>
-                <td style="border:1px solid #ddd; padding:5px; width:33%;">
-                  <b>RFC:</b><br/>
-                  <t t-out="o.driver_id.tms_rfc or ''"/>
-                </td>
-                <td style="border:1px solid #ddd; padding:5px; width:33%;">
-                  <b>Licencia:</b><br/>
-                  <t t-out="o.driver_id.tms_driver_license or o.driver_id.tms_license_number or ''"/>
+                <td style="width:46%; vertical-align:top; padding:6px 10px; border-left:2px solid #035d96; background:#f8fbff;">
+                  <div style="font-size:14px; font-weight:bold; color:#035d96; margin-bottom:3px;">Complemento Carta Porte 3.1</div>
+                  <div style="font-size:12px;">
+                    <b>Folio fiscal:</b>
+                    <span style="font-size:11px; word-break:break-all;">
+                      <t t-out="o.cfdi_uuid or 'Sin timbrar'"/>
+                    </span>
+                  </div>
+                  <div style="font-size:12px;">
+                    <b>Fecha:</b>
+                    <t t-out="cfdi.get('fecha_timbrado') or str(o.cfdi_fecha or '')"/>
+ &#160; <b>Serie/Folio:</b>
+                    <t t-out="o.name or ''"/>
+                  </div>
+                  <div style="font-size:12px;">
+                    <b>Cert. emisor:</b>
+                    <t t-out="cfdi.get('no_cert_emisor') or ''"/>
+                  </div>
+                  <div style="font-size:12px;">
+                    <b>Cert. SAT:</b>
+                    <t t-out="cfdi.get('no_cert_sat') or o.cfdi_no_cert_sat or ''"/>
+                  </div>
+                  <div style="font-size:12px;">
+                    <b>Tipo:</b> Traslado &#160; <b>Uso CFDI:</b>
+                    <t t-out="cfdi.get('uso_cfdi') or 'S01'"/>
+ &#160; <b>R&#233;gimen:</b>
+                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal or ''"/>
+                  </div>
                 </td>
               </tr>
             </table>
-          </t>
 
-          <!-- ══════════════════════════════════════════════════════
-               PIE FISCAL: QR + sellos + leyenda
-               ══════════════════════════════════════════════════════ -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:6px;
-              background:#f5f5f5; border:1px solid #ccc;">
-            <tr>
-              <td colspan="2" style="background:#555; color:white; padding:5px 10px;
-                  font-size:10px; font-weight:bold;">
-                DATOS FISCALES DEL TIMBRE
-              </td>
-            </tr>
+            <!-- ============================================================ -->
+            <!-- 2. RECEPTOR (1 columna, sin emisor que ya esta arriba)       -->
+            <!-- ============================================================ -->
+            <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+              <tr>
+                <td style="background:#035d96; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">RECEPTOR</td>
+              </tr>
+              <tr>
+                <td style="border:1px solid #999; padding:5px 10px; font-size:14px; vertical-align:top;">
+                  <b>Nombre:</b>
+                  <t t-out="cfdi.get('nombre_receptor') or ''"/>
+                  &#160;&#160; <b>RFC:</b>
+                  <t t-out="cfdi.get('rfc_receptor') or ''"/>
+                  &#160;&#160; <b>Uso CFDI:</b>
+                  <t t-out="cfdi.get('uso_cfdi') or 'S01'"/>
+                  &#160;&#160; <b>Dom. Fiscal:</b>
+                  <t t-out="(o.partner_invoice_id.zip if o.partner_invoice_id else '') or o.company_id.zip or ''"/>
+                </td>
+              </tr>
+            </table>
 
-            <!-- QR + UUID + No. Certificado SAT -->
-            <tr>
-              <td style="padding:8px; vertical-align:top; width:130px;">
-                <t t-if="qr_img">
-                  <img t-att-src="'data:image/png;base64,' + qr_img"
-                       style="width:120px; height:120px;"/>
-                </t>
-                <t t-else="">
-                  <div style="width:120px; height:120px; border:1px solid #aaa;
-                      display:flex; align-items:center; justify-content:center;
-                      font-size:8px; color:#666; text-align:center;">
-                    QR no disponible<br/>(instalar qrcode)
+            <!-- ============================================================ -->
+            <!-- 3. UBICACIONES                                               -->
+            <!-- ============================================================ -->
+            <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+              <tr>
+                <td style="background:#035d96; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">
+                  UBICACIONES
+                  <span style="font-weight:normal; font-size:12px; margin-left:12px;">Total dist.: <t t-out="str(int(o.distance_km or 0))"/>
+ km &#160;&#160; Transp. intl.: No</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="border:1px solid #999; padding:5px 10px; font-size:14px; background:#f9fafb;">
+                  <div>
+                    <b style="color:#035d96;">Tipo: Origen Nacional</b> &#160;&#160; <b>ID:</b> OR000001</div>
+                  <div>
+                    <b>RFC remitente:</b>
+                    <t t-out="(o.partner_origin_id.vat if o.partner_origin_id else '') or 'XAXX010101000'"/>
+ &#160;&#160; <b>Nombre:</b>
+                    <t t-out="o.partner_origin_id.name if o.partner_origin_id else '-'"/>
                   </div>
-                </t>
-              </td>
-              <td style="padding:8px; vertical-align:top; font-size:8px;">
-                <b>UUID:</b>
-                <span style="word-break:break-all;">
-                  <t t-out="o.cfdi_uuid or ''"/>
-                </span><br/><br/>
-                <b>No. Certificado SAT:</b>
-                <t t-out="cfdi.get('no_cert_sat', '') or o.cfdi_no_cert_sat or ''"/><br/><br/>
-                <b>Fecha Timbrado:</b>
-                <t t-out="cfdi.get('fecha_timbrado', '') or str(o.cfdi_fecha or '')"/>
+                  <div>
+                    <b>Domicilio:</b> CP <t t-out="o.origin_zip or '-'"/>
+,                  <t t-out="o.origin_city_name or '-'"/>
+, MEX</div>
               </td>
             </tr>
-
-            <!-- Cadena original TFD -->
             <tr>
-              <td colspan="2" style="padding:5px 8px; border-top:1px solid #ccc;">
-                <b style="font-size:8px;">Cadena Original TFD:</b><br/>
-                <span style="font-size:7px; word-break:break-all; color:#444;">
-                  <t t-out="cfdi.get('cadena_tfd', '')"/>
-                </span>
-              </td>
-            </tr>
+              <td style="border:1px solid #999; border-top:0; padding:5px 10px; font-size:14px;">
+                <div>
+                  <b style="color:#035d96;">Tipo: Destino Final</b> &#160;&#160; <b>ID:</b> DE000001 &#160;&#160; <b>Dist.:</b>
+                  <t t-out="str(int(o.distance_km or 0))"/>
+ km</div>
+                <div>
+                  <b>RFC destinatario:</b>
+                  <t t-out="(o.partner_dest_id.vat if o.partner_dest_id else '') or 'XAXX010101000'"/>
+ &#160;&#160; <b>Nombre:</b>
+                  <t t-out="o.partner_dest_id.name if o.partner_dest_id else '-'"/>
+                </div>
+                <div>
+                  <b>Domicilio:</b> CP <t t-out="o.dest_zip or '-'"/>
+,                <t t-out="o.dest_city_name or '-'"/>
+, MEX</div>
+            </td>
+          </tr>
+        </table>
 
-            <!-- Sello del CFDI (truncado) -->
-            <tr>
-              <td colspan="2" style="padding:5px 8px; border-top:1px solid #ccc;">
-                <b style="font-size:8px;">Sello del CFDI:</b><br/>
-                <span style="font-size:7px; word-break:break-all; color:#444;">
-                  <t t-out="(cfdi.get('sello_cfdi', '') or '')[:80]"/>...
-                </span>
-              </td>
-            </tr>
+        <!-- ============================================================ -->
+        <!-- 4. MERCANCIAS                                                -->
+        <!-- ============================================================ -->
+        <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+          <tr>
+            <td colspan="6" style="background:#035d96; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">
+                  MERCANC&#205;AS
+              <span style="font-weight:normal; font-size:12px; margin-left:12px;">Total: <t t-out="str(len(o.line_ids))"/>
+ &#160;&#160; Peso bruto: <t t-out="'%.0f' % sum((l.weight_kg or 0) * (l.quantity or 1) for l in o.line_ids)"/>
+ kg</span>
+          </td>
+        </tr>
+        <tr style="background:#e8f0fe;">
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:left;">Bienes Transp.</th>
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:left;">Descripci&#243;n</th>
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:right;">Cant.</th>
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:left;">Unidad</th>
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:right;">Peso kg</th>
+          <th style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:left;">Dimensiones</th>
+        </tr>
+        <t t-foreach="o.line_ids" t-as="line">
+          <tr>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px;">
+              <t t-out="line.product_sat_id.code if line.product_sat_id else ''"/>
+            </td>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px;">
+              <t t-out="line.description or ''"/>
+            </td>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:right;">
+              <t t-out="'%.3f' % (line.quantity or 0)"/>
+            </td>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px;">
+              <t t-out="line.uom_sat_id.code if line.uom_sat_id else ''"/>
+            </td>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px; text-align:right;">
+              <t t-out="'%.3f' % ((line.weight_kg or 0) * (line.quantity or 1))"/>
+            </td>
+            <td style="border:1px solid #999; padding:3px 5px; font-size:12px;">
+              <t t-out="line.dimensions or ''"/>
+            </td>
+          </tr>
+        </t>
+      </table>
 
-            <!-- Sello del SAT (truncado) -->
-            <tr>
-              <td colspan="2" style="padding:5px 8px; border-top:1px solid #ccc;">
-                <b style="font-size:8px;">Sello del SAT:</b><br/>
-                <span style="font-size:7px; word-break:break-all; color:#444;">
-                  <t t-out="(cfdi.get('sello_sat', '') or '')[:80]"/>...
-                </span>
-              </td>
-            </tr>
+      <!-- ============================================================ -->
+      <!-- 5. AUTOTRANSPORTE                                            -->
+      <!-- ============================================================ -->
+      <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+        <tr>
+          <td colspan="4" style="background:#035d96; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">AUTOTRANSPORTE</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #999; padding:4px 6px; width:18%; font-size:14px;">
+            <b>Permiso SCT:</b>
+            <br/>
+            <t t-out="o.vehicle_id.sat_permiso_sct_id.code if o.vehicle_id and o.vehicle_id.sat_permiso_sct_id else '-'"/>
+          </td>
+          <td style="border:1px solid #999; border-left:0; padding:4px 6px; width:24%; font-size:14px;">
+            <b>No. Permiso:</b>
+            <br/>
+            <t t-out="o.vehicle_id.permiso_sct_number if o.vehicle_id else '-'"/>
+          </td>
+          <td style="border:1px solid #999; border-left:0; padding:4px 6px; width:14%; font-size:14px;">
+            <b>Config.:</b>
+            <br/>
+            <t t-out="o.vehicle_id.sat_config_id.code if o.vehicle_id and o.vehicle_id.sat_config_id else '-'"/>
+          </td>
+          <td style="border:1px solid #999; border-left:0; padding:4px 6px; width:44%; font-size:14px;">
+            <b>Placa:</b>
+            <t t-out="o.vehicle_id.license_plate if o.vehicle_id else '-'"/>
+ &#160; <b>A&#241;o:</b>
+            <t t-out="str(o.vehicle_id.model_year or '-') if o.vehicle_id else '-'"/>
+ &#160; <b>Peso:</b>
+            <t t-out="'%.1f' % (o.vehicle_id.tms_gross_vehicle_weight or 0) if o.vehicle_id else '-'"/>
+ ton</td>
+        </tr>
+        <tr>
+          <td colspan="2" style="border:1px solid #999; border-top:0; padding:4px 6px; font-size:14px;">
+            <b>Aseg. RC:</b>
+            <t t-out="o.company_id.tms_insurance_rc_company or '-'"/>
+ &#160; <b>P&#243;liza:</b>
+            <t t-out="o.company_id.tms_insurance_rc_policy or '-'"/>
+          </td>
+          <td colspan="2" style="border:1px solid #999; border-left:0; border-top:0; padding:4px 6px; font-size:14px;">
+            <t t-if="o.trailer1_id">
+              <b>Remolque 1:</b>
+              <t t-out="o.trailer1_id.license_plate or '-'"/>
+            </t>
+            <t t-if="o.trailer2_id"> &#160; <b>Remolque 2:</b>
+              <t t-out="o.trailer2_id.license_plate or '-'"/>
+            </t>
+            <t t-if="not o.trailer1_id">-</t>
+          </td>
+        </tr>
+      </table>
 
-            <!-- Leyenda fiscal -->
-            <tr>
-              <td colspan="2" style="padding:6px 8px; border-top:1px solid #ccc;
-                  text-align:center; font-size:8px; color:#555;">
-                Este documento es una representación impresa de un Comprobante Fiscal Digital
-                por Internet (CFDI). Verifica su autenticidad en:
-                verificacfdi.facturaelectronica.sat.gob.mx
-              </td>
-            </tr>
-          </table>
+      <!-- ============================================================ -->
+      <!-- 6. FIGURA TRANSPORTE                                         -->
+      <!-- ============================================================ -->
+      <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+        <tr>
+          <td style="background:#035d96; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">FIGURA TRANSPORTE - Tipo 01 (Operador)</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #999; padding:5px 10px; font-size:14px;">
+            <b>Nombre:</b>
+            <t t-out="o.driver_id.name if o.driver_id else '-'"/>
+                  &#160;&#160; <b>RFC:</b>
+            <t t-out="(o.driver_id.tms_rfc if o.driver_id else '') or '-'"/>
+                  &#160;&#160; <b>Licencia:</b>
+            <t t-out="(o.driver_id.tms_driver_license or o.driver_id.tms_license_number or '-') if o.driver_id else '-'"/>
+          </td>
+        </tr>
+      </table>
 
-        </div>
-      </t>
-    </t>
+      <!-- ============================================================ -->
+      <!-- 7. PIE FISCAL                                                -->
+      <!-- ============================================================ -->
+      <table style="width:100%; border-collapse:collapse; border:1px solid #999;">
+        <tr>
+          <td colspan="2" style="background:#333; color:white; padding:3px 8px; font-size:13px; font-weight:bold;">SELLO DIGITAL - REPRESENTACI&#211;N IMPRESA DE CFDI</td>
+        </tr>
+        <tr>
+          <td style="padding:5px; vertical-align:top; width:100px; border-right:1px solid #999;">
+            <t t-if="qr_img">
+              <img t-att-src="'data:image/png;base64,' + qr_img" style="width:110px; height:110px;"/>
+            </t>
+            <t t-else="">
+              <div style="width:90px; height:90px; border:1px solid #aaa; font-size:10px; color:#666; text-align:center; padding-top:30px;">QR no<br/>
+disponible</div>
+            </t>
+          </td>
+          <td style="padding:5px 10px; vertical-align:top; font-size:12px;">
+            <div>
+              <b>UUID:</b>
+              <t t-out="o.cfdi_uuid or ''"/>
+            </div>
+            <div>
+              <b>No. Cert. SAT:</b>
+              <t t-out="cfdi.get('no_cert_sat') or o.cfdi_no_cert_sat or ''"/>
+ &#160;&#160; <b>Fecha Timbrado:</b>
+              <t t-out="cfdi.get('fecha_timbrado') or str(o.cfdi_fecha or '')"/>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:3px 8px; border-top:1px solid #ccc;">
+            <b style="font-size:10px;">Cadena Original TFD:</b>
+            <div style="font-size:8px; word-break:break-all; color:#444; max-height:32px; overflow:hidden; line-height:1.2;">
+              <t t-out="cfdi.get('cadena_tfd') or ''"/>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:3px 8px; border-top:1px solid #ccc; border-right:1px solid #ccc; vertical-align:top; width:50%;">
+            <b style="font-size:10px;">Sello CFDI:</b>
+            <div style="font-size:8px; word-break:break-all; color:#444; line-height:1.2;">
+              <t t-out="(cfdi.get('sello_cfdi') or '')[:100]"/>
+...</div>
+          </td>
+          <td style="padding:3px 8px; border-top:1px solid #ccc; vertical-align:top; width:50%;">
+            <b style="font-size:10px;">Sello SAT:</b>
+            <div style="font-size:8px; word-break:break-all; color:#444; line-height:1.2;">
+              <t t-out="(cfdi.get('sello_sat') or '')[:100]"/>
+...</div>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding:4px 10px; border-top:1px solid #ccc; text-align:center; font-size:10px; color:#555; font-style:italic;">
+                  Este documento es una representaci&#243;n impresa de un Comprobante Fiscal Digital por Internet (CFDI). Verifica su autenticidad en: verificacfdi.facturaelectronica.sat.gob.mx
+          </td>
+        </tr>
+      </table>
+
+    </div>
   </t>
+</t>
 </t>
 </template>
 </odoo>

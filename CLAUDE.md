@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-15 — V2.2 EN PROGRESO (contratos A/B/C completados)
+# Última actualización: 2026-03-17 — V2.2 EN PROGRESO (etapa 2.2.1 PDF completada)
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -179,6 +179,12 @@ tms/                                    # Módulo principal
 │   ├── tms_fleet_vehicle_views.xml
 │   ├── tms_destination_views.xml
 │   └── res_config_settings_views.xml
+├── reports/
+│   ├── tms_waybill_report.xml
+│   ├── tms_cotizacion_report.xml
+│   ├── tms_cotizacion_report_template.xml
+│   ├── tms_carta_porte_report.xml          # Acción reporte PDF CP timbrada (V2.2.1)
+│   └── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
 ├── wizard/
 │   ├── tms_cotizacion_wizard.py        # Wizard cotización 2 pasos
 │   └── tms_cotizacion_wizard_views.xml
@@ -251,10 +257,12 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 
 ### 🚧 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales (EN PROGRESO)
 **PAC:** Formas Digitales (forsedi.facturacfdi.mx) + SW Sapien (respaldo)
-**Contratos completados 2026-03-15:**
+**Completado:**
 - ✅ A — `res.company` PAC dual + `tms.waybill` cfdi_* + métodos stamp/cancel/check
 - ✅ B — `services/`: xml_builder, xml_signer, pac_manager, formas_digitales, sw_sapien
 - ✅ C — vistas: botones CFDI en header + sección TFD en tab CP + config PAC en settings
+- ✅ Fixes timbrado: sustitución datos fiscales pruebas, IdCCP vacío, CP155 MaterialPeligroso
+- ✅ **2.2.1** — PDF Carta Porte timbrada con QR verificación SAT (2026-03-17)
 **Pendiente:** merge ramas → feat/etapa-2.2-carta-porte + QA E2E con CSD FUNK671228PH6
 - ⚠️ SEMILLA: crear modelo vacío `tms.route.analytics` aquí
 
