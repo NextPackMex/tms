@@ -22,5 +22,6 @@
         <field name="binding_model_id" ref="model_tms_waybill"/>
         <field name="binding_type">report</field>
         <field name="paperformat_id" ref="paperformat_carta_porte"/>
+        <field name="print_report_name">'Carta Porte %s' % (object.name or 'Sin Folio').replace('/', '')</field>
     </record>
 </odoo>
