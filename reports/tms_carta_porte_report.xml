@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_carta_porte" model="report.paperformat">
+        <field name="name">Carta Porte Letter</field>
+        <field name="default" eval="False"/>
+        <field name="format">Letter</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">100</field>
+    </record>
+
+    <record id="action_report_carta_porte_timbrada" model="ir.actions.report">
+        <field name="name">Carta Porte Timbrada</field>
+        <field name="model">tms.waybill</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms.report_carta_porte_timbrada</field>
+        <field name="report_file">tms.report_carta_porte_timbrada</field>
+        <field name="binding_model_id" ref="model_tms_waybill"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_carta_porte"/>
+        <field name="print_report_name">'Carta Porte %s' % (object.name or 'Sin Folio').replace('/', '')</field>
+    </record>
+</odoo>

@@ -128,6 +128,8 @@
         'reports/tms_waybill_report.xml',
         'reports/tms_cotizacion_report.xml',
         'reports/tms_cotizacion_report_template.xml',
+        'reports/tms_carta_porte_report.xml',
+        'reports/tms_carta_porte_report_template.xml',
         'data/mail_template_data.xml',
         'data/mail_template_cotizacion.xml',
 

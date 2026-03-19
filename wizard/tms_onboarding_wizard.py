@@ -316,6 +316,19 @@ class TmsOnboardingWizard(models.TransientModel):
             vals['currency_id'] = mxn.id
         if vals:
             company.write(vals)
+            # Sincronizar en el partner asociado a la empresa.
+            # Los reportes PDF (external_layout) usan partner_id, no res.company directamente.
+            # res.company usa _inherits pero Odoo 19 no siempre propaga todos los campos.
+            if company.partner_id:
+                partner_vals = {}
+                if vals.get('name'):
+                    partner_vals['name'] = vals['name']
+                if vals.get('vat'):
+                    partner_vals['vat'] = vals['vat']
+                if vals.get('country_id'):
+                    partner_vals['country_id'] = vals['country_id']
+                if partner_vals:
+                    company.partner_id.write(partner_vals)
         return self.action_next_step()
 
     def _get_or_create_vehicle_model(self, name):
