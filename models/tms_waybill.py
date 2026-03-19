@@ -28,6 +28,24 @@ def _generate_id_ccp():
     return f"CCC{raw[0:5]}-{raw[5:9]}-{raw[9:13]}-{raw[13:17]}-{raw[17:29]}"
 
 
+# Campos que SÍ se pueden escribir cuando cfdi_status == 'timbrado'.
+# Todo lo demás queda bloqueado para proteger la integridad del CFDI sellado.
+TIMBRADO_WRITABLE_FIELDS = {
+    # Campos CFDI — el sistema los escribe internamente al timbrar/cancelar
+    'cfdi_uuid', 'cfdi_xml', 'cfdi_xml_fname', 'cfdi_fecha',
+    'cfdi_pac', 'cfdi_no_cert_sat', 'cfdi_status', 'cfdi_error_msg',
+    # Estado del workflow (ej. cerrar viaje después del timbrado)
+    'state', 'message_main_attachment_id',
+    # Mensajería y actividades de Odoo (chatter, log notes, etc.)
+    'message_ids', 'message_follower_ids', 'message_partner_ids',
+    'activity_ids', 'activity_state', 'activity_user_id',
+    'activity_type_id', 'activity_date_deadline',
+    'activity_summary', 'activity_exception_decoration',
+    # Bitácora GPS — siempre editable aunque el CFDI esté timbrado
+    'tracking_event_ids',
+}
+
+
 class TmsWaybill(models.Model):
     """
     Modelo Maestro: Viaje / Carta Porte (SINGLE DOCUMENT FLOW).
@@ -2515,15 +2533,31 @@ class TmsWaybill(models.Model):
 
     def write(self, vals):
         """
-        Purga de datos técnica: Si se desactiva 'require_trailer',
-        vaciamos forzosamente los campos de remolque para mantener integridad.
+        Dos responsabilidades:
+        1. Bloquea escritura de campos operativos cuando el CFDI ya está timbrado.
+           Solo permite los campos de TIMBRADO_WRITABLE_FIELDS (definidos a nivel módulo).
+        2. Purga de datos técnica: si se desactiva 'require_trailer',
+           vacía forzosamente los campos de remolque para mantener integridad.
         """
+        # — Protección post-timbrado —
+        for record in self:
+            if record.cfdi_status == 'timbrado':
+                campos_prohibidos = set(vals.keys()) - TIMBRADO_WRITABLE_FIELDS
+                if campos_prohibidos:
+                    raise UserError(
+                        _('No se puede modificar un viaje timbrado. '
+                          'Cancele el CFDI primero.\n'
+                          'Campos bloqueados: %s') % ', '.join(sorted(campos_prohibidos))
+                    )
+
+        # — Limpieza de remolques al desactivar require_trailer —
         if 'require_trailer' in vals and not vals['require_trailer']:
             vals.update({
                 'trailer1_id': False,
                 'dolly_id': False,
                 'trailer2_id': False,
             })
+
         res = super(TmsWaybill, self).write(vals)
         # SEMILLA V2.3: activar cuando se implemente tms.route.analytics
         # if vals.get('state') == 'closed':

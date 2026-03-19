@@ -296,12 +296,12 @@
                         <div class="col-lg-8">
                             <!-- FACTURACIÓN CARD — readonly cuando el viaje ya está operando -->
                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
-                                <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']">
-                                    <field name="date_created" string="Fecha del Pedido"/>
-                                    <field name="partner_invoice_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
+                                    <field name="date_created" string="Fecha del Pedido" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="partner_invoice_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
-                                    <field name="company_id" groups="base.group_multi_company"/>
+                                    <field name="company_id" groups="base.group_multi_company" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <div class="text-end mt-2" invisible="state in ['in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_facturacion" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
@@ -311,15 +311,15 @@
                         <div class="col-lg-4">
                             <!-- PRECIO CARD -->
                             <div class="card shadow-sm p-3 bg-white h-100" style="border: 1px solid #e0e0e0;">
-                                <group class="mb-0">
-                                    <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}"/>
-                                    <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger"/>
+                                <group class="mb-0" readonly="cfdi_status == 'timbrado'">
+                                    <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="amount_tax" widget="monetary" options="{'currency_field': 'currency_id'}" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="amount_retention" widget="monetary" options="{'currency_field': 'currency_id'}" class="text-danger" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="amount_total" string="Precio Final"/>
                                     <h2>
-                                        <field name="amount_total" decoration-danger="amount_total == 0"/>
+                                        <field name="amount_total" decoration-danger="amount_total == 0" readonly="cfdi_status == 'timbrado'"/>
                                     </h2>
-                                    <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted"/>
+                                    <field name="selected_proposal" string="Propuesta" widget="label" class="text-muted" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="currency_id" invisible="1"/>
                                 </group>
                             </div>
@@ -345,15 +345,15 @@
                                     </div>
                                 </div>
                                 <!-- Datos completos: siempre visibles, readonly en estados operativos -->
-                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
-                                    <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'" invisible="False">
+                                    <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="origin_zip"/>
                                     <div class="d-flex align-items-center" invisible="False">
-                                        <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
+                                        <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
                                         <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
-                                    <field name="origin_rfc"/>
+                                    <field name="origin_rfc" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <div class="text-end mt-2" invisible="state in ['cotizado', 'in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_origen" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
@@ -378,15 +378,15 @@
                                     </div>
                                 </div>
                                 <!-- Datos completos: siempre visibles, readonly en estados operativos -->
-                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel']" invisible="False">
-                                    <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'" invisible="False">
+                                    <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="dest_zip"/>
                                     <div class="d-flex align-items-center" invisible="False">
-                                        <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;"/>
+                                        <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
                                         <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
-                                    <field name="dest_rfc"/>
+                                    <field name="dest_rfc" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <div class="text-end mt-2" invisible="state in ['cotizado', 'in_transit','arrived','closed','cancel']">
                                     <button name="action_clear_destino" type="object" icon="fa-trash" title="Limpiar" class="btn btn-link text-danger"/>
@@ -403,33 +403,33 @@
                         <!-- INFORMACIÓN DE RUTA    -->
                         <!-- ======================= -->
                         <page string="Información de Ruta">
-                            <group>
+                            <group readonly="cfdi_status == 'timbrado'">
                                 <group>
-                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}"/>
+                                    <field name="waybill_type" widget="radio" options="{'horizontal': True}" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                             </group>
 
                             <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
-                            <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel']">
+                            <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
                                 <group>
-                                    <field name="vehicle_id" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque"/>
-                                    <field name="trailer1_id" invisible="not require_trailer"/>
-                                    <field name="dolly_id" invisible="not require_trailer"/>
+                                    <field name="vehicle_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="trailer1_id" invisible="not require_trailer" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="dolly_id" invisible="not require_trailer" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <group>
-                                    <field name="driver_id"/>
-                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)" invisible="not require_trailer"/>
-                                    <field name="total_axles"/>
+                                    <field name="driver_id" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="trailer2_id" widget="many2one" placeholder="Segundo Remolque (Opcional)" invisible="not require_trailer" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="total_axles" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                             </group>
 
                             <!-- DETALLES DE RUTA — readonly cuando el viaje ya está en ruta -->
-                            <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel']">
+                            <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
                                 <group>
-                                    <field name="distance_km" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <field name="duration_hours" widget="float_time" required="state not in ['draft', 'cotizado', 'aprobado']"/>
-                                    <field name="cost_tolls" required="state not in ['draft', 'cotizado', 'aprobado']"/>
+                                    <field name="distance_km" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="duration_hours" widget="float_time" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_tolls" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
@@ -448,7 +448,7 @@
                         <!-- COTIZACIÓN Y COSTOS (SIEMPRE VISIBLE) -->
                         <!-- ======================= -->
                         <!-- Pestaña de cotización: readonly en estados operativos/finales -->
-                        <page string="Cotización y Costos" readonly="state in ['in_transit','arrived','closed','cancel']">
+                        <page string="Cotización y Costos" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
 
                             <!-- SECCIÓN 1: COSTOS OPERATIVOS -->
                             <group string="⛽ COSTOS OPERATIVOS">
@@ -457,15 +457,15 @@
  Usados para calcular Propuesta B
                                 </p>
                                 <group>
-                                    <field name="fuel_price_liter"/>
-                                    <field name="cost_driver"/>
-                                    <field name="cost_other"/>
+                                    <field name="fuel_price_liter" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_driver" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_other" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="cost_diesel_total" readonly="1"/>
                                 </group>
                                 <group>
-                                    <field name="fuel_performance"/>
-                                    <field name="cost_maneuver"/>
-                                    <field name="cost_commission"/>
+                                    <field name="fuel_performance" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_maneuver" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_commission" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="cost_total_estimated" decoration-bf="1" readonly="1"/>
                                 </group>
                             </group>
@@ -477,7 +477,7 @@
  Usado para calcular Propuesta A
                                 </p>
                                 <group>
-                                    <field name="price_per_km"/>
+                                    <field name="price_per_km" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="distance_km" string="Distancia Base"/>
                                     <div class="o_row">
                                         <field name="distance_km" class="oe_inline" readonly="1"/>
@@ -485,8 +485,8 @@
                                     </div>
                                 </group>
                                 <group>
-                                    <field name="profit_margin_percent"/>
-                                    <field name="extra_distance_km" string="Km Extras"/>
+                                    <field name="profit_margin_percent" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="extra_distance_km" string="Km Extras" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                             </group>
 
@@ -497,7 +497,7 @@
  Propuesta C — tarifa fija
                                 </p>
                                 <group>
-                                    <field name="proposal_direct_amount" string="Precio Directo"/>
+                                    <field name="proposal_direct_amount" string="Precio Directo" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                             </group>
 
@@ -515,7 +515,7 @@
                                     </group>
                                 </group>
                                 <group>
-                                    <field name="selected_proposal" widget="radio" options="{'horizontal': true}"/>
+                                    <field name="selected_proposal" widget="radio" options="{'horizontal': true}" readonly="cfdi_status == 'timbrado'"/>
                                     <button name="action_apply_proposal" string="Aplicar Propuesta" type="object" class="btn-primary mt-2" icon="fa-check-circle" help="Actualiza el subtotal con el valor de la propuesta seleccionada."/>
                                 </group>
                             </group>
@@ -525,21 +525,21 @@
                         <!-- CARTA PORTE 3.1 -->
                         <!-- ======================= -->
                         <!-- Carta Porte: no tiene sentido en borrador (sin info completa aún) -->
-                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']">
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']" readonly="cfdi_status == 'timbrado'">
                             <group>
                                 <group string="Identificación">
                                     <!-- IdCCP: campo interno, se genera automáticamente, no se muestra al usuario -->
                                     <field name="tms_id_ccp" invisible="1"/>
-                                    <field name="l10n_mx_edi_is_international" widget="boolean_toggle"/>
-                                    <field name="l10n_mx_edi_logistica_inversa" widget="boolean_toggle"/>
+                                    <field name="l10n_mx_edi_is_international" widget="boolean_toggle" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="l10n_mx_edi_logistica_inversa" widget="boolean_toggle" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <group string="Autotransporte">
-                                    <field name="tms_gross_vehicle_weight" string="Peso Bruto (Ton)"/>
+                                    <field name="tms_gross_vehicle_weight" string="Peso Bruto (Ton)" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                             </group>
 
                             <group string="Regímenes Aduaneros (Hasta 10)" invisible="not l10n_mx_edi_is_international">
-                                <field name="l10n_mx_edi_customs_regime_ids" nolabel="1">
+                                <field name="l10n_mx_edi_customs_regime_ids" nolabel="1" readonly="cfdi_status == 'timbrado'">
                                     <list editable="bottom">
                                         <field name="regimen_aduanero"/>
                                     </list>
@@ -573,7 +573,7 @@
                         <!-- ======================= -->
                         <page string="Mercancías">
                             <field name="has_dangerous_lines" invisible="1"/>
-                            <field name="line_ids">
+                            <field name="line_ids" readonly="cfdi_status == 'timbrado'">
                                 <list editable="bottom">
                                     <field name="product_sat_id" string="Clave SAT"/>
                                     <field name="description" string="Descripción"/>
