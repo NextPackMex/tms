@@ -75,6 +75,23 @@ class TmsOnboardingWizard(models.TransientModel):
         string='Régimen Fiscal',
         help='Régimen fiscal del emisor según el SAT'
     )
+    company_street = fields.Char(
+        string='Calle y número',
+        help='Dirección fiscal de la empresa para reportes PDF'
+    )
+    company_zip = fields.Char(
+        string='Código Postal',
+        size=5,
+        default=lambda self: self.env.company.zip or '',
+        help='CP fiscal de la empresa. Se usa en LugarExpedicion del CFDI '
+             'y en los reportes PDF.'
+    )
+    company_state_id = fields.Many2one(
+        'res.country.state',
+        string='Estado',
+        domain="[('country_id.code', '=', 'MX')]",
+        help='Estado de la república para dirección fiscal'
+    )
 
     # --- Paso 2: Vehículo ---
     vehicle_name = fields.Char(
@@ -314,6 +331,13 @@ class TmsOnboardingWizard(models.TransientModel):
         mxn = self.env.ref('base.MXN', raise_if_not_found=False)
         if mxn:
             vals['currency_id'] = mxn.id
+        # Dirección fiscal — se escribe en company para que Bloque A la propague a partner_id
+        if self.company_street:
+            vals['street'] = self.company_street
+        if self.company_zip:
+            vals['zip'] = self.company_zip
+        if self.company_state_id:
+            vals['state_id'] = self.company_state_id.id
         if vals:
             company.write(vals)
 
@@ -339,24 +363,12 @@ class TmsOnboardingWizard(models.TransientModel):
                     partner_vals['vat'] = company.vat
                 company.partner_id.write(partner_vals)
 
-            # ── Bloque B: Actualizar company_details (campo Html del external_layout) ──
-            # Este campo controla el header/footer de TODOS los reportes PDF de Odoo.
-            state_name = company.state_id.name if company.state_id else ''
-            country_name = company.country_id.name if company.country_id else 'México'
-            zip_code = company.zip or ''
-            city_name = company.city or ''
-            parts = []
-            if company.street:
-                parts.append(company.street)
-            address_line = '%s %s, %s' % (zip_code, city_name, state_name) if city_name else zip_code
-            if address_line.strip():
-                parts.append(address_line.strip())
-            parts.append(country_name)
-            details_html = '<p>%s<br/>%s</p>' % (
-                company.name or '',
-                '<br/>'.join(parts)
-            )
-            company.company_details = details_html
+            # ── Bloque B: Limpiar company_details ──
+            # El campo company_details puede tener datos del setup inicial incorrectos
+            # (nombre de empresa viejo, país incorrecto, etc.).
+            # Vaciarlo forza al external_layout a leer partner_id directamente,
+            # donde Bloque A ya escribió los datos correctos.
+            company.write({'company_details': False})
 
         return self.action_next_step()
 
