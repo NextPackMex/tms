@@ -10,6 +10,8 @@ access_sat_municipio_user,tms.sat.municipio.user,model_tms_sat_municipio,tms.gro
 access_sat_config_autotransporte_user,tms.sat.config.autotransporte.user,model_tms_sat_config_autotransporte,tms.group_tms_user,1,1,1,1
 access_sat_tipo_permiso_user,tms.sat.tipo.permiso.user,model_tms_sat_tipo_permiso,tms.group_tms_user,1,1,1,1
 access_sat_figura_transporte_user,tms.sat.figura.transporte.user,model_tms_sat_figura_transporte,tms.group_tms_user,1,1,1,1
+access_tms_sat_regimen_fiscal_user,tms.sat.regimen.fiscal.user,model_tms_sat_regimen_fiscal,tms.group_tms_user,1,0,0,0
+access_tms_sat_regimen_fiscal_manager,tms.sat.regimen.fiscal.manager,model_tms_sat_regimen_fiscal,tms.group_tms_manager,1,1,1,1
 access_sat_import_wizard_user,sat.import.wizard.user,model_sat_import_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_destination_user,tms.destination.user,model_tms_destination,tms.group_tms_user,1,1,1,0
 access_tms_destination_manager,tms.destination.manager,model_tms_destination,tms.group_tms_manager,1,1,1,1

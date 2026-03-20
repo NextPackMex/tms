@@ -23,7 +23,7 @@
                         <field name="tms_csd_password"
                                string="Contraseña CSD"
                                password="True"/>
-                        <field name="tms_regimen_fiscal"
+                        <field name="tms_regimen_fiscal_id"
                                string="Régimen Fiscal SAT"/>
                     </group>
 

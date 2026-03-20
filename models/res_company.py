@@ -52,23 +52,10 @@ class ResCompany(models.Model):
     )
 
     # --- CSD para timbrado CFDI ---
-    tms_regimen_fiscal = fields.Selection(
-        selection=[
-            ('601', '601 - General de Ley Personas Morales'),
-            ('603', '603 - Personas Morales con Fines no Lucrativos'),
-            ('605', '605 - Sueldos y Salarios'),
-            ('606', '606 - Arrendamiento'),
-            ('612', '612 - Personas Físicas con Actividades Empresariales y Profesionales'),
-            ('616', '616 - Sin obligaciones fiscales'),
-            ('620', '620 - Sociedades Cooperativas de Producción'),
-            ('621', '621 - Incorporación Fiscal'),
-            ('622', '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras'),
-            ('623', '623 - Opcional para Grupos de Sociedades'),
-            ('624', '624 - Coordinados'),
-            ('625', '625 - Actividades Empresariales con ingresos vía Plataformas Tecnológicas'),
-            ('626', '626 - Régimen Simplificado de Confianza'),
-        ],
-        string='Régimen Fiscal SAT',
+    tms_regimen_fiscal_id = fields.Many2one(
+        'tms.sat.regimen.fiscal',
+        string='Régimen Fiscal',
+        help='Régimen fiscal del SAT para el CFDI. Catálogo c_RegimenFiscal.'
     )
     tms_csd_cer_fname = fields.Char(string='Nombre .cer')
     tms_csd_key_fname = fields.Char(string='Nombre .key')

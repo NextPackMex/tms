@@ -26,7 +26,7 @@
                     <group>
                         <field name="company_name" placeholder="Ej: Transportes García SA de CV"/>
                         <field name="company_rfc" placeholder="Ej: TGA200101ABC"/>
-                        <field name="regimen_fiscal"/>
+                        <field name="regimen_fiscal_id"/>
                     </group>
                     <group>
                         <field name="company_logo" widget="image" class="oe_avatar"/>
