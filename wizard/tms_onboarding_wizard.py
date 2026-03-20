@@ -316,19 +316,48 @@ class TmsOnboardingWizard(models.TransientModel):
             vals['currency_id'] = mxn.id
         if vals:
             company.write(vals)
-            # Sincronizar en el partner asociado a la empresa.
-            # Los reportes PDF (external_layout) usan partner_id, no res.company directamente.
+
+            # ── Bloque A: Sincronizar partner asociado a la empresa ──
+            # Los reportes PDF (external_layout) usan partner_id para nombre, RFC, dirección.
             # res.company usa _inherits pero Odoo 19 no siempre propaga todos los campos.
             if company.partner_id:
-                partner_vals = {}
-                if vals.get('name'):
-                    partner_vals['name'] = vals['name']
-                if vals.get('vat'):
-                    partner_vals['vat'] = vals['vat']
-                if vals.get('country_id'):
-                    partner_vals['country_id'] = vals['country_id']
-                if partner_vals:
-                    company.partner_id.write(partner_vals)
+                partner_vals = {
+                    'name': company.name,
+                    'country_id': company.country_id.id,
+                    'city': company.city,
+                    'zip': company.zip,
+                }
+                if company.state_id:
+                    partner_vals['state_id'] = company.state_id.id
+                if company.street:
+                    partner_vals['street'] = company.street
+                if company.phone:
+                    partner_vals['phone'] = company.phone
+                if company.email:
+                    partner_vals['email'] = company.email
+                if company.vat:
+                    partner_vals['vat'] = company.vat
+                company.partner_id.write(partner_vals)
+
+            # ── Bloque B: Actualizar company_details (campo Html del external_layout) ──
+            # Este campo controla el header/footer de TODOS los reportes PDF de Odoo.
+            state_name = company.state_id.name if company.state_id else ''
+            country_name = company.country_id.name if company.country_id else 'México'
+            zip_code = company.zip or ''
+            city_name = company.city or ''
+            parts = []
+            if company.street:
+                parts.append(company.street)
+            address_line = '%s %s, %s' % (zip_code, city_name, state_name) if city_name else zip_code
+            if address_line.strip():
+                parts.append(address_line.strip())
+            parts.append(country_name)
+            details_html = '<p>%s<br/>%s</p>' % (
+                company.name or '',
+                '<br/>'.join(parts)
+            )
+            company.company_details = details_html
+
         return self.action_next_step()
 
     def _get_or_create_vehicle_model(self, name):
