@@ -31,7 +31,7 @@
                     <b>RFC:</b>
                     <t t-out="cfdi.get('rfc_emisor') or o.company_id.vat or ''"/>
  &#160; <b>R&#233;gimen:</b>
-                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal or ''"/>
+                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal_id.code or ''"/>
                   </div>
                   <div t-if="o.company_id.street" style="font-size:14px;">
                     <t t-out="o.company_id.street or ''"/>
@@ -70,7 +70,7 @@
                     <b>Tipo:</b> Traslado &#160; <b>Uso CFDI:</b>
                     <t t-out="cfdi.get('uso_cfdi') or 'S01'"/>
  &#160; <b>R&#233;gimen:</b>
-                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal or ''"/>
+                    <t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal_id.code or ''"/>
                   </div>
                 </td>
               </tr>

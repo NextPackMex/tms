@@ -75,9 +75,10 @@
         'security/tms_security.xml',          # Define grupos (group_tms_user, group_tms_manager)
         'security/ir.model.access.csv',       # USA los grupos (debe cargar después)
 
-        # 2. Datos iniciales (secuencias)
+        # 2. Datos iniciales (secuencias + catálogos SAT pequeños)
         'data/tms_sequence_data.xml',
         'data/tms_data.xml',
+        'data/sat_regimen_fiscal.xml',
 
 
         # 3. Wizard de importación

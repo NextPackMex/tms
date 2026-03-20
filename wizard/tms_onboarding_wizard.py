@@ -56,24 +56,10 @@ class TmsOnboardingWizard(models.TransientModel):
         string='Contraseña CSD',
         help='Contraseña de la llave privada del CSD'
     )
-    regimen_fiscal = fields.Selection(
-        selection=[
-            ('601', '601 - General de Ley Personas Morales'),
-            ('603', '603 - Personas Morales con Fines no Lucrativos'),
-            ('605', '605 - Sueldos y Salarios'),
-            ('606', '606 - Arrendamiento'),
-            ('612', '612 - Personas Físicas con Actividades Empresariales y Profesionales'),
-            ('616', '616 - Sin obligaciones fiscales'),
-            ('620', '620 - Sociedades Cooperativas de Producción'),
-            ('621', '621 - Incorporación Fiscal'),
-            ('622', '622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras'),
-            ('623', '623 - Opcional para Grupos de Sociedades'),
-            ('624', '624 - Coordinados'),
-            ('625', '625 - Régimen de las Actividades Empresariales con ingresos a través de Plataformas Tecnológicas'),
-            ('626', '626 - Régimen Simplificado de Confianza'),
-        ],
+    regimen_fiscal_id = fields.Many2one(
+        'tms.sat.regimen.fiscal',
         string='Régimen Fiscal',
-        help='Régimen fiscal del emisor según el SAT'
+        help='Régimen fiscal SAT de la empresa. Catálogo c_RegimenFiscal.'
     )
     company_street = fields.Char(
         string='Calle y número',
@@ -315,8 +301,8 @@ class TmsOnboardingWizard(models.TransientModel):
             vals['vat'] = self.company_rfc
         if self.company_logo:
             vals['logo'] = self.company_logo
-        if self.regimen_fiscal:
-            vals['tms_regimen_fiscal'] = self.regimen_fiscal
+        if self.regimen_fiscal_id:
+            vals['tms_regimen_fiscal_id'] = self.regimen_fiscal_id.id
         if self.csd_cer_file:
             vals['tms_csd_cer'] = self.csd_cer_file
         if self.csd_key_file:

@@ -698,10 +698,10 @@ class CartaPorteXmlBuilder:
             return {
                 'rfc_emisor':               rfc_real,
                 'nombre_emisor':            (company.name or '').upper()[:254],
-                'regimen_fiscal':           company.tms_regimen_fiscal or '612',
+                'regimen_fiscal':           (company.tms_regimen_fiscal_id.code or '612'),
                 'rfc_receptor':             (company.partner_id.vat or rfc_real).upper().strip(),
                 'nombre_receptor':          (company.name or '').upper()[:254],
-                'regimen_receptor':         company.tms_regimen_fiscal or '612',
+                'regimen_receptor':         (company.tms_regimen_fiscal_id.code or '612'),
                 'uso_cfdi':                 'S01',
                 'lugar_expedicion':         company.zip or '00000',
                 'domicilio_fiscal_receptor': company.zip or '00000',

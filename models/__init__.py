@@ -16,6 +16,7 @@ from . import sat_municipio           # c_Municipio
 from . import sat_config_autotransporte  # c_ConfigAutotransporte
 from . import sat_tipo_permiso        # c_TipoPermiso
 from . import sat_figura_transporte   # c_FiguraTransporte
+from . import sat_regimen_fiscal      # c_RegimenFiscal
 
 # ============================================================
 # MODELOS OPERATIVOS - PRIVADOS (CON company_id OBLIGATORIO)
