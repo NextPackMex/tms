@@ -12,6 +12,7 @@ Namespaces:
 """
 import base64
 import logging
+import re
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -19,6 +20,8 @@ from zoneinfo import ZoneInfo
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from lxml import etree
+
+from odoo.exceptions import UserError
 
 # Zona horaria oficial del SAT — CFDI debe usar hora del centro de México
 _TZ_MEXICO = ZoneInfo('America/Mexico_City')
@@ -46,6 +49,64 @@ NSMAP = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Helpers de normalización SAT (module-level — usables sin instanciar la clase)
+# ---------------------------------------------------------------------------
+
+def _normalize_placa(placa):
+    """Normaliza placa vehicular para SAT.
+    Quita guiones, espacios y caracteres no alfanuméricos; convierte a mayúsculas.
+    SAT acepta entre 5 y 7 caracteres alfanuméricos en PlacaVM/Placa.
+    """
+    if not placa:
+        return ''
+    return re.sub(r'[^A-Za-z0-9]', '', placa).upper()[:7]
+
+
+def _normalize_rfc(rfc):
+    """Normaliza RFC para SAT.
+    Quita espacios, guiones y caracteres no alfanuméricos; convierte a mayúsculas.
+    Persona física: 13 chars, Persona moral: 12 chars.
+    """
+    if not rfc:
+        return ''
+    return re.sub(r'[^A-Za-z0-9]', '', rfc).upper()
+
+
+def _normalize_date_iso(dt):
+    """Asegura formato ISO 8601 sin microsegundos para SAT.
+    Formato correcto: 2026-03-19T14:30:00
+    Acepta datetime objects o strings; elimina fracción de segundos si existe.
+    """
+    if not dt:
+        return ''
+    if hasattr(dt, 'strftime'):
+        return dt.strftime('%Y-%m-%dT%H:%M:%S')
+    # Si ya es string, eliminar microsegundos
+    s = str(dt)
+    if '.' in s:
+        s = s.split('.')[0]
+    return s
+
+
+def _normalize_sat_code(code):
+    """Limpia código de catálogo SAT (PermSCT, ConfigVehicular, ClaveUnidad, etc).
+    Elimina espacios al inicio y final para evitar rechazos por whitespace.
+    """
+    if not code:
+        return ''
+    return str(code).strip()
+
+
+def _normalize_id_ubicacion(tipo, numero):
+    """Genera IDUbicacion con formato SAT.
+    Origen: OR + 6 dígitos (OR000001)
+    Destino: DE + 6 dígitos (DE000001)
+    """
+    prefix = 'OR' if tipo == 'Origen' else 'DE'
+    return '%s%06d' % (prefix, numero)
+
+
 class CartaPorteXmlBuilder:
     """
     Construye el XML CFDI 4.0 con Complemento Carta Porte 3.1
@@ -68,6 +129,9 @@ class CartaPorteXmlBuilder:
             bytes: XML serializado, listo para firmar con CfdiSigner
         """
         _logger.info('Construyendo XML CFDI 4.0 para waybill %s', waybill.name)
+
+        # Validar campos requeridos antes de construir el XML
+        self._validate_required_fields(waybill)
 
         company = waybill.company_id
         # Resolver datos fiscales según ambiente (pruebas vs producción)
@@ -109,6 +173,54 @@ class CartaPorteXmlBuilder:
             etree.tostring(comprobante, pretty_print=True, encoding='unicode'),
         )
         return xml_bytes
+
+    # ------------------------------------------------------------------
+    # Validación previa al build
+    # ------------------------------------------------------------------
+
+    def _validate_required_fields(self, waybill):
+        """Valida campos requeridos antes de construir el XML.
+        Lanza UserError con mensaje claro si falta algún dato SAT crítico.
+        Previene timbrados fallidos por datos incompletos — mejor fallar aquí
+        con mensaje legible que recibir un error críptico del PAC.
+        """
+        errors = []
+        vehicle = waybill.vehicle_id
+        if not vehicle:
+            errors.append('No hay vehículo asignado al viaje')
+        else:
+            if not vehicle.license_plate:
+                errors.append('El vehículo no tiene placa asignada')
+            if not vehicle.sat_permiso_sct_id:
+                errors.append('El vehículo no tiene tipo de permiso SCT')
+            if not vehicle.permiso_sct_number:
+                errors.append('El vehículo no tiene número de permiso SCT')
+        driver = waybill.driver_id
+        if not driver:
+            errors.append('No hay chofer asignado al viaje')
+        else:
+            if not driver.tms_rfc:
+                errors.append('El chofer no tiene RFC')
+            licencia = (
+                getattr(driver, 'tms_driver_license', None) or
+                getattr(driver, 'tms_license_number', None)
+            )
+            if not licencia:
+                errors.append('El chofer no tiene número de licencia federal')
+        if not waybill.line_ids:
+            errors.append('No hay mercancías en el viaje')
+        else:
+            for line in waybill.line_ids:
+                if not line.product_sat_id:
+                    errors.append(
+                        'La mercancía "%s" no tiene clave SAT' %
+                        (line.description or str(line.id))
+                    )
+        if errors:
+            raise UserError(
+                'No se puede generar el XML. Corrige lo siguiente:\n• ' +
+                '\n• '.join(errors)
+            )
 
     # ------------------------------------------------------------------
     # Nodo raíz: cfdi:Comprobante
@@ -274,7 +386,7 @@ class CartaPorteXmlBuilder:
         origen.set('TipoUbicacion',    'Origen')
         origen.set('IDUbicacion',      'OR000001')
         origen.set('RFCRemitenteDestinatario',
-                   (waybill.partner_origin_id.vat or 'XAXX010101000').upper())
+                   _normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000')
         origen.set('NombreRemitenteDestinatario',
                    (waybill.partner_origin_id.name or '').upper()[:254])
         origen.set('FechaHoraSalidaLlegada',
@@ -290,7 +402,7 @@ class CartaPorteXmlBuilder:
         destino.set('TipoUbicacion',   'Destino')
         destino.set('IDUbicacion',     'DE000001')
         destino.set('RFCRemitenteDestinatario',
-                    (waybill.partner_dest_id.vat or 'XAXX010101000').upper())
+                    _normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000')
         destino.set('NombreRemitenteDestinatario',
                     (waybill.partner_dest_id.name or '').upper()[:254])
         destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
@@ -342,11 +454,11 @@ class CartaPorteXmlBuilder:
         for line in waybill.line_ids:
             merc = etree.SubElement(mercancias, etree.QName(NS_CP31, 'Mercancia'))
             merc.set('BienesTransp',
-                     line.product_sat_id.code if line.product_sat_id else '47131500')
+                     _normalize_sat_code(line.product_sat_id.code if line.product_sat_id else '47131500'))
             merc.set('Descripcion',   (line.description or 'MERCANCIA GENERAL')[:100])
             merc.set('Cantidad',      '{:.3f}'.format(line.quantity or 1))
             merc.set('ClaveUnidad',
-                     line.uom_sat_id.code if line.uom_sat_id else 'KGM')
+                     _normalize_sat_code(line.uom_sat_id.code if line.uom_sat_id else 'KGM'))
             merc.set('PesoEnKg',      '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
             merc.set('Dimensiones',   line.dimensions or '000/000/000cm')
 
@@ -404,9 +516,9 @@ class CartaPorteXmlBuilder:
 
         auto = etree.Element(etree.QName(NS_CP31, 'Autotransporte'))
         auto.set('PermSCT',
-                 vehicle.sat_permiso_sct_id.code if (vehicle and vehicle.sat_permiso_sct_id) else 'TPAF10')
+                 _normalize_sat_code(vehicle.sat_permiso_sct_id.code if (vehicle and vehicle.sat_permiso_sct_id) else 'TPAF10'))
         auto.set('NumPermisoSCT',
-                 vehicle.permiso_sct_number or '000000')
+                 _normalize_sat_code(vehicle.permiso_sct_number or '000000'))
 
         # IdentificacionVehicular
         # PesoBrutoVehicular es REQUERIDO por el XSLT del SAT (en toneladas métricas)
@@ -415,12 +527,10 @@ class CartaPorteXmlBuilder:
         )
         id_veh = etree.SubElement(auto, etree.QName(NS_CP31, 'IdentificacionVehicular'))
         id_veh.set('ConfigVehicular',
-                   vehicle.sat_config_id.code if (vehicle and vehicle.sat_config_id) else 'C2')
+                   _normalize_sat_code(vehicle.sat_config_id.code if (vehicle and vehicle.sat_config_id) else 'C2'))
         id_veh.set('PesoBrutoVehicular', f'{peso_bruto:.3f}')
         # SAT exige PlacaVM sin guiones ni espacios, entre 5 y 7 caracteres alfanuméricos
-        placa_raw = (vehicle.license_plate if vehicle else '') or ''
-        placa = placa_raw.replace('-', '').replace(' ', '').upper()[:7]
-        id_veh.set('PlacaVM', placa or 'SINPLA')
+        id_veh.set('PlacaVM', _normalize_placa(vehicle.license_plate if vehicle else '') or 'SINPLA')
         id_veh.set('AnioModeloVM', str(vehicle.model_year or '2020') if vehicle else '2020')
 
         # Seguros — mapeo correcto según XSLT SAT CP 3.1:
@@ -442,14 +552,12 @@ class CartaPorteXmlBuilder:
             remolques_node = etree.SubElement(auto, etree.QName(NS_CP31, 'Remolques'))
             rem1 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
             rem1.set('SubTipoRem', getattr(waybill.trailer1_id, 'tms_subtipo_remolque', None) or 'CTR007')
-            placa_rem1 = (waybill.trailer1_id.license_plate or '').replace('-', '').replace(' ', '').upper()[:7]
-            rem1.set('Placa', placa_rem1 or 'SINREM')
+            rem1.set('Placa', _normalize_placa(waybill.trailer1_id.license_plate) or 'SINREM')
 
             if waybill.trailer2_id:
                 rem2 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
                 rem2.set('SubTipoRem', getattr(waybill.trailer2_id, 'tms_subtipo_remolque', None) or 'CTR007')
-                placa_rem2 = (waybill.trailer2_id.license_plate or '').replace('-', '').replace(' ', '').upper()[:7]
-                rem2.set('Placa', placa_rem2 or 'SINREM')
+                rem2.set('Placa', _normalize_placa(waybill.trailer2_id.license_plate) or 'SINREM')
 
         return auto
 
@@ -488,7 +596,7 @@ class CartaPorteXmlBuilder:
             figura.set('TipoFigura', '01')
             figura.set('RFCFigura',   rfc_valor)
             figura.set('NombreFigura', nombre_valor)
-            figura.set('NumLicencia',  licencia_valor or '000000000000')
+            figura.set('NumLicencia',  _normalize_sat_code(licencia_valor) or '000000000000')
         else:
             # Figura vacía de relleno para cumplir XSD
             figura = etree.SubElement(figura_root, etree.QName(NS_CP31, 'TiposFigura'))

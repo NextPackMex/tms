@@ -28,6 +28,24 @@
                                         <t t-if="doc.company_id.country_id">
                                             <span t-field="doc.company_id.country_id.name"/>
                                         </t>
+                                        <!-- Dirección fiscal de la empresa -->
+                                        <t t-if="doc.company_id.street">
+                                            <br/><span t-out="doc.company_id.street"/>
+                                        </t>
+                                        <t t-if="doc.company_id.zip or doc.company_id.city">
+                                            <br/>
+                                            <t t-if="doc.company_id.zip">
+                                                <span t-out="doc.company_id.zip"/>
+                                                <t t-if="doc.company_id.city">, </t>
+                                            </t>
+                                            <t t-if="doc.company_id.city">
+                                                <span t-out="doc.company_id.city"/>
+                                            </t>
+                                            <t t-if="doc.company_id.state_id">
+                                                <span>, </span>
+                                                <span t-out="doc.company_id.state_id.name"/>
+                                            </t>
+                                        </t>
                                     </p>
                                 </td>
                                 <td style="width: 30%; text-align: right; vertical-align: top;">

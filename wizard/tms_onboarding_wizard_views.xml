@@ -31,6 +31,12 @@
                     <group>
                         <field name="company_logo" widget="image" class="oe_avatar"/>
                     </group>
+                    <separator string="Dirección fiscal"/>
+                    <group>
+                        <field name="company_street" placeholder="Ej. Av. Patria 1245"/>
+                        <field name="company_zip" placeholder="Ej. 44970"/>
+                        <field name="company_state_id"/>
+                    </group>
                     <separator string="Certificado de Sello Digital (CSD)"/>
                     <div class="alert alert-warning" role="status" colspan="2">
                         <strong>💡 Tip:</strong> El CSD lo descargas del portal del SAT.
