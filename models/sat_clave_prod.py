@@ -19,9 +19,9 @@ class TmsSatClaveProd(models.Model):
     # Descripción del modelo
     _description = 'Catálogo SAT - Clave Producto/Servicio (c_ClaveProdServCP)'
 
-    # Campo que se usa como nombre del registro en búsquedas
-    # Cuando buscas un producto SAT, aparecerá el código (ej: "01010101")
-    _rec_name = 'code'
+    # Campo base del registro — 'name' para que Enter busque por descripción primero
+    # El display final sigue siendo "code - name" via _compute_display_name
+    _rec_name = 'name'
 
     # Orden por defecto: alfabético por código
     _order = 'code asc'
@@ -91,5 +91,5 @@ class TmsSatClaveProd(models.Model):
         for record in self:
             record.display_name = f"{record.code} - {record.name[:100]}"
 
-    # Odoo 19: Búsqueda flexible en múltiples campos
-    _rec_names_search = ['code', 'name', 'palabras_clave']
+    # Odoo 19: descripción primero, luego código (palabras_clave queda al final por si se puebla)
+    _rec_names_search = ['name', 'code', 'palabras_clave']

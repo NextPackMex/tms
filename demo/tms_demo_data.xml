@@ -199,9 +199,9 @@
             TMS.WAYBILL (Cartas Porte Demo)
             ==============================
         -->
-        <!-- Waybill 1: Borrador -->
+        <!-- Waybill 1: Pre-cotización (estado inicial del flujo) -->
         <record id="waybill_demo_draft" model="tms.waybill">
-            <field name="state">draft</field>
+            <field name="state">cotizado</field>
             <field name="waybill_type">income</field>
             <field name="partner_invoice_id" ref="partner_aceros_mty"/>
             <field name="partner_origin_id" ref="partner_aceros_mty"/>
@@ -213,9 +213,9 @@
             <field name="amount_untaxed">15000.0</field>
         </record>
 
-        <!-- Waybill 2: Validada lista para carga / viaje (con chofer) -->
+        <!-- Waybill 2: Carta Porte validada lista para carga / viaje (con chofer) -->
         <record id="waybill_demo_ready" model="tms.waybill">
-            <field name="state">assigned</field>
+            <field name="state">waybill</field>
             <field name="waybill_type">income</field>
             <field name="partner_invoice_id" ref="partner_export_gdl"/>
             <field name="partner_origin_id" ref="partner_export_gdl"/>

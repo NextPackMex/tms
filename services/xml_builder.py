@@ -130,10 +130,11 @@ class CartaPorteXmlBuilder:
         """
         _logger.info('Construyendo XML CFDI 4.0 para waybill %s', waybill.name)
 
-        # Validar campos requeridos antes de construir el XML
-        self._validate_required_fields(waybill)
-
         company = waybill.company_id
+        # Validar campos requeridos antes de construir el XML
+        # company se pasa para relajar validaciones que el PAC sustituye en pruebas
+        self._validate_required_fields(waybill, company)
+
         # Resolver datos fiscales según ambiente (pruebas vs producción)
         datos = self._get_datos_fiscales(company, waybill)
 
@@ -178,12 +179,16 @@ class CartaPorteXmlBuilder:
     # Validación previa al build
     # ------------------------------------------------------------------
 
-    def _validate_required_fields(self, waybill):
+    def _validate_required_fields(self, waybill, company):
         """Valida campos requeridos antes de construir el XML.
         Lanza UserError con mensaje claro si falta algún dato SAT crítico.
         Previene timbrados fallidos por datos incompletos — mejor fallar aquí
         con mensaje legible que recibir un error críptico del PAC.
+
+        En ambiente 'pruebas', las validaciones de RFC del chofer se relajan
+        porque _get_datos_fiscales() las sustituye por valores de prueba.
         """
+        es_pruebas = (company.fd_ambiente == 'pruebas')
         errors = []
         vehicle = waybill.vehicle_id
         if not vehicle:
@@ -199,12 +204,10 @@ class CartaPorteXmlBuilder:
         if not driver:
             errors.append('No hay chofer asignado al viaje')
         else:
-            if not driver.tms_rfc:
+            # En pruebas, _get_datos_fiscales sustituye el RFC del chofer por CACX7605101P8
+            if not driver.tms_rfc and not es_pruebas:
                 errors.append('El chofer no tiene RFC')
-            licencia = (
-                getattr(driver, 'tms_driver_license', None) or
-                getattr(driver, 'tms_license_number', None)
-            )
+            licencia = getattr(driver, 'tms_driver_license', None)
             if not licencia:
                 errors.append('El chofer no tiene número de licencia federal')
         if not waybill.line_ids:
@@ -357,7 +360,7 @@ class CartaPorteXmlBuilder:
         cp.set('TranspInternac',       'No')
         cp.set('TotalDistRec',         str(int(waybill.distance_km or 0)))
 
-        cp.append(self._build_ubicaciones(waybill))
+        cp.append(self._build_ubicaciones(waybill, datos))
 
         # Mercancias contiene Autotransporte como hijo (no al nivel de CartaPorte)
         mercancias_node = self._build_mercancias(waybill)
@@ -373,12 +376,21 @@ class CartaPorteXmlBuilder:
     # Ubicaciones
     # ------------------------------------------------------------------
 
-    def _build_ubicaciones(self, waybill):
+    def _build_ubicaciones(self, waybill, datos=None):
         """
         Construye Ubicaciones con Origen y Destino.
         IDUbicacion: OR000001 (origen) / DE000001 (destino).
         Domicilio requiere: CodigoPostal + Estado + Pais='MEX'.
+
+        En ambiente pruebas, si el partner no tiene RFC, usa EKU9003173C9
+        (persona moral válida en dev33) en lugar de XAXX010101000 — el PAC
+        dev33 rechaza XAXX010101000 en RFCRemitenteDestinatario (CP132).
         """
+        # En pruebas SIEMPRE usar EKU9003173C9 — el PAC dev33 rechaza RFCs reales
+        # que no están en su lista de pruebas (CP132), aunque el RFC exista en el SAT.
+        # En producción: RFC real del partner, o XAXX010101000 si no tiene.
+        es_pruebas = datos.get('es_pruebas', False) if datos else False
+
         ubicaciones = etree.Element(etree.QName(NS_CP31, 'Ubicaciones'))
 
         # Origen
@@ -386,7 +398,8 @@ class CartaPorteXmlBuilder:
         origen.set('TipoUbicacion',    'Origen')
         origen.set('IDUbicacion',      'OR000001')
         origen.set('RFCRemitenteDestinatario',
-                   _normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000')
+                   'EKU9003173C9' if es_pruebas else
+                   (_normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000'))
         origen.set('NombreRemitenteDestinatario',
                    (waybill.partner_origin_id.name or '').upper()[:254])
         origen.set('FechaHoraSalidaLlegada',
@@ -402,7 +415,8 @@ class CartaPorteXmlBuilder:
         destino.set('TipoUbicacion',   'Destino')
         destino.set('IDUbicacion',     'DE000001')
         destino.set('RFCRemitenteDestinatario',
-                    _normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000')
+                    'EKU9003173C9' if es_pruebas else
+                    (_normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000'))
         destino.set('NombreRemitenteDestinatario',
                     (waybill.partner_dest_id.name or '').upper()[:254])
         destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
@@ -584,7 +598,7 @@ class CartaPorteXmlBuilder:
             rfc_real      = (driver.tms_rfc or '').upper().strip()
             rfc_valor     = rfc_override if rfc_override else (rfc_real or 'XEXX010101000')
             nombre_valor  = (driver.name or '').upper()[:254]
-            licencia_valor = driver.tms_driver_license or driver.tms_license_number or ''
+            licencia_valor = driver.tms_driver_license or ''
             _logger.warning(
                 'FiguraTransporte — RFC real: %r → RFC usado: %r, Nombre: %r, Licencia: %r',
                 rfc_real,
@@ -661,7 +675,8 @@ class CartaPorteXmlBuilder:
         Retorna diccionario con datos fiscales para los nodos CFDI.
 
         En ambiente 'pruebas':
-          - RFC emisor/receptor: extraído del .cer cargado (o EKU9003173C9 como fallback)
+          - RFC emisor/receptor: del .cer cargado → company.vat → 'EKU9003173C9' (fallback)
+          - Nombre emisor/receptor: company.name (debe coincidir con el padrón SAT dev33)
           - Régimen fiscal: '616' (Sin obligaciones fiscales)
           - LugarExpedicion: CP de la empresa (debe ser 44970 para dev33)
           - RFC chofer: 'CACX7605101P8' (RFC de persona física válido en pruebas)
@@ -676,21 +691,24 @@ class CartaPorteXmlBuilder:
         es_pruebas = (company.fd_ambiente == 'pruebas')
 
         if es_pruebas:
-            # Intentar extraer RFC real del certificado de pruebas cargado
-            rfc_pruebas = self._get_rfc_from_cer(company) or 'EKU9003173C9'
+            # RFC: del .cer cargado → company.vat → fallback EKU9003173C9
+            # Nombre: company.name (ajustar en Ajustes → Empresa para que coincida con el padrón SAT dev33)
+            rfc_pruebas    = self._get_rfc_from_cer(company) or company.vat or 'EKU9003173C9'
+            nombre_pruebas = (company.name or '').upper()[:254]
             # CP de la empresa — debe coincidir con el del certificado (44970 para dev33)
             cp_pruebas  = company.zip or '44970'
             return {
                 'rfc_emisor':               rfc_pruebas,
-                'nombre_emisor':            (company.name or '').upper()[:254],
+                'nombre_emisor':            nombre_pruebas,
                 'regimen_fiscal':           '616',
                 'rfc_receptor':             rfc_pruebas,    # receptor = emisor (CP107)
-                'nombre_receptor':          (company.name or '').upper()[:254],
+                'nombre_receptor':          nombre_pruebas,
                 'regimen_receptor':         '616',
                 'uso_cfdi':                 'S01',
                 'lugar_expedicion':         cp_pruebas,
                 'domicilio_fiscal_receptor': cp_pruebas,
                 'rfc_chofer':               'CACX7605101P8',  # persona física válida en dev33
+                'es_pruebas':               True,
             }
         else:
             # PRODUCCIÓN — datos reales, sin sustituciones

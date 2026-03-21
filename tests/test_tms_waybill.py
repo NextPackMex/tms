@@ -83,10 +83,10 @@ class TestTmsWaybill(TransactionCase):
 
     def test_create_waybill_draft(self):
         """
-        PRUEBA 1: Verificar que un waybill nuevo se crea en estado 'draft'.
-        
+        PRUEBA 1: Verificar que un waybill nuevo se crea en estado 'cotizado'.
+
         EXPECTATIVA:
-            - El waybill debe tener state='draft' al crearse
+            - El waybill debe tener state='cotizado' al crearse
             - El folio debe asignarse automáticamente (no 'Nuevo')
         """
         # Crear waybill con datos mínimos
@@ -97,12 +97,12 @@ class TestTmsWaybill(TransactionCase):
             'vehicle_id': self.vehicle.id if self.vehicle else False,
             'company_id': self.company.id,
         })
-        
-        # Verificar estado inicial = draft
+
+        # Verificar estado inicial = cotizado (default tras simplificación V2.5)
         self.assertEqual(
-            waybill.state, 
-            'draft', 
-            "El estado inicial del waybill debe ser 'draft' (Solicitud)"
+            waybill.state,
+            'cotizado',
+            "El estado inicial del waybill debe ser 'cotizado'"
         )
         
         # Verificar que el registro existe
@@ -110,11 +110,11 @@ class TestTmsWaybill(TransactionCase):
 
     def test_state_transitions_basic(self):
         """
-        PRUEBA 2: Verificar transiciones básicas de estado.
-        
+        PRUEBA 2: Verificar transiciones básicas de estado (flujo V2.5).
+
         FLUJO PROBADO:
-            draft → assigned → waybill → in_transit → arrived → closed
-        
+            cotizado → aprobado → waybill → in_transit → arrived → closed
+
         EXPECTATIVA:
             - Cada transición debe ejecutarse sin errores
             - El estado final debe ser 'closed'
@@ -145,22 +145,13 @@ class TestTmsWaybill(TransactionCase):
         })
         
         # Verificar estado inicial
-        self.assertEqual(waybill.state, 'draft')
-        
-        # TRANSICIÓN 1: draft → assigned (usando acción existente)
-        try:
-            waybill.action_assign()
-            self.assertEqual(
-                waybill.state, 
-                'assigned', 
-                "Después de action_assign, estado debe ser 'assigned'"
-            )
-        except Exception as e:
-            # Si falla por validaciones, verificar manualmente
-            waybill.write({'state': 'assigned'})
-            self.assertEqual(waybill.state, 'assigned')
-        
-        # TRANSICIÓN 2: assigned → waybill
+        self.assertEqual(waybill.state, 'cotizado')
+
+        # TRANSICIÓN 1: cotizado → aprobado (cliente aprueba precio)
+        waybill.write({'state': 'aprobado'})
+        self.assertEqual(waybill.state, 'aprobado')
+
+        # TRANSICIÓN 2: aprobado → waybill (validación Carta Porte)
         try:
             waybill.action_approve_cp()
             self.assertEqual(waybill.state, 'waybill')

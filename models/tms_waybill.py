@@ -14,7 +14,7 @@ from datetime import timedelta
 _logger = logging.getLogger(__name__)
 
 
-def _generate_id_ccp():
+def _generate_id_ccp(self=None):
     """
     Genera un IdCCP válido según el formato del SAT para Carta Porte 3.1.
 
@@ -126,15 +126,12 @@ class TmsWaybill(models.Model):
         selection=[
             ('cotizado', 'Cotizado'),
             ('aprobado', 'Aprobado'),
-            ('draft', 'Solicitud'),
-            ('en_pedido', 'En Pedido'),
-            ('assigned', 'Por Asignar'),
             ('waybill', 'Carta Porte Lista'),
             ('in_transit', 'En Trayecto'),
             ('arrived', 'En Destino'),
             ('closed', 'Facturado / Cerrado'),
             ('cancel', 'Cancelado'),
-            ('rejected', 'Rechazado'),  # Agregado para rechazo desde portal
+            ('rejected', 'Rechazado'),
         ],
         default='cotizado',
         required=True,
@@ -365,10 +362,7 @@ class TmsWaybill(models.Model):
     # 10=verde, 11=morado oscuro
     _STATE_COLOR_MAP = {
         'cotizado': 0,      # gris
-        'aprobado': 0,      # gris
-        'draft': 0,         # gris (sin acento)
-        'en_pedido': 4,     # azul claro
-        'assigned': 3,      # amarillo
+        'aprobado': 4,      # azul claro
         'waybill': 5,       # morado
         'in_transit': 10,   # verde
         'arrived': 10,      # verde (llegó)
@@ -556,9 +550,9 @@ class TmsWaybill(models.Model):
 
     @api.constrains('partner_origin_id', 'partner_dest_id', 'state')
     def _check_fiscal_rfc(self):
-        """ Valida RFC en partners (Solo si no es borrador/cancelado) """
+        """ Valida RFC en partners (Solo en estados cotizado/aprobado no aplica) """
         for record in self:
-             if record.state in ['draft', 'cancel', 'rejected']:
+             if record.state in ['cotizado', 'aprobado', 'cancel', 'rejected']:
                  continue
              if record.partner_origin_id and not record.partner_origin_id.vat:
                 raise ValidationError(_("El Remitente seleccionado no tiene RFC configurado."))
@@ -571,9 +565,9 @@ class TmsWaybill(models.Model):
 
     @api.constrains('amount_total', 'state')
     def _check_financials(self):
-        """ Valida precio final (Solo si no es borrador/cancelado) """
+        """ Valida precio final (Solo aplica desde waybill en adelante) """
         for record in self:
-            if record.state in ['draft', 'cancel', 'rejected']:
+            if record.state in ['cotizado', 'aprobado', 'cancel', 'rejected']:
                  continue
             if record.amount_total <= 0:
                 raise ValidationError(_("El Precio Final (Total) debe ser mayor a $0.00."))
@@ -1171,28 +1165,12 @@ class TmsWaybill(models.Model):
             )
 
     def action_confirm_order(self):
-        """Transición aprobado → draft. Datos completos, confirmar pedido."""
+        """Transición aprobado → waybill. Delega a action_approve_cp para validación CP 3.1."""
         self.ensure_one()
         if self.state != 'aprobado':
             raise UserError(_("Solo se pueden confirmar viajes en estado Aprobado."))
-        # Validar datos mínimos operativos antes de avanzar
-        self._validate_before_confirm()
-        self.write({'state': 'draft'})
-        return True
+        return self.action_approve_cp()
 
-    def action_assign(self):
-        """
-        Transición: De Solicitud (draft) -> Por Asignar (assigned)
-        Valida que haya cliente facturación, origen y destino.
-        """
-        self.ensure_one()
-        if not self.partner_invoice_id:
-            raise UserError(_("Debe indicar el Cliente de Facturación antes de confirmar."))
-        if not self.partner_origin_id or not self.partner_dest_id:
-             raise UserError(_("Debe indicar Origen y Destino antes de confirmar."))
-
-        self.write({'state': 'assigned'})
-        return True
 
     # ============================================================
     # MOTOR DE COTIZACIÓN (Costos y Propuestas)
@@ -1621,21 +1599,18 @@ class TmsWaybill(models.Model):
 
     def _expand_states(self, states, domain, order=None):
         """
-        Asegura que TODAS las columnas del Kanban aparezcan siempre.
-        Retorna la lista completa de estados.
+        Controla qué columnas aparecen en el Kanban agrupado por estado.
+        Solo retorna los 6 estados operativos visibles al transportista.
+        Los estados internos (draft, en_pedido, assigned, cancel, rejected)
+        siguen existiendo en el flujo Python pero no se muestran como columnas.
         """
         return [
             'cotizado',
             'aprobado',
-            'draft',
-            'en_pedido',
-            'assigned',
             'waybill',
             'in_transit',
-            'rejected',
             'arrived',
             'closed',
-            'cancel',
         ]
 
     # ============================================================
@@ -1644,8 +1619,7 @@ class TmsWaybill(models.Model):
     # IMPORTANTE: Estos métodos son el RESPALDO cuando la App falla
     # o no está disponible. Permiten operar el sistema 100% manualmente.
 
-    # Solución al duplicado: action_confirm ahora establece el estado 'en_pedido'
-    # incorporando la lógica de validación existente.
+    # action_confirm es alias de action_approve_cp (V2.5 — estados simplificados).
 
     # ============================================================
     # SMART BUTTONS — Acciones de navegación rápida
@@ -1712,26 +1686,15 @@ class TmsWaybill(models.Model):
             'res_id': self.vehicle_id.id,
         }
 
-    def action_set_en_pedido(self):
-        """
-        Cambia el estado a en_pedido.
-        Incluye validaciones de action_confirm.
-        """
-        self.action_confirm()
-
     def action_confirm(self):
         """
-        MANUAL: Confirmar Solicitud → En Pedido.
-        Se ejecuta desde el botón "Confirmar Pedido" en estado draft.
+        Alias de action_approve_cp para compatibilidad con llamadas externas.
+        Confirma el viaje ejecutando la validación completa CP 3.1.
         """
         self.ensure_one()
-
         if not self.partner_invoice_id:
             raise UserError(_('Debe seleccionar un cliente antes de confirmar.'))
-        # Validar datos mínimos operativos (ruta, vehículo, chofer, mercancías)
-        self._validate_before_confirm()
-
-        self.write({'state': 'en_pedido'})
+        return self.action_approve_cp()
 
     def action_approve_cp(self):
         """
@@ -1837,7 +1800,8 @@ class TmsWaybill(models.Model):
             msg += "\n\nPor favor complete la información faltante en los registros correspondientes (Empresa, Cliente, Vehículo, Chofer o Mercancías)."
             raise ValidationError(msg)
 
-        self.write({'state': 'waybill'})
+        # NO cambiar estado aquí — el estado 'waybill' se asigna solo al timbrar exitosamente.
+        # Validación aprobada: el registro queda en 'aprobado', listo para timbrar.
 
     # ============================================================
     # TIMBRADO CFDI — Acciones (V2.2)
@@ -1857,8 +1821,8 @@ class TmsWaybill(models.Model):
         6. Cambiar cfdi_status a 'timbrado'
         """
         self.ensure_one()
-        if self.state != 'waybill':
-            raise UserError(_('Solo se puede timbrar una Carta Porte en estado "Carta Porte".'))
+        if self.state not in ('aprobado', 'waybill'):
+            raise UserError(_('Solo se puede timbrar una Carta Porte en estado "Aprobado" o "Carta Porte".'))
         if self.cfdi_status == 'timbrado':
             raise UserError(_('Este CFDI ya fue timbrado. UUID: %s') % self.cfdi_uuid)
 
@@ -1909,7 +1873,7 @@ class TmsWaybill(models.Model):
             manager = PacManager(self.env)
             resultado = manager.timbrar(xml_sellado, company)
 
-            # 4. Guardar resultado
+            # 4. Guardar resultado + avanzar estado a 'waybill' (timbrado exitoso)
             xml_fname = 'CFDI-%s-%s.xml' % (self.name, resultado['uuid'][:8])
             self.write({
                 'cfdi_uuid':        resultado['uuid'],
@@ -1921,6 +1885,7 @@ class TmsWaybill(models.Model):
                 'cfdi_no_cert_sat': resultado.get('no_cert_sat', ''),
                 'cfdi_status':      'timbrado',
                 'cfdi_error_msg':   False,
+                'state':            'waybill',  # Estado 'waybill' solo al timbrar exitosamente
             })
 
             # 5. Registrar en chatter
@@ -2380,9 +2345,9 @@ class TmsWaybill(models.Model):
         """
         self.ensure_one()
 
-        # Validar que esté en estado de solicitud
-        if self.state != 'draft':
-            raise UserError(_('Solo se pueden firmar cotizaciones en estado "Solicitud".'))
+        # Validar que esté en estado cotizado o aprobado
+        if self.state not in ('cotizado', 'aprobado'):
+            raise UserError(_('Solo se pueden firmar cotizaciones en estado Cotizado o Aprobado.'))
 
         # Validar que la firma no esté vacía
         if not signature:
@@ -2396,7 +2361,7 @@ class TmsWaybill(models.Model):
             'signature': signature,
             'signed_by': signed_by,
             'signed_on': now,
-            'state': 'en_pedido',  # Cambiar a "En Pedido" (cotización confirmada)
+            'state': 'aprobado',  # Firma digital aprueba la cotización
         })
 
         # Registrar en el chatter

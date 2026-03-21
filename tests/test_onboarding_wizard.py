@@ -164,11 +164,11 @@ class TestOnboardingWizard(TransactionCase):
         ], limit=1)
         self.assertTrue(emp, 'Debe crearse el empleado chofer')
         self.assertEqual(
-            emp.tms_license_number, 'LIC-TEST-001',
+            emp.tms_driver_license, 'LIC-TEST-001',
             'El número de licencia debe guardarse'
         )
         self.assertEqual(
-            emp.tms_license_type, 'B',
+            emp.tms_driver_license_type, 'B',
             'El tipo de licencia debe guardarse'
         )
 
