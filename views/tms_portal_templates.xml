@@ -62,10 +62,7 @@
                                     <t t-elif="waybill.state == 'aprobado'">
                                         <span class="badge bg-warning text-dark">Aprobada — pendiente de confirmar</span>
                                     </t>
-                                    <t t-elif="waybill.state == 'draft'">
-                                        <span class="badge bg-secondary">Solicitud</span>
-                                    </t>
-                                    <t t-elif="waybill.state == 'en_pedido'">
+                                    <t t-elif="waybill.state == 'aprobado'">
                                         <span class="badge bg-success">Aceptado</span>
                                     </t>
                                     <t t-elif="waybill.state == 'rejected'">
@@ -370,7 +367,7 @@
                                 SECCIÓN: FIRMA EXISTENTE (Si ya fue firmada)
                                 ================================================================
                             -->
-                            <t t-if="waybill.signature and waybill.state == 'en_pedido'">
+                            <t t-if="waybill.signature and waybill.state == 'aprobado'">
                                 <div class="card mb-4">
                                     <div class="card-header bg-success text-white">
                                         <h5 class="mb-0"><i class="fa fa-check-circle"/> Cotización Aceptada</h5>
@@ -480,8 +477,8 @@
                                             Botones de Acción (CTAs)
                                             Solo se muestran si el estado permite firma/rechazo
                                         -->
-                                        <!-- cotizado + draft + en_pedido permiten firmar/rechazar -->
-                                        <t t-if="waybill.state in ('cotizado', 'draft', 'en_pedido') and not waybill.signature">
+                                        <!-- cotizado + aprobado permiten firmar/rechazar -->
+                                        <t t-if="waybill.state in ('cotizado', 'aprobado') and not waybill.signature">
                                             <!--
                                                 Botón Principal: Firmar y Aceptar
                                             -->

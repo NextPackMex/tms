@@ -27,10 +27,10 @@
                             <field name="tms_driver_license_expiration"/>
                         </group>
                         <group string="Validación SAT (Carta Porte)">
-                            <field name="tms_driver_rfc"/>
+                            <field name="tms_rfc" string="RFC Operador"/>
                             <field name="l10n_mx_edi_fiscal_regime" required="1"/>
                             <field name="tms_driver_address" string="Domicilio Fiscal"/>
-                            <div class="alert alert-info" role="alert" invisible="tms_driver_rfc and tms_driver_address">
+                            <div class="alert alert-info" role="alert" invisible="tms_rfc and tms_driver_address">
                                 <strong>Nota:</strong> Los datos fiscales se sincronizan desde el <i>Contacto Fiscal</i> seleccionado a la izquierda.
                             </div>
                         </group>
@@ -49,7 +49,7 @@
                 <field name="name"/>
                 <field name="tms_driver_license"/>
                 <field name="tms_driver_license_type"/>
-                <field name="tms_driver_rfc"/>
+                <field name="tms_rfc" string="RFC"/>
                 <field name="tms_driver_license_expiration" widget="remaining_days"/>
             </list>
         </field>

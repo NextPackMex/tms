@@ -491,11 +491,11 @@ class TmsOnboardingWizard(models.TransientModel):
             if self.driver_curp:
                 emp_vals['tms_curp'] = self.driver_curp
             if self.driver_license_number:
-                emp_vals['tms_license_number'] = self.driver_license_number
+                emp_vals['tms_driver_license'] = self.driver_license_number
             if self.driver_license_type:
-                emp_vals['tms_license_type'] = self.driver_license_type
+                emp_vals['tms_driver_license_type'] = self.driver_license_type
             if self.driver_license_expiry:
-                emp_vals['tms_license_expiry'] = self.driver_license_expiry
+                emp_vals['tms_driver_license_expiration'] = self.driver_license_expiry
             self.env['hr.employee'].create(emp_vals)
         return self.action_next_step()
 

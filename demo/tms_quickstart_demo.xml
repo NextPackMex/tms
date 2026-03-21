@@ -123,7 +123,7 @@
             <field name="partner_dest_id" ref="partner_driver_juan"/>
             <!-- Usando chofer como destino dummy -->
             <field name="date_created" eval="obj().fields.Date.today()"/>
-            <field name="state">draft</field>
+            <field name="state">cotizado</field>
             <field name="waybill_type">income</field>
             <field name="distance_km">920.0</field>
             <field name="duration_hours">12.5</field>

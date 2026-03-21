@@ -68,15 +68,8 @@ class HrEmployee(models.Model):
     )
 
     # ============================================================
-    # CAMPOS RELACIONADOS (RFC y Domicilio desde el Partner)
+    # CAMPOS RELACIONADOS (Domicilio desde el Partner)
     # ============================================================
-
-    tms_driver_rfc = fields.Char(
-        string='RFC Operador',
-        related='work_contact_id.vat',
-        readonly=True,
-        help='RFC tomado del Contacto vinculado (work_contact_id).'
-    )
 
     tms_driver_address = fields.Char(
         string='Domicilio Fiscal',
@@ -108,8 +101,8 @@ class HrEmployee(models.Model):
             errors.append(f"{prefix} No tiene Contacto vinculado. Es necesario para obtener RFC y domicilio fiscal.")
             return errors
 
-        if not self.tms_driver_rfc:
-            errors.append(f"{prefix} Falta el RFC (vat) en el contacto vinculado.")
+        if not self.tms_rfc:
+            errors.append(f"{prefix} Falta el RFC del operador (tms_rfc).")
 
         if not self.tms_driver_license:
             errors.append(f"{prefix} Falta el Número de Licencia (NumLicencia).")
@@ -131,15 +124,3 @@ class HrEmployee(models.Model):
 
     tms_rfc = fields.Char(string='RFC del chofer', size=13)
     tms_curp = fields.Char(string='CURP del chofer', size=18)
-    tms_license_number = fields.Char(string='Número licencia federal')
-    tms_license_type = fields.Selection(
-        selection=[
-            ('A', 'Tipo A - Vehículos ligeros'),
-            ('B', 'Tipo B - Vehículos pesados'),
-            ('C', 'Tipo C - Doble articulado'),
-            ('D', 'Tipo D - Materiales peligrosos'),
-            ('E', 'Tipo E - Doble articulado + peligrosos'),
-        ],
-        string='Tipo licencia federal',
-    )
-    tms_license_expiry = fields.Date(string='Vigencia licencia')

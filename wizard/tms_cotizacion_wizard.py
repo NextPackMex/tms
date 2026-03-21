@@ -751,7 +751,7 @@ class TmsCotizacionWizard(models.TransientModel):
 
     def action_crear_waybill(self):
         """
-        Crea el tms.waybill en estado 'draft' con todos los datos
+        Crea el tms.waybill en estado 'cotizado' con todos los datos
         capturados en ambos pasos del wizard.
         """
         self.ensure_one()

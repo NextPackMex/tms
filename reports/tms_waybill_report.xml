@@ -24,7 +24,8 @@
                         <div class="row mb-4">
                             <div class="col-8">
                                 <h2>
-                                    <span t-if="o.state == 'draft'">Solicitud de Cotización</span>
+                                    <span t-if="o.state == 'cotizado'">Pre-Cotización</span>
+                                    <span t-elif="o.state == 'aprobado'">Cotización Aprobada</span>
                                     <span t-else="">Carta Porte / Viaje</span>
                                     <span class="text-muted" t-field="o.name"/>
                                 </h2>
@@ -51,7 +52,7 @@
                                     <span t-field="o.partner_origin_id.name"/><br/>
                                 </t>
                                 <t t-if="o.origin_city_name">
-                                    <span t-esc="o.origin_city_name"/><br/>
+                                    <span t-out="o.origin_city_name"/><br/>
                                 </t>
                                 <t t-if="o.origin_zip">
                                     <span>CP <span t-field="o.origin_zip"/></span><br/>
@@ -65,7 +66,7 @@
                                     <span t-field="o.partner_dest_id.name"/><br/>
                                 </t>
                                 <t t-if="o.dest_city_name">
-                                    <span t-esc="o.dest_city_name"/><br/>
+                                    <span t-out="o.dest_city_name"/><br/>
                                 </t>
                                 <t t-if="o.dest_zip">
                                     <span>CP <span t-field="o.dest_zip"/></span><br/>

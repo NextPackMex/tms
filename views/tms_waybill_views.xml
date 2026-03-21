@@ -24,6 +24,7 @@
                 <field name="driver_id"/>
                 <field name="distance_km"/>
                 <field name="duration_hours"/>
+                <field name="cfdi_status"/>
 
                 <!-- Definición de colores por valor del campo 'color' -->
                 <progressbar field="priority" colors="{&quot;0&quot;: &quot;success&quot;, &quot;1&quot;: &quot;warning&quot;, &quot;2&quot;: &quot;warning&quot;, &quot;3&quot;: &quot;danger&quot;}"/>
@@ -52,6 +53,14 @@
                                         <span class="badge text-bg-secondary ms-1">Traslado</span>
                                     </t>
                                 </div>
+                            </div>
+
+                            <!-- Badge estado CFDI -->
+                            <div class="mb-1">
+                                <span t-if="record.cfdi_status.raw_value == 'timbrado'"
+                                      class="badge rounded-pill text-bg-success">Timbrada</span>
+                                <span t-elif="record.state.raw_value == 'aprobado'"
+                                      class="badge rounded-pill text-bg-warning">Por Timbrar</span>
                             </div>
 
                             <!-- ============================================================
@@ -147,7 +156,7 @@
                 <field name="driver_id"/>
                 <field name="amount_total" />
                 <!-- decoration-success: estado 'closed' (Facturado/Cerrado) resaltado en verde -->
-                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'closed'"/>
+                <field name="state" widget="badge" decoration-info="state == 'cotizado'" decoration-success="state == 'closed'"/>
                 <field name="company_id" column_invisible="True"/>
                 <field name="currency_id" column_invisible="True"/>
             </list>
@@ -166,11 +175,7 @@
                     <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
                     <button name="action_confirm_order" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'aprobado'"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
-                    <button name="action_assign" string="Confirmar (Por Asignar)" type="object" class="oe_highlight" invisible="state not in ['draft', 'en_pedido']"/>
-                    <button name="action_set_en_pedido" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state != 'draft'"/>
-                    <!-- Botón Generar Carta Porte: solo visible cuando estado es 'assigned' (Por Asignar) -->
-                    <button name="action_approve_cp" string="Generar Carta Porte" type="object" class="oe_highlight" invisible="state != 'assigned'"/>
+                    <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state not in ('cotizado', 'aprobado')"/>
                     <!-- Botón Iniciar Ruta: solo visible cuando estado es 'waybill' (Carta Porte Lista) -->
                     <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'waybill'"/>
                     <!-- Botón Registrar Llegada: solo visible cuando estado es 'in_transit' (En Trayecto) -->
@@ -178,7 +183,7 @@
                     <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
                     <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
                     <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
-                    <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['draft','en_pedido','assigned']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
+                    <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['cotizado','aprobado']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
                     <!-- ═══════════════════════════════════════════════════
                          BOTONES CFDI — Timbrado, cancelación y estatus SAT
@@ -189,7 +194,7 @@
                             type="object"
                             class="oe_highlight"
                             icon="fa-stamp"
-                            invisible="state != 'waybill' or cfdi_status == 'timbrado'"
+                            invisible="state not in ('aprobado', 'waybill') or cfdi_status == 'timbrado'"
                             help="Genera y sella el CFDI 4.0 con Complemento Carta Porte 3.1"/>
                     <!-- Cancelar CFDI: solo cuando ya está timbrado -->
                     <button name="action_cancel_cfdi"
@@ -227,7 +232,7 @@
                     <!-- Campo invisible para usar en condiciones de visibilidad -->
                     <field name="cfdi_status" invisible="1"/>
 
-                    <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,draft,en_pedido,assigned,waybill,in_transit,arrived,closed" statusbar_colors="draft:grey;en_pedido:blue;assigned:orange;waybill:green;in_transit:purple;arrived:teal;closed:black"/>
+                    <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,waybill,in_transit,arrived,closed" statusbar_colors="cotizado:secondary;aprobado:info;waybill:success;in_transit:primary;arrived:warning;closed:dark"/>
                 </header>
 
                 <sheet>
@@ -262,7 +267,7 @@
                         </div>
 
                         <!-- Fechas de embarque/entrega: solo relevantes cuando el viaje ya está en ruta -->
-                        <div class="text-center" invisible="state in ['draft','en_pedido','assigned']">
+                        <div class="text-center" invisible="state in ['cotizado','aprobado']">
                             <div class="d-flex gap-3">
                                 <div>
                                     <label for="date_started_route" string="Fecha Y hora Embarque" class="text-danger fw-bold"/>
@@ -298,7 +303,7 @@
                             <div class="card shadow-sm p-3 bg-white" style="border: 1px solid #e0e0e0;">
                                 <group string="Facturación" class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
                                     <field name="date_created" string="Fecha del Pedido" readonly="cfdi_status == 'timbrado'"/>
-                                    <field name="partner_invoice_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="partner_invoice_id" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="invoice_rfc" readonly="1"/>
                                     <field name="invoice_address" readonly="1"/>
                                     <field name="company_id" groups="base.group_multi_company" readonly="cfdi_status == 'timbrado'"/>
@@ -346,11 +351,11 @@
                                 </div>
                                 <!-- Datos completos: siempre visibles, readonly en estados operativos -->
                                 <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'" invisible="False">
-                                    <field name="partner_origin_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
-                                    <field name="origin_address" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="partner_origin_id" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="origin_address" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="origin_zip"/>
                                     <div class="d-flex align-items-center" invisible="False">
-                                        <field name="origin_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
+                                        <field name="origin_zip" required="state not in ['cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
                                         <field name="origin_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="origin_rfc" readonly="cfdi_status == 'timbrado'"/>
@@ -379,11 +384,11 @@
                                 </div>
                                 <!-- Datos completos: siempre visibles, readonly en estados operativos -->
                                 <group class="mb-0" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'" invisible="False">
-                                    <field name="partner_dest_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
-                                    <field name="dest_address" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="partner_dest_id" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="dest_address" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <label for="dest_zip"/>
                                     <div class="d-flex align-items-center" invisible="False">
-                                        <field name="dest_zip" required="state not in ['draft', 'cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
+                                        <field name="dest_zip" required="state not in ['cotizado', 'aprobado']" class="me-2" style="max-width: 100px;" readonly="cfdi_status == 'timbrado'"/>
                                         <field name="dest_city_name" readonly="1" nolabel="1" class="text-muted fst-italic"/>
                                     </div>
                                     <field name="dest_rfc" readonly="cfdi_status == 'timbrado'"/>
@@ -412,7 +417,7 @@
                             <!-- UNIDAD ASIGNADA — readonly cuando el viaje ya está en ruta -->
                             <group string="Unidad Asignada" invisible="state == 'cotizado'" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
                                 <group>
-                                    <field name="vehicle_id" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="vehicle_id" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="require_trailer" widget="boolean_toggle" string="Lleva Remolque" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="trailer1_id" invisible="not require_trailer" readonly="cfdi_status == 'timbrado'"/>
                                     <field name="dolly_id" invisible="not require_trailer" readonly="cfdi_status == 'timbrado'"/>
@@ -427,9 +432,9 @@
                             <!-- DETALLES DE RUTA — readonly cuando el viaje ya está en ruta -->
                             <group string="Detalles de Ruta" readonly="state in ['in_transit','arrived','closed','cancel'] or cfdi_status == 'timbrado'">
                                 <group>
-                                    <field name="distance_km" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
-                                    <field name="duration_hours" widget="float_time" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
-                                    <field name="cost_tolls" required="state not in ['draft', 'cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="distance_km" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="duration_hours" widget="float_time" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
+                                    <field name="cost_tolls" required="state not in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'"/>
                                 </group>
                                 <group>
                                     <label for="action_compute_route_smart" string="Cálculo" invisible="state in ['in_transit','arrived','closed','cancel']"/>
@@ -525,7 +530,7 @@
                         <!-- CARTA PORTE 3.1 -->
                         <!-- ======================= -->
                         <!-- Carta Porte: no tiene sentido en borrador (sin info completa aún) -->
-                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado', 'draft']" readonly="cfdi_status == 'timbrado'">
+                        <page string="Complemento Carta Porte 3.1" name="carta_porte_31" invisible="state in ['cotizado', 'aprobado']" readonly="cfdi_status == 'timbrado'">
                             <group>
                                 <group string="Identificación">
                                     <!-- IdCCP: campo interno, se genera automáticamente, no se muestra al usuario -->
@@ -599,7 +604,7 @@
                         <!-- BITÁCORA GPS           -->
                         <!-- ======================= -->
                         <!-- Bitácora GPS: solo relevante cuando el viaje ya salió (desde estado waybill) -->
-                        <page string="Bitácora GPS" invisible="state in ['draft','en_pedido','assigned']">
+                        <page string="Bitácora GPS" invisible="state in ['cotizado','aprobado']">
                             <field name="tracking_event_ids">
                                 <list string="Eventos de Rastreo" editable="bottom">
                                     <field name="date"/>
@@ -676,13 +681,13 @@
             <search>
                 <field name="name"/>
                 <field name="partner_invoice_id"/>
-                <!-- Filtro: muestra solo viajes en estado 'draft' (Solicitud/Borrador) -->
-                <filter name="filter_request" string="Solicitudes" domain="[('state', '=', 'draft')]"/>
-                <!--
-                <group expand="0" string="Agrupar Por">
-                    <filter string="Estado" name="group_by_state" context="{'group_by': 'state'}"/>
-                </group>
-                -->
+                <!-- Filtros individuales por los 6 estados del flujo V2.5 -->
+                <filter name="filter_cotizado"   string="Cotizado"     domain="[('state', '=', 'cotizado')]"/>
+                <filter name="filter_aprobado"   string="Aprobado"     domain="[('state', '=', 'aprobado')]"/>
+                <filter name="filter_waybill"    string="Carta Porte"  domain="[('state', '=', 'waybill')]"/>
+                <filter name="filter_in_transit" string="En Tránsito"  domain="[('state', '=', 'in_transit')]"/>
+                <filter name="filter_arrived"    string="En Destino"   domain="[('state', '=', 'arrived')]"/>
+                <filter name="filter_closed"     string="Facturado"    domain="[('state', '=', 'closed')]"/>
             </search>
         </field>
     </record>
@@ -692,7 +697,10 @@
         <field name="res_model">tms.waybill</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_tms_waybill_search"/>
-        <field name="context">{'search_default_group_by_state': 1}</field>
+        <!-- Domain fijo: excluye estados internos del tablero. El kanban usa su propio
+             default_group_by="state" (no expand=True), así las columnas vacías no aparecen. -->
+        <field name="domain">[('state', 'not in', ['rejected','cancel'])]</field>
+        <field name="context">{}</field>
     </record>
 
 </odoo>
