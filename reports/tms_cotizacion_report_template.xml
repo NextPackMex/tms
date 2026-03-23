@@ -126,22 +126,16 @@
                         <!-- MÉTRICAS DE RUTA -->
                         <table style="width: 100%; margin-bottom: 20px; border-collapse: separate; border-spacing: 8px 0;">
                             <tr>
-                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                <td style="width: 50%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
                                     <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Distancia</span>
                                     <strong style="font-size: 20px; color: #035d96;">
                                         <span t-out="'%.0f' % doc.distance_km"/> km
                                     </strong>
                                 </td>
-                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
+                                <td style="width: 50%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
                                     <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Tiempo Estimado</span>
                                     <strong style="font-size: 20px; color: #035d96;">
                                         <span t-out="'%.1f' % doc.duration_hours"/> hrs
-                                    </strong>
-                                </td>
-                                <td style="width: 33%; text-align: center; background: #f0f5fa; padding: 10px; border-radius: 6px;">
-                                    <span style="font-size: 10px; color: #666; display: block; text-transform: uppercase;">Casetas (TAG)</span>
-                                    <strong style="font-size: 20px; color: #035d96;">
-                                        $ <span t-out="'%.2f' % doc.toll_cost"/>
                                     </strong>
                                 </td>
                             </tr>
@@ -240,7 +234,6 @@
                                 No constituye un CFDI ni tiene validez fiscal. Los precios pueden variar según
                                 condiciones de mercado. Vigencia: 15 días a partir de la fecha de emisión.
                                 Precios en MXN. IVA 16% incluido. Retención IVA 4% aplica solo a personas morales.
-                                Casetas calculadas con sistema de telepeaje (TAG).
                             </p>
                         </div>
 
