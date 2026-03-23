@@ -6,3 +6,4 @@ from . import partner_assign_company_wizard
 from . import tms_load_demo_wizard
 from . import tms_cotizacion_wizard
 from . import tms_onboarding_wizard
+from . import tms_stamp_validation_wizard

@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-17 — V2.2 EN PROGRESO (etapa 2.2.1 PDF completada)
+# Última actualización: 2026-03-23 — V2.2.2 COMPLETADA (Refuerzo Timbrado)
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -18,8 +18,8 @@
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.1.4
-**Progreso actual:** ~40% — V2.1.4f completado, V2.1.5 es la siguiente etapa
+**Versión módulo:** 19.0.2.2
+**Progreso actual:** ~65% — V2.2.2 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -252,19 +252,18 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 | 2.1.4d | Mercancías simplificadas Paso 1 | ✅ |
 | 2.1.4e | Wizard desde lista, no desde form | ✅ |
 | 2.1.4f | Fix direcciones + botón form | ✅ 2026-03-13 |
-| **2.1.5** | **Onboarding wizard 6 pasos** | **📋 SIGUIENTE** |
-| 2.1.6 | PDF pre-cotización + email | 📋 |
+| 2.1.5 | Onboarding wizard 6 pasos | ✅ |
+| 2.1.6 | PDF pre-cotización + email | ✅ |
 
-### 🚧 V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales (EN PROGRESO)
+### ✅ V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales (COMPLETADO)
 **PAC:** Formas Digitales (forsedi.facturacfdi.mx) + SW Sapien (respaldo)
-**Completado:**
-- ✅ A — `res.company` PAC dual + `tms.waybill` cfdi_* + métodos stamp/cancel/check
-- ✅ B — `services/`: xml_builder, xml_signer, pac_manager, formas_digitales, sw_sapien
-- ✅ C — vistas: botones CFDI en header + sección TFD en tab CP + config PAC en settings
-- ✅ Fixes timbrado: sustitución datos fiscales pruebas, IdCCP vacío, CP155 MaterialPeligroso
-- ✅ **2.2.1** — PDF Carta Porte timbrada con QR verificación SAT (2026-03-17)
-**Pendiente:** merge ramas → feat/etapa-2.2-carta-porte + QA E2E con CSD FUNK671228PH6
-- ⚠️ SEMILLA: crear modelo vacío `tms.route.analytics` aquí
+**Hitos técnicos:**
+- ✅ Core: Timbrado CFDI 4.0 + CP 3.1 (UUID: 97367659-43B7-40E2-9AEC-731A014F9D46)
+- ✅ V2.2.1: PDF Carta Porte timbrada (7 secciones + QR SAT)
+- ✅ V2.2.2: Refuerzo flujo timbrado + wizard validación (2026-03-23)
+- ✅ Migración: `tms_regimen_fiscal` → `tms.sat.regimen.fiscal` (PR #10)
+- ✅ Servicios: xml_builder (id_ccp movido), xml_signer, pac_manager
+- ✅ Semilla: Modelo `tms.route.analytics` creado
 
 ### 📋 V2.3 — Facturación Real
 - CFDI de ingreso vinculado al waybill via `account.move`
@@ -288,11 +287,11 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - `tms.driver.settlement`: flete × % chofer + reembolsos − anticipos − deducciones
 - Comprobante PDF firmado digitalmente, saldo arrastrado entre viajes
 
-### 📋 V2.5 🆕 — Mantenimiento de Unidades (`tms_maintenance/`)
-- Plan preventivo (10 tipos de servicio) + órdenes correctivas
-- Semáforo 🟢🟡🔴⛔ en `fleet.vehicle.vehicle_status`
-- Bloquea asignación si hay falla activa
-- ⚠️ SEMILLAS Fase 2: `fleet.vehicle.current_zip` + `res.partner.is_tms_carrier`
+### ✅ V2.5 — Limpieza y Data Integrity (COMPLETADO)
+- ✅ Estados simplificados a 6 (ciclo vital Hombre Camión)
+- ✅ Normalización t-esc → t-out (tracking events)
+- ✅ Badges Kanban dinámicos por estado y urgencia
+- ✅ ⚠️ SEMILLAS Fase 2: `fleet.vehicle.current_zip` + `res.partner.is_tms_carrier`
 
 ### 📋 V2.6 — KPIs, Reportes y Portal Web
 - Dashboard ingresos, rentabilidad por vehículo, rendimiento diesel
@@ -366,6 +365,10 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 | FIX-02 | ✅ | is_dangerous no definido en wizard.line | Resuelto |
 | FIX-03 | ✅ | Direcciones origen/destino no llegaban al waybill | Resuelto 2026-03-13 |
 | FIX-04 | ✅ | Retención 4% no considera is_company | Resuelto |
+| FIX-A | ✅ | Normalización SAT xml_builder (5 helpers, 11 campos) | Resuelto |
+| FIX-B | ✅ | Auto-sustitución fiscal en pruebas | Resuelto |
+| FIX-C | ✅ | Waybill readonly post-timbrado | Resuelto |
+| FIX-D | ✅ | Onboarding sincroniza company.partner_id | Resuelto |
 
 ---
 
@@ -539,3 +542,12 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 _Este archivo es el contexto técnico del proyecto._
 _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `contexto_maestro_tms_final.md`_
 _Actualizar después de cada etapa completada._
+
+## Próxima etapa
+**Opciones en orden de dificultad:**
+- [ ] Fix rápido: ocultar toll_cost en PDF pre-cotización (tms_cotizacion_report_template.xml)
+- [ ] Fix rápido: invisible="not vehicle_id" en bloque portal "Unidad Asignada"
+- [ ] Fix medio: mover validaciones "Confirmar Pedido" → "Timbrar" y eliminar botón
+- [ ] V2.4: KPIs + portal cliente
+- [ ] V2.3: Facturación real account.move (más compleja)
+
