@@ -41,3 +41,5 @@ access_tms_cotizacion_wizard_line_user,tms.cotizacion.wizard.line.user,model_tms
 access_tms_cotizacion_wizard_line_manager,tms.cotizacion.wizard.line.manager,model_tms_cotizacion_wizard_line,tms.group_tms_manager,1,1,1,1
 access_tms_onboarding_wizard_user,tms.onboarding.wizard.user,model_tms_onboarding_wizard,tms.group_tms_user,1,1,1,0
 access_tms_onboarding_wizard_manager,tms.onboarding.wizard.manager,model_tms_onboarding_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_stamp_validation_wizard_user,tms.stamp.validation.wizard.user,model_tms_stamp_validation_wizard,tms.group_tms_user,1,1,1,1
+access_tms_stamp_validation_wizard_manager,tms.stamp.validation.wizard.manager,model_tms_stamp_validation_wizard,tms.group_tms_manager,1,1,1,1

@@ -164,10 +164,10 @@ class TmsWaybill(models.Model):
         string='IdCCP',
         copy=False,
         readonly=True,
-        default=_generate_id_ccp,
         help='Identificador único del Complemento Carta Porte (especificación 3.1). '
              'Formato SAT: CCC[5hex]-[4hex]-[4hex]-[4hex]-[12hex]. '
-             'Se genera automáticamente al crear el waybill.',
+             'Se genera automáticamente al momento de timbrar (no al crear el waybill), '
+             'garantizando un IdCCP fresco y único por intento de timbrado.',
     )
 
     l10n_mx_edi_is_international = fields.Boolean(
@@ -1804,21 +1804,40 @@ class TmsWaybill(models.Model):
         # Validación aprobada: el registro queda en 'aprobado', listo para timbrar.
 
     # ============================================================
-    # TIMBRADO CFDI — Acciones (V2.2)
+    # TIMBRADO CFDI — Acciones (V2.2 / V2.2.2)
     # ============================================================
 
     def action_stamp_cfdi(self):
         """
-        Timbra la Carta Porte 3.1 del waybill.
-        Solo ejecutable en estado 'waybill'.
+        Abre el wizard de validación previa antes de timbrar (V2.2.2).
+        Crea el wizard con todos los checks del waybill y lo muestra en diálogo.
+        El timbrado real lo ejecuta action_do_stamp_cfdi() si pasa la validación.
+        """
+        self.ensure_one()
+        wizard = self.env['tms.stamp.validation.wizard'].create_for_waybill(self.id)
+        return {
+            'type':      'ir.actions.act_window',
+            'res_model': 'tms.stamp.validation.wizard',
+            'res_id':    wizard.id,
+            'view_mode': 'form',
+            'target':    'new',
+            'name':      'Validación previa al timbrado',
+        }
+
+    def action_do_stamp_cfdi(self):
+        """
+        Ejecuta el timbrado real de la Carta Porte 3.1 (V2.2 / V2.2.2).
+        Llamado desde TmsStampValidationWizard.action_confirmar_timbrado()
+        después de que el usuario revisó y aprobó las validaciones.
 
         Flujo:
-        1. Construir XML con CartaPorteXmlBuilder
-        2. Firmar XML con CfdiSigner usando CSD de la empresa
-        3. Enviar a PAC via PacManager (con failover automático)
-        4. Guardar UUID, XML, fecha, PAC en campos cfdi_*
-        5. Registrar en chatter: UUID + PAC usado
-        6. Cambiar cfdi_status a 'timbrado'
+        1. Generar IdCCP fresco (siempre nuevo por intento, no reutilizar)
+        2. Construir XML con CartaPorteXmlBuilder
+        3. Firmar XML con CfdiSigner usando CSD de la empresa
+        4. Enviar a PAC via PacManager (con failover automático)
+        5. Guardar UUID, XML, fecha, PAC en campos cfdi_*
+        6. Registrar en chatter: UUID + PAC usado
+        7. Cambiar cfdi_status a 'timbrado'
         """
         self.ensure_one()
         if self.state not in ('aprobado', 'waybill'):
@@ -1849,12 +1868,11 @@ class TmsWaybill(models.Model):
                     'en Ajustes → TMS → Certificados SAT.'
                 ))
 
-            # Asegurar que el waybill tenga IdCCP antes de construir el XML.
-            # El campo tiene default=_generate_id_ccp, pero registros creados antes
-            # de añadir el campo — o cuyo campo fue borrado — pueden llegar vacíos.
-            # Persistirlo aquí garantiza que el mismo IdCCP se use en cancelación/retimbrado.
-            if not self.tms_id_ccp:
-                self.tms_id_ccp = _generate_id_ccp()
+            # Generar IdCCP fresco en cada intento de timbrado.
+            # No reutilizar el IdCCP de intentos fallidos anteriores — cada timbrado
+            # debe identificarse de manera única ante el SAT y el PAC.
+            self.tms_id_ccp = _generate_id_ccp()
+            _logger.info('IdCCP generado para timbrado: %s (waybill %s)', self.tms_id_ccp, self.name)
 
             # 1. Construir XML
             builder = CartaPorteXmlBuilder()

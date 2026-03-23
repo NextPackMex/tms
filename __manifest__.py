@@ -114,6 +114,7 @@
         # 6. Wizard cotización (ANTES de tms_waybill_views para que action_tms_cotizacion_wizard exista)
         'wizard/tms_cotizacion_wizard_views.xml',
         'wizard/tms_onboarding_wizard_views.xml',
+        'wizard/tms_stamp_validation_wizard_views.xml',
 
         # 7. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',
