@@ -263,6 +263,14 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - ✅ Fix: PDF pre-cotización oculta `toll_cost` — solo Distancia (50%) y Tiempo (50%) (2026-03-24)
 - ✅ Fix: Labels de estados visibles en español en statusbar y PDF (2026-03-24)
 - ✅ Fix: Portal card "Unidad Asignada" invisible cuando no hay vehículo/chofer/remolque (2026-03-24)
+- ✅ Fix 3: Eliminar botón "Confirmar Pedido" (2026-03-24)
+  - action_confirm_order eliminado del modelo
+  - _validate_before_confirm eliminado (código muerto)
+  - Botón eliminado de tms_waybill_views.xml
+  - 5 validaciones migradas al wizard V2.2.2: val_receptor_regimen, val_receptor_uso_cfdi, val_distancia, val_uom_sat, val_material_peligroso
+  - Wizard ampliado a 20 checks en 7 secciones
+  - Banner rojo/verde en formulario waybill (tms_stamp_ready)
+  - decoration-danger en product_sat_id y uom_sat_id
 
 ### 📋 V2.3 — Facturación Real
 - CFDI de ingreso vinculado al waybill via `account.move`
@@ -373,6 +381,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 | FIX-E | ✅ | PDF pre-cotización mostraba casetas (toll_cost) | Resuelto 2026-03-24 |
 | FIX-F | ✅ | Labels de estados en español en statusbar y vista | Resuelto 2026-03-24 |
 | FIX-G | ✅ | Portal card "Unidad Asignada" visible sin datos asignados | Resuelto 2026-03-24 |
+| FIX-H | ✅ | Eliminar botón "Confirmar Pedido" (Flujo simplificado) | Resuelto 2026-03-24 |
 
 ## 10. Deuda Técnica Conocida
 
@@ -561,9 +570,10 @@ _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `context
 _Actualizar después de cada etapa completada._
 
 ## Próxima etapa
-**Fix 3 — Eliminar botón "Confirmar Pedido"**
-- [ ] Mover validaciones de `action_confirm_order` a `action_do_stamp_cfdi`
-- [ ] Eliminar `action_confirm_order` del modelo `tms_waybill.py`
-- [ ] Eliminar botón de todas las vistas (form + portal)
-- [ ] Necesario antes de V2.3 (simplifica el flujo aprobado → timbrar)
+**V2.3 — Facturación Real**
+- Auditoría previa antes de construir (metodología confirmada)
+- CFDI de ingreso vinculado al waybill via account.move
+- Retención IVA 4% (solo PM, no RESICO, nunca en Traslado)
+- IVA 0% para receptores en zonas ZEDE (validar receptor.zip)
+- Mover validaciones de estado al nuevo flujo
 

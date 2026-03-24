@@ -300,6 +300,93 @@
 
                         </div><!-- /fila receptor -->
 
+                        <!-- Fila 2: 📋 Régimen Fiscal cliente | 🧾 Uso CFDI cliente -->
+                        <div class="row g-1 mb-1">
+
+                            <!-- 📋 Régimen Fiscal receptor — verde -->
+                            <div class="col-6" invisible="not val_receptor_regimen">
+                                <div style="background:#d1e7dd;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">📋</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#0a3622;">Régimen Fiscal cliente</div>
+                                        <div style="font-size:10px;color:#146c43;">Configurado ✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 📋 Régimen Fiscal receptor — rojo -->
+                            <div class="col-6" invisible="val_receptor_regimen">
+                                <div style="background:#f8d7da;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">📋</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#58151c;">Régimen Fiscal cliente</div>
+                                        <div style="font-size:10px;color:#842029;">Sin régimen ✗</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🧾 Uso CFDI receptor — verde -->
+                            <div class="col-6" invisible="not val_receptor_uso_cfdi">
+                                <div style="background:#d1e7dd;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">🧾</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#0a3622;">Uso CFDI cliente</div>
+                                        <div style="font-size:10px;color:#146c43;">Configurado ✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 🧾 Uso CFDI receptor — rojo -->
+                            <div class="col-6" invisible="val_receptor_uso_cfdi">
+                                <div style="background:#f8d7da;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">🧾</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#58151c;">Uso CFDI cliente</div>
+                                        <div style="font-size:10px;color:#842029;">Sin uso CFDI ✗</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div><!-- /fila 2 receptor -->
+
+                        <!-- ── SECCIÓN: Ruta ────────────────────────────── -->
+                        <div class="row mb-0 mt-1">
+                            <div class="col-12">
+                                <small class="text-muted text-uppercase fw-bold"
+                                       style="font-size:10px;letter-spacing:0.05em;">
+                                    Ruta
+                                </small>
+                                <hr class="mt-0 mb-1" style="border-color:#dee2e6;"/>
+                            </div>
+                        </div>
+
+                        <!-- Fila 1: 🗺️ Distancia calculada | celda vacía -->
+                        <div class="row g-1 mb-1">
+
+                            <!-- 🗺️ Distancia — verde -->
+                            <div class="col-6" invisible="not val_distancia">
+                                <div style="background:#d1e7dd;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">🗺️</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#0a3622;">Distancia calculada</div>
+                                        <div style="font-size:10px;color:#146c43;">Calculada ✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 🗺️ Distancia — rojo -->
+                            <div class="col-6" invisible="val_distancia">
+                                <div style="background:#f8d7da;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">🗺️</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#58151c;">Distancia calculada</div>
+                                        <div style="font-size:10px;color:#842029;">Sin ruta ✗ — ve al Paso 1 del wizard</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Celda vacía -->
+                            <div class="col-6"/>
+
+                        </div><!-- /fila ruta -->
+
                         <!-- ── SECCIÓN: Mercancías ─────────────────────── -->
                         <div class="row mb-0 mt-1">
                             <div class="col-12">
@@ -344,6 +431,61 @@
                         <div class="row mb-1" invisible="not val_mercancias_detalle">
                             <div class="col-12">
                                 <field name="val_mercancias_detalle" readonly="1" nolabel="1"
+                                       style="font-size:11px; color:#842029;"/>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: 📐 Unidad SAT | ☢️ Material peligroso -->
+                        <div class="row g-1 mb-1">
+
+                            <!-- 📐 Unidad SAT — verde -->
+                            <div class="col-6" invisible="not val_uom_sat">
+                                <div style="background:#d1e7dd;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">📐</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#0a3622;">Unidad SAT</div>
+                                        <div style="font-size:10px;color:#146c43;">Completa ✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 📐 Unidad SAT — rojo -->
+                            <div class="col-6" invisible="val_uom_sat">
+                                <div style="background:#f8d7da;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">📐</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#58151c;">Unidad SAT</div>
+                                        <div style="font-size:10px;color:#842029;">Sin unidad SAT ✗</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ☢️ Material peligroso — verde -->
+                            <div class="col-6" invisible="not val_material_peligroso">
+                                <div style="background:#d1e7dd;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">☢️</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#0a3622;">Material peligroso</div>
+                                        <div style="font-size:10px;color:#146c43;">Completo ✓</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- ☢️ Material peligroso — rojo -->
+                            <div class="col-6" invisible="val_material_peligroso">
+                                <div style="background:#f8d7da;border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;">
+                                    <span style="font-size:20px;line-height:1;">☢️</span>
+                                    <div>
+                                        <div style="font-size:11px;font-weight:600;color:#58151c;">Material peligroso</div>
+                                        <div style="font-size:10px;color:#842029;">Incompleto ✗</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div><!-- /fila 2 mercancías -->
+
+                        <!-- Detalle material peligroso (cuando hay errores) -->
+                        <div class="row mb-1" invisible="not val_material_peligroso_detalle">
+                            <div class="col-12">
+                                <field name="val_material_peligroso_detalle" readonly="1" nolabel="1"
                                        style="font-size:11px; color:#842029;"/>
                             </div>
                         </div>
@@ -563,7 +705,13 @@
                     <field name="val_emisor_cp" invisible="1"/>
                     <field name="val_receptor_rfc" invisible="1"/>
                     <field name="val_receptor_cp" invisible="1"/>
+                    <field name="val_receptor_regimen" invisible="1"/>
+                    <field name="val_receptor_uso_cfdi" invisible="1"/>
+                    <field name="val_distancia" invisible="1"/>
                     <field name="val_mercancias" invisible="1"/>
+                    <field name="val_uom_sat" invisible="1"/>
+                    <field name="val_material_peligroso" invisible="1"/>
+                    <field name="val_material_peligroso_detalle" invisible="1"/>
                     <field name="val_vehiculo_placa" invisible="1"/>
                     <field name="val_vehiculo_permiso" invisible="1"/>
                     <field name="val_vehiculo_config" invisible="1"/>
