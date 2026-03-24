@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-23 — V2.2 COMPLETADA (etapa 2.2.2 es la siguiente)
+# Última actualización: 2026-03-24 — V2.2.2 COMPLETADA + fixes post-timbrado
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -19,7 +19,7 @@
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
 **Versión módulo:** 19.0.2.2
-**Progreso actual:** ~60% — V2.2 completado, V2.2.2 es la siguiente etapa
+**Progreso actual:** ~65% — V2.2.2 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -79,10 +79,9 @@ nunca por intermediar dinero entre partes. Sin factoraje, sin seguros intermedia
 
 ### Workflow de Estados (ÚNICOS VÁLIDOS)
 ```
-cotizado → aprobado → draft → en_pedido → assigned →
-waybill → in_transit → arrived → closed
-                                          ↓
-                                        cancel
+cotizado → aprobado → waybill → in_transit → arrived → closed
+                                                           ↓
+                                                         cancel
 rejected (portal)
 ```
 
@@ -90,9 +89,6 @@ rejected (portal)
 |---|---|---|
 | Cotizado | `cotizado` | Wizard generó pre-cotización, cliente no ha aprobado |
 | Aprobado | `aprobado` | Cliente aprobó precio, pendiente datos completos |
-| Solicitud | `draft` | Datos completos capturados |
-| En Pedido | `en_pedido` | Cliente confirma / operador confirma |
-| Por Asignar | `assigned` | Asignar vehículo, chofer, remolques |
 | Carta Porte | `waybill` | Valida cumplimiento CP 3.1 completo |
 | En Tránsito | `in_transit` | Ruta iniciada |
 | En Destino | `arrived` | Llegó al destino |
@@ -100,7 +96,7 @@ rejected (portal)
 | Cancelado | `cancel` | Anulado |
 | Rechazado | `rejected` | Rechazado desde portal |
 
-⚠️ NUNCA usar: `'transit'`, `'destination'`, `'carta_porte'` — NO EXISTEN → ValueError
+⚠️ NUNCA usar: `'transit'`, `'destination'`, `'carta_porte'`, `'draft'`, `'en_pedido'`, `'assigned'` — NO EXISTEN → ValueError
 
 ### Motor de Cotización (3 Propuestas)
 
@@ -260,9 +256,13 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 **Hitos técnicos:**
 - ✅ Core: Timbrado CFDI 4.0 + CP 3.1 (UUID: 97367659-43B7-40E2-9AEC-731A014F9D46)
 - ✅ V2.2.1: PDF Carta Porte timbrada (7 secciones + QR SAT)
+- ✅ V2.2.2: Refuerzo flujo timbrado + wizard validación (2026-03-23)
 - ✅ Migración: `tms_regimen_fiscal` → `tms.sat.regimen.fiscal` (PR #10)
 - ✅ Servicios: xml_builder, xml_signer, pac_manager (dual PAC)
 - ✅ Semilla: Modelo `tms.route.analytics` creado
+- ✅ Fix: PDF pre-cotización oculta `toll_cost` — solo Distancia (50%) y Tiempo (50%) (2026-03-24)
+- ✅ Fix: Labels de estados visibles en español en statusbar y PDF (2026-03-24)
+- ✅ Fix: Portal card "Unidad Asignada" invisible cuando no hay vehículo/chofer/remolque (2026-03-24)
 
 ### 📋 V2.3 — Facturación Real
 - CFDI de ingreso vinculado al waybill via `account.move`
@@ -286,11 +286,13 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - `tms.driver.settlement`: flete × % chofer + reembolsos − anticipos − deducciones
 - Comprobante PDF firmado digitalmente, saldo arrastrado entre viajes
 
-### ✅ V2.5 — Limpieza y Data Integrity (COMPLETADO)
+### 🚧 V2.5 — Limpieza y Data Integrity (EN CURSO — Semillas Pendientes)
 - ✅ Estados simplificados a 6 (ciclo vital Hombre Camión)
 - ✅ Normalización t-esc → t-out (tracking events)
 - ✅ Badges Kanban dinámicos por estado y urgencia
-- ✅ ⚠️ SEMILLAS Fase 2: `fleet.vehicle.current_zip` + `res.partner.is_tms_carrier`
+- ❌ PENDIENTE: current_zip (fleet.vehicle) — Matching geográfico Fase 2
+- ❌ PENDIENTE: vehicle_status (fleet.vehicle) — Bloquear vehículo en falla ⚠️ RIESGO: Referenciado en comentario action_confirm_order (tms_waybill.py) — si se convierte en código real sin implementar el campo → crash inmediato.
+- ❌ PENDIENTE: is_tms_carrier (res.partner) — Filtrar transportistas marketplace
 
 ### 📋 V2.6 — KPIs, Reportes y Portal Web
 - Dashboard ingresos, rentabilidad por vehículo, rendimiento diesel
@@ -352,7 +354,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 3. Waybill cotizado muestra solo: cliente + precio
 4. Botón "Aprobar Cotización" → estado `aprobado`
 5. Estado aprobado → formulario completo visible
-6. "Confirmar Pedido" → estado `draft`/`en_pedido`
+6. "Confirmar Pedido" → estado `waybill` (vía `action_approve_cp`)
 
 ---
 
@@ -368,10 +370,26 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 | FIX-B | ✅ | Auto-sustitución fiscal en pruebas | Resuelto |
 | FIX-C | ✅ | Waybill readonly post-timbrado | Resuelto |
 | FIX-D | ✅ | Onboarding sincroniza company.partner_id | Resuelto |
+| FIX-E | ✅ | PDF pre-cotización mostraba casetas (toll_cost) | Resuelto 2026-03-24 |
+| FIX-F | ✅ | Labels de estados en español en statusbar y vista | Resuelto 2026-03-24 |
+| FIX-G | ✅ | Portal card "Unidad Asignada" visible sin datos asignados | Resuelto 2026-03-24 |
+
+## 10. Deuda Técnica Conocida
+
+### Semillas V2.5 — campos pendientes de implementar
+Estos campos están documentados en el roadmap pero NO existen en el código. No bloquean V2.3 ni V2.4.
+
+| Campo | Modelo | Para qué | Prioridad |
+|---|---|---|---|
+| current_zip | fleet.vehicle | Matching geográfico futuro (Fase 2) | Baja |
+| vehicle_status | fleet.vehicle | Bloquear wizard si vehículo en falla | Media ⚠️ |
+| is_tms_carrier | res.partner | Marketplace: filtrar transportistas | Baja |
+
+Implementar antes de V2.7 / Fase 2.
 
 ---
 
-## 10. Problemas Históricos (NUNCA Repetir)
+## 11. Problemas Históricos (NUNCA Repetir)
 
 1. **Código duplicado** — Python usa la última definición silenciosamente
 2. **Estados desalineados** — Selection vs métodos → ValueError
@@ -386,7 +404,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 
 ---
 
-## 11. Reglas Absolutas de Código
+## 12. Reglas Absolutas de Código
 
 1. SIEMPRE comentar cada función con docstring en **español**
 2. SIEMPRE comentar líneas no obvias dentro de los métodos
@@ -405,7 +423,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 
 ---
 
-## 12. Dev Workflow Git
+## 13. Dev Workflow Git
 
 ```bash
 # Inicio de cada etapa
@@ -444,7 +462,7 @@ chore: descripción           ← mantenimiento
 
 ---
 
-## 13. Reglas de Trabajo por Herramienta
+## 14. Reglas de Trabajo por Herramienta
 
 ### Claude Code (consola IDE)
 - Lee `CLAUDE.md` automáticamente al iniciar
@@ -479,7 +497,7 @@ chore: descripción           ← mantenimiento
 
 ---
 
-## 14. Formato SDD Obligatorio
+## 15. Formato SDD Obligatorio
 
 Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar:
 
@@ -502,7 +520,7 @@ Módulo, Fecha, Prioridad, Branch GIT
 
 ---
 
-## 15. Qué Actualizar al Terminar Cada Etapa
+## 16. Qué Actualizar al Terminar Cada Etapa
 
 ### En CLAUDE.md (obligatorio antes del commit):
 1. Fecha en el encabezado → fecha actual
@@ -525,7 +543,7 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 
 ---
 
-## 16. Semillas Entre Fases (No Olvidar)
+## 17. Semillas Entre Fases (No Olvidar)
 
 | Cuándo | Qué | Para qué |
 |---|---|---|
@@ -543,9 +561,9 @@ _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `context
 _Actualizar después de cada etapa completada._
 
 ## Próxima etapa
-**V2.2.2 — Refuerzo flujo timbrado Carta Porte**
-- [ ] Auditoría completa xml_builder.py (todos los nodos XML)
-- [ ] Fix bug sustitución datos fiscales en ambiente pruebas (_get_datos_fiscales)
-- [ ] Mover generación id_ccp al momento del timbrado en xml_builder.py
-- [ ] Wizard de pre-validación antes de timbrar (nuevo TransientModel)
+**Fix 3 — Eliminar botón "Confirmar Pedido"**
+- [ ] Mover validaciones de `action_confirm_order` a `action_do_stamp_cfdi`
+- [ ] Eliminar `action_confirm_order` del modelo `tms_waybill.py`
+- [ ] Eliminar botón de todas las vistas (form + portal)
+- [ ] Necesario antes de V2.3 (simplifica el flujo aprobado → timbrar)
 
