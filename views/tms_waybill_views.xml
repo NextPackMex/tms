@@ -173,7 +173,6 @@
             <form string="Viaje" create="false">
                 <header>
                     <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
-                    <button name="action_confirm_order" string="Confirmar Pedido" type="object" class="btn-primary" invisible="state != 'aprobado'"/>
                     <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
                     <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state not in ('cotizado', 'aprobado')"/>
                     <!-- Botón Iniciar Ruta: solo visible cuando estado es 'waybill' (Carta Porte Lista) -->
@@ -234,6 +233,25 @@
 
                     <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,waybill,in_transit,arrived,closed" statusbar_colors="cotizado:secondary;aprobado:info;waybill:success;in_transit:primary;arrived:warning;closed:dark"/>
                 </header>
+
+                <!-- Banner: datos faltantes para timbrar (solo en estado aprobado) -->
+                <div class="alert alert-danger mb-0"
+                     role="alert"
+                     invisible="tms_stamp_ready or state != 'aprobado'">
+                    <field name="tms_stamp_ready" invisible="1"/>
+                    <field name="tms_stamp_missing" invisible="1"/>
+                    <strong>⚠️ Faltan datos para timbrar:</strong>
+                    <field name="tms_stamp_missing" readonly="1" nolabel="1"
+                           style="display:inline; color:#842029;"/>
+                </div>
+
+                <!-- Banner: listo para timbrar (solo en estado aprobado) -->
+                <div class="alert alert-success mb-0"
+                     role="status"
+                     invisible="not tms_stamp_ready or state != 'aprobado'">
+                    <strong>✅ Listo para timbrar.</strong>
+                    Presiona "Timbrar Carta Porte" para continuar.
+                </div>
 
                 <sheet>
                     <!-- =============================================
@@ -580,10 +598,12 @@
                             <field name="has_dangerous_lines" invisible="1"/>
                             <field name="line_ids" readonly="cfdi_status == 'timbrado'">
                                 <list editable="bottom">
-                                    <field name="product_sat_id" string="Clave SAT"/>
+                                    <field name="product_sat_id" string="Clave SAT"
+                                           decoration-danger="not product_sat_id"/>
                                     <field name="description" string="Descripción"/>
                                     <field name="quantity" string="Cant."/>
-                                    <field name="uom_sat_id" string="Unidad"/>
+                                    <field name="uom_sat_id" string="Unidad"
+                                           decoration-danger="not uom_sat_id"/>
                                     <field name="dim_largo" string="↔ Lrg"/>
                                     <field name="dim_ancho" string="↕ Anc"/>
                                     <field name="dim_alto"  string="↑ Alt"/>

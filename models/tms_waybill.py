@@ -283,6 +283,92 @@ class TmsWaybill(models.Model):
         readonly=True
     )
 
+    # ── Validación visual para timbrado ──────────────────────────────
+    # Indica si el waybill tiene todos los datos mínimos para timbrar.
+    # Solo activo en estado 'aprobado' — visible en el banner del formulario.
+    tms_stamp_ready = fields.Boolean(
+        string='Listo para timbrar',
+        compute='_compute_stamp_readiness',
+        store=False,
+    )
+    tms_stamp_missing = fields.Char(
+        string='Datos faltantes para timbrar',
+        compute='_compute_stamp_readiness',
+        store=False,
+    )
+
+    @api.depends(
+        'state',
+        'vehicle_id', 'vehicle_id.license_plate',
+        'vehicle_id.sat_permiso_sct_id', 'vehicle_id.sat_config_id',
+        'driver_id', 'driver_id.tms_driver_license',
+        'line_ids', 'line_ids.product_sat_id', 'line_ids.uom_sat_id',
+        'partner_invoice_id', 'partner_invoice_id.vat',
+        'partner_invoice_id.zip',
+        'partner_invoice_id.l10n_mx_edi_fiscal_regime',
+        'partner_invoice_id.l10n_mx_edi_usage',
+        'distance_km',
+    )
+    def _compute_stamp_readiness(self):
+        """
+        Calcula si el waybill tiene todos los datos necesarios para timbrar.
+        Muestra un resumen de qué falta directamente en el formulario,
+        sin necesidad de abrir el wizard de validación.
+        Solo aplica cuando state == 'aprobado'; en otros estados devuelve
+        ready=True para no mostrar el banner innecesariamente.
+        """
+        for rec in self:
+            if rec.state != 'aprobado':
+                rec.tms_stamp_ready = True
+                rec.tms_stamp_missing = ''
+                continue
+
+            faltantes = []
+
+            # ── Vehículo ──────────────────────────────────────────────
+            if not rec.vehicle_id:
+                faltantes.append('Vehículo')
+            else:
+                if not rec.vehicle_id.license_plate:
+                    faltantes.append('Placa del vehículo')
+                if not rec.vehicle_id.sat_permiso_sct_id:
+                    faltantes.append('Permiso SCT del vehículo')
+                if not rec.vehicle_id.sat_config_id:
+                    faltantes.append('Config. SAT del vehículo')
+
+            # ── Chofer ────────────────────────────────────────────────
+            if not rec.driver_id:
+                faltantes.append('Chofer')
+            elif not rec.driver_id.tms_driver_license:
+                faltantes.append('Licencia del chofer')
+
+            # ── Mercancías ────────────────────────────────────────────
+            if not rec.line_ids:
+                faltantes.append('Mercancías')
+            else:
+                sin_clave = rec.line_ids.filtered(lambda l: not l.product_sat_id)
+                sin_uom   = rec.line_ids.filtered(lambda l: not l.uom_sat_id)
+                if sin_clave:
+                    faltantes.append('Clave SAT en mercancías')
+                if sin_uom:
+                    faltantes.append('Unidad SAT en mercancías')
+
+            # ── Receptor ─────────────────────────────────────────────
+            if not rec.partner_invoice_id:
+                faltantes.append('Cliente de facturación')
+            else:
+                if not rec.partner_invoice_id.l10n_mx_edi_fiscal_regime:
+                    faltantes.append('Régimen Fiscal del cliente')
+                if not rec.partner_invoice_id.l10n_mx_edi_usage:
+                    faltantes.append('Uso CFDI del cliente')
+
+            # ── Ruta ─────────────────────────────────────────────────
+            if not rec.distance_km or rec.distance_km <= 0:
+                faltantes.append('Ruta calculada (distance_km)')
+
+            rec.tms_stamp_ready  = not bool(faltantes)
+            rec.tms_stamp_missing = ', '.join(faltantes) if faltantes else ''
+
     # ============================================================
     # ACCIONES: Clear (Limpieza de Campos)
     # ============================================================
@@ -1103,74 +1189,6 @@ class TmsWaybill(models.Model):
             raise UserError(_("Solo se pueden aprobar viajes en estado Cotizado."))
         self.write({'state': 'aprobado'})
         return True
-
-    def _validate_before_confirm(self):
-        """
-        Valida que el waybill tenga todos los datos mínimos operativos
-        antes de confirmar el pedido (transición aprobado → draft → en_pedido).
-
-        Agrupa todos los errores y los muestra juntos para que el usuario
-        pueda corregirlos todos de una vez, en lugar de un error por vez.
-
-        NOTA: Los siguientes campos del task NO existen aún y se omiten:
-          - fecha_embarque (no definido en el modelo — agregar en V2.2)
-          - vehicle_status == 'blocked' (semilla V2.5 — fleet.vehicle)
-        """
-        errors = []
-
-        # ── GRUPO 1: RUTA ──────────────────────────────────────────────
-        if not self.partner_origin_id:
-            errors.append("• Remitente (origen del viaje)")
-        if not self.partner_dest_id:
-            errors.append("• Destinatario")
-        if not self.origin_zip:
-            errors.append("• Código Postal de origen")
-        if not self.dest_zip:
-            errors.append("• Código Postal de destino")
-
-        # ── GRUPO 2: VEHÍCULO Y CHOFER ──────────────────────────────────
-        if not self.vehicle_id:
-            errors.append("• Vehículo (tracto) asignado")
-        if not self.driver_id:
-            errors.append("• Chofer asignado")
-
-        # ── GRUPO 3: MERCANCÍAS ─────────────────────────────────────────
-        if not self.line_ids:
-            errors.append("• Al menos una línea de mercancía")
-        else:
-            for i, line in enumerate(self.line_ids, 1):
-                ref = line.description or f'Línea #{i}'
-                if not line.description:
-                    errors.append(f"• Mercancía #{i}: falta la descripción")
-                if not line.quantity or line.quantity <= 0:
-                    errors.append(f"• Mercancía #{i} ({ref}): falta la cantidad")
-                if not line.weight_kg or line.weight_kg <= 0:
-                    errors.append(f"• Mercancía #{i} ({ref}): falta el peso (kg)")
-                # product_sat_id = clave SAT del producto (requerida para Carta Porte)
-                if not line.product_sat_id:
-                    errors.append(
-                        f"• Mercancía #{i} ({ref}): falta la Clave SAT del producto"
-                    )
-                # Dimensiones obligatorias para Carta Porte 3.1
-                if line.dim_largo <= 0 or line.dim_ancho <= 0 or line.dim_alto <= 0:
-                    errors.append(
-                        f"• Mercancía #{i} ({ref}): "
-                        f"faltan dimensiones (Largo, Ancho y Alto en cm)"
-                    )
-
-        if errors:
-            raise UserError(
-                _("Para confirmar el pedido, completa los siguientes campos:\n\n")
-                + "\n".join(errors)
-            )
-
-    def action_confirm_order(self):
-        """Transición aprobado → waybill. Delega a action_approve_cp para validación CP 3.1."""
-        self.ensure_one()
-        if self.state != 'aprobado':
-            raise UserError(_("Solo se pueden confirmar viajes en estado Aprobado."))
-        return self.action_approve_cp()
-
 
     # ============================================================
     # MOTOR DE COTIZACIÓN (Costos y Propuestas)
