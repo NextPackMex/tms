@@ -52,16 +52,18 @@ class TmsWaybill(models.Model):
 
     CONCEPTO: Fusiona Cotización + Operación + Carta Porte en un solo documento.
 
-    WORKFLOW (8 Etapas Reales):
-    1. Solicitud (draft)          → Cotización inicial / borrador
-    2. En Pedido (en_pedido)      → Pedido confirmado por cliente
-    3. Por Asignar (assigned)     → Confirmada, asignar vehículo/chofer
-    4. Carta Porte (waybill)      → CP lista para timbrar
-    5. En Trayecto (in_transit)   → Chofer en camino
-    6. En Destino (arrived)       → Entregado
-    7. Facturado (closed)         → Cerrado/Facturado
-    8. Cancelado (cancel)         → Anulado
-    9. Rechazado (rejected)       → Rechazado desde portal
+    WORKFLOW (8 Estados — simplificado en V2.5):
+    1. Cotizado   (cotizado)    → Pre-cotización generada, pendiente aprobación cliente
+    2. Aprobado   (aprobado)    → Cliente aprobó precio; completar datos y timbrar
+    3. Carta Porte (waybill)   → CP timbrada con PAC, listo para salir a ruta
+    4. En Trayecto (in_transit) → Chofer en camino al destino
+    5. En Destino  (arrived)   → Entregado, pendiente de facturar
+    6. Facturado   (closed)    → Viaje cerrado / factura emitida
+    --- Excepciones ---
+    7. Cancelado   (cancel)    → Anulado en cualquier etapa
+    8. Rechazado   (rejected)  → Rechazado desde portal por el cliente
+
+    NOTA: draft, en_pedido y assigned fueron eliminados del Selection en V2.5.
 
     ARQUITECTURA HÍBRIDA:
     - Plan A: App Móvil reporta GPS (action_driver_report API)
@@ -1619,8 +1621,8 @@ class TmsWaybill(models.Model):
         """
         Controla qué columnas aparecen en el Kanban agrupado por estado.
         Solo retorna los 6 estados operativos visibles al transportista.
-        Los estados internos (draft, en_pedido, assigned, cancel, rejected)
-        siguen existiendo en el flujo Python pero no se muestran como columnas.
+        cancel y rejected existen en el Selection pero se omiten del tablero Kanban.
+        draft, en_pedido y assigned fueron eliminados del Selection en V2.5.
         """
         return [
             'cotizado',
