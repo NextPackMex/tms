@@ -287,11 +287,13 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - `tms.driver.settlement`: flete × % chofer + reembolsos − anticipos − deducciones
 - Comprobante PDF firmado digitalmente, saldo arrastrado entre viajes
 
-### ✅ V2.5 — Limpieza y Data Integrity (COMPLETADO)
+### 🚧 V2.5 — Limpieza y Data Integrity (EN CURSO — Semillas Pendientes)
 - ✅ Estados simplificados a 6 (ciclo vital Hombre Camión)
 - ✅ Normalización t-esc → t-out (tracking events)
 - ✅ Badges Kanban dinámicos por estado y urgencia
-- ✅ ⚠️ SEMILLAS Fase 2: `fleet.vehicle.current_zip` + `res.partner.is_tms_carrier`
+- ❌ PENDIENTE: current_zip (fleet.vehicle) — Matching geográfico Fase 2
+- ❌ PENDIENTE: vehicle_status (fleet.vehicle) — Bloquear vehículo en falla ⚠️ RIESGO: Referenciado en comentario action_confirm_order (tms_waybill.py) — si se convierte en código real sin implementar el campo → crash inmediato.
+- ❌ PENDIENTE: is_tms_carrier (res.partner) — Filtrar transportistas marketplace
 
 ### 📋 V2.6 — KPIs, Reportes y Portal Web
 - Dashboard ingresos, rentabilidad por vehículo, rendimiento diesel
@@ -370,9 +372,22 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 | FIX-C | ✅ | Waybill readonly post-timbrado | Resuelto |
 | FIX-D | ✅ | Onboarding sincroniza company.partner_id | Resuelto |
 
+## 10. Deuda Técnica Conocida
+
+### Semillas V2.5 — campos pendientes de implementar
+Estos campos están documentados en el roadmap pero NO existen en el código. No bloquean V2.3 ni V2.4.
+
+| Campo | Modelo | Para qué | Prioridad |
+|---|---|---|---|
+| current_zip | fleet.vehicle | Matching geográfico futuro (Fase 2) | Baja |
+| vehicle_status | fleet.vehicle | Bloquear wizard si vehículo en falla | Media ⚠️ |
+| is_tms_carrier | res.partner | Marketplace: filtrar transportistas | Baja |
+
+Implementar antes de V2.7 / Fase 2.
+
 ---
 
-## 10. Problemas Históricos (NUNCA Repetir)
+## 11. Problemas Históricos (NUNCA Repetir)
 
 1. **Código duplicado** — Python usa la última definición silenciosamente
 2. **Estados desalineados** — Selection vs métodos → ValueError
@@ -387,7 +402,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 
 ---
 
-## 11. Reglas Absolutas de Código
+## 12. Reglas Absolutas de Código
 
 1. SIEMPRE comentar cada función con docstring en **español**
 2. SIEMPRE comentar líneas no obvias dentro de los métodos
@@ -406,7 +421,7 @@ line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
 
 ---
 
-## 12. Dev Workflow Git
+## 13. Dev Workflow Git
 
 ```bash
 # Inicio de cada etapa
@@ -445,7 +460,7 @@ chore: descripción           ← mantenimiento
 
 ---
 
-## 13. Reglas de Trabajo por Herramienta
+## 14. Reglas de Trabajo por Herramienta
 
 ### Claude Code (consola IDE)
 - Lee `CLAUDE.md` automáticamente al iniciar
@@ -480,7 +495,7 @@ chore: descripción           ← mantenimiento
 
 ---
 
-## 14. Formato SDD Obligatorio
+## 15. Formato SDD Obligatorio
 
 Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar:
 
@@ -503,7 +518,7 @@ Módulo, Fecha, Prioridad, Branch GIT
 
 ---
 
-## 15. Qué Actualizar al Terminar Cada Etapa
+## 16. Qué Actualizar al Terminar Cada Etapa
 
 ### En CLAUDE.md (obligatorio antes del commit):
 1. Fecha en el encabezado → fecha actual
@@ -526,7 +541,7 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 
 ---
 
-## 16. Semillas Entre Fases (No Olvidar)
+## 17. Semillas Entre Fases (No Olvidar)
 
 | Cuándo | Qué | Para qué |
 |---|---|---|
