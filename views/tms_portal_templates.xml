@@ -62,14 +62,26 @@
                                     <t t-elif="waybill.state == 'aprobado'">
                                         <span class="badge bg-warning text-dark">Aprobada — pendiente de confirmar</span>
                                     </t>
-                                    <t t-elif="waybill.state == 'aprobado'">
-                                        <span class="badge bg-success">Aceptado</span>
+                                    <t t-elif="waybill.state == 'waybill'">
+                                        <span class="badge bg-primary">Carta Porte Lista</span>
+                                    </t>
+                                    <t t-elif="waybill.state == 'in_transit'">
+                                        <span class="badge bg-info text-dark">En Tránsito</span>
+                                    </t>
+                                    <t t-elif="waybill.state == 'arrived'">
+                                        <span class="badge bg-success">En Destino</span>
+                                    </t>
+                                    <t t-elif="waybill.state == 'closed'">
+                                        <span class="badge bg-success">Facturado / Cerrado</span>
+                                    </t>
+                                    <t t-elif="waybill.state == 'cancel'">
+                                        <span class="badge bg-danger">Cancelado</span>
                                     </t>
                                     <t t-elif="waybill.state == 'rejected'">
                                         <span class="badge bg-danger">Rechazado</span>
                                     </t>
                                     <t t-else="">
-                                        <span class="badge bg-info" t-esc="waybill.state"/>
+                                        <span class="badge bg-secondary" t-esc="waybill.state"/>
                                     </t>
                                 </div>
 
@@ -324,43 +336,45 @@
                                 SECCIÓN: UNIDAD Y CHOFER
                                 ================================================================
                             -->
-                            <div class="card mb-4">
-                                <div class="card-header">
-                                    <h5 class="mb-0"><i class="fa fa-truck"/> Unidad Asignada</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <t t-if="waybill.vehicle_id">
-                                            <div class="col-md-6 mb-3">
-                                                <strong>Vehículo (Tractor):</strong><br/>
-                                                <span t-esc="waybill.vehicle_id.license_plate"/> - <span t-esc="waybill.vehicle_id.model_id.name"/>
-                                            </div>
-                                        </t>
-                                        <t t-if="waybill.driver_id">
-                                            <div class="col-md-6 mb-3">
-                                                <strong>Chofer:</strong><br/>
-                                                <span t-esc="waybill.driver_id.name"/>
-                                            </div>
-                                        </t>
+                            <t t-if="waybill.vehicle_id or waybill.driver_id or waybill.trailer1_id or waybill.trailer2_id">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fa fa-truck"/> Unidad Asignada</h5>
                                     </div>
-                                    <div class="row">
-                                         <t t-if="waybill.trailer1_id">
-                                            <div class="col-md-6 mb-3">
-                                                <strong>Remolque 1:</strong><br/>
-                                                <span t-esc="waybill.trailer1_id.license_plate"/>
-                                                <t t-if="waybill.trailer1_id.model_id"> - <span t-esc="waybill.trailer1_id.model_id.name"/></t>
-                                            </div>
-                                        </t>
-                                         <t t-if="waybill.trailer2_id">
-                                            <div class="col-md-6 mb-3">
-                                                <strong>Remolque 2:</strong><br/>
-                                                <span t-esc="waybill.trailer2_id.license_plate"/>
-                                                 <t t-if="waybill.trailer2_id.model_id"> - <span t-esc="waybill.trailer2_id.model_id.name"/></t>
-                                            </div>
-                                        </t>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <t t-if="waybill.vehicle_id">
+                                                <div class="col-md-6 mb-3">
+                                                    <strong>Vehículo (Tractor):</strong><br/>
+                                                    <span t-esc="waybill.vehicle_id.license_plate"/> - <span t-esc="waybill.vehicle_id.model_id.name"/>
+                                                </div>
+                                            </t>
+                                            <t t-if="waybill.driver_id">
+                                                <div class="col-md-6 mb-3">
+                                                    <strong>Chofer:</strong><br/>
+                                                    <span t-esc="waybill.driver_id.name"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                        <div class="row">
+                                            <t t-if="waybill.trailer1_id">
+                                                <div class="col-md-6 mb-3">
+                                                    <strong>Remolque 1:</strong><br/>
+                                                    <span t-esc="waybill.trailer1_id.license_plate"/>
+                                                    <t t-if="waybill.trailer1_id.model_id"> - <span t-esc="waybill.trailer1_id.model_id.name"/></t>
+                                                </div>
+                                            </t>
+                                            <t t-if="waybill.trailer2_id">
+                                                <div class="col-md-6 mb-3">
+                                                    <strong>Remolque 2:</strong><br/>
+                                                    <span t-esc="waybill.trailer2_id.license_plate"/>
+                                                    <t t-if="waybill.trailer2_id.model_id"> - <span t-esc="waybill.trailer2_id.model_id.name"/></t>
+                                                </div>
+                                            </t>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </t>
 
                             <!--
                                 ================================================================

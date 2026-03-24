@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-23 — V2.2.2 COMPLETADA (Refuerzo Timbrado)
+# Última actualización: 2026-03-23 — V2.2 COMPLETADA (etapa 2.2.2 es la siguiente)
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -19,7 +19,7 @@
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
 **Versión módulo:** 19.0.2.2
-**Progreso actual:** ~65% — V2.2.2 completado
+**Progreso actual:** ~60% — V2.2 completado, V2.2.2 es la siguiente etapa
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -260,9 +260,8 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 **Hitos técnicos:**
 - ✅ Core: Timbrado CFDI 4.0 + CP 3.1 (UUID: 97367659-43B7-40E2-9AEC-731A014F9D46)
 - ✅ V2.2.1: PDF Carta Porte timbrada (7 secciones + QR SAT)
-- ✅ V2.2.2: Refuerzo flujo timbrado + wizard validación (2026-03-23)
 - ✅ Migración: `tms_regimen_fiscal` → `tms.sat.regimen.fiscal` (PR #10)
-- ✅ Servicios: xml_builder (id_ccp movido), xml_signer, pac_manager
+- ✅ Servicios: xml_builder, xml_signer, pac_manager (dual PAC)
 - ✅ Semilla: Modelo `tms.route.analytics` creado
 
 ### 📋 V2.3 — Facturación Real
@@ -559,10 +558,9 @@ _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `context
 _Actualizar después de cada etapa completada._
 
 ## Próxima etapa
-**Opciones en orden de dificultad:**
-- [ ] Fix rápido: ocultar toll_cost en PDF pre-cotización (tms_cotizacion_report_template.xml)
-- [ ] Fix rápido: invisible="not vehicle_id" en bloque portal "Unidad Asignada"
-- [ ] Fix medio: mover validaciones "Confirmar Pedido" → "Timbrar" y eliminar botón
-- [ ] V2.4: KPIs + portal cliente
-- [ ] V2.3: Facturación real account.move (más compleja)
+**V2.2.2 — Refuerzo flujo timbrado Carta Porte**
+- [ ] Auditoría completa xml_builder.py (todos los nodos XML)
+- [ ] Fix bug sustitución datos fiscales en ambiente pruebas (_get_datos_fiscales)
+- [ ] Mover generación id_ccp al momento del timbrado en xml_builder.py
+- [ ] Wizard de pre-validación antes de timbrar (nuevo TransientModel)
 
