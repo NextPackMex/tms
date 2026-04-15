@@ -179,8 +179,10 @@
                     <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'waybill'"/>
                     <!-- Botón Registrar Llegada: solo visible cuando estado es 'in_transit' (En Trayecto) -->
                     <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'in_transit'"/>
-                    <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
-                    <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
+                    <!-- Botón Facturar: visible desde aprobado hasta arrived (sin estado closed ni cancel) -->
+                    <button name="action_create_invoice" string="Facturar" type="object"
+                            class="oe_highlight"
+                            invisible="state not in ('aprobado','waybill','in_transit','arrived')"/>
                     <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
                     <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['cotizado','aprobado']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
@@ -268,6 +270,19 @@
                                 <span class="o_stat_text">Vehículo</span>
                             </div>
                         </button>
+
+                        <!-- Smart Button: Ver Factura(s) — visible cuando hay facturas vinculadas -->
+                        <button type="object"
+                                name="action_view_invoices"
+                                class="oe_stat_button"
+                                icon="fa-file-text-o"
+                                invisible="not invoice_ids">
+                            <field name="invoice_ids" widget="statinfo"
+                                   string="Factura(s)" nolabel="1"/>
+                        </button>
+
+                        <!-- Campo invisible para condiciones -->
+                        <field name="invoice_status" invisible="1"/>
 
                     </div>
 
@@ -622,6 +637,32 @@
 
                         <!-- ======================= -->
                         <!-- BITÁCORA GPS           -->
+                        <!-- ======================= -->
+                        <!-- Facturación CFDI Ingreso: visible desde estado aprobado en adelante -->
+                        <page string="Facturación" invisible="state == 'cotizado'"
+                              name="facturacion_page">
+                            <group string="Estado de Facturación">
+                                <field name="invoice_status" readonly="1"/>
+                                <field name="invoice_ids" readonly="1" nolabel="1"
+                                       invisible="not invoice_ids">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="tms_cfdi_status"/>
+                                        <field name="tms_cfdi_uuid"/>
+                                        <field name="amount_untaxed"/>
+                                        <field name="amount_total"/>
+                                        <field name="currency_id" column_invisible="1"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <div class="alert alert-info" role="status"
+                                 invisible="invoice_status == 'invoiced' or state == 'cotizado'">
+                                <i class="fa fa-info-circle"/>
+                                Para generar la factura CFDI Ingreso, usa el botón
+                                <strong>"Facturar"</strong> en la barra de herramientas superior.
+                            </div>
+                        </page>
+
                         <!-- ======================= -->
                         <!-- Bitácora GPS: solo relevante cuando el viaje ya salió (desde estado waybill) -->
                         <page string="Bitácora GPS" invisible="state in ['cotizado','aprobado']">

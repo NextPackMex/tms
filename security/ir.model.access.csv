@@ -43,3 +43,9 @@ access_tms_onboarding_wizard_user,tms.onboarding.wizard.user,model_tms_onboardin
 access_tms_onboarding_wizard_manager,tms.onboarding.wizard.manager,model_tms_onboarding_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_stamp_validation_wizard_user,tms.stamp.validation.wizard.user,model_tms_stamp_validation_wizard,tms.group_tms_user,1,1,1,1
 access_tms_stamp_validation_wizard_manager,tms.stamp.validation.wizard.manager,model_tms_stamp_validation_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_sat_zona_especial_user,tms.sat.zona.especial.user,model_tms_sat_zona_especial,base.group_user,1,0,0,0
+access_tms_sat_zona_especial_manager,tms.sat.zona.especial.manager,model_tms_sat_zona_especial,tms.group_tms_manager,1,1,1,1
+access_tms_invoice_wizard_user,tms.invoice.wizard.user,model_tms_invoice_wizard,tms.group_tms_user,1,1,1,1
+access_tms_invoice_wizard_manager,tms.invoice.wizard.manager,model_tms_invoice_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_cancel_invoice_wizard_user,tms.cancel.invoice.wizard.user,model_tms_cancel_invoice_wizard,tms.group_tms_user,1,1,1,1
+access_tms_cancel_invoice_wizard_manager,tms.cancel.invoice.wizard.manager,model_tms_cancel_invoice_wizard,tms.group_tms_manager,1,1,1,1

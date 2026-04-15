@@ -79,6 +79,7 @@
         'data/tms_sequence_data.xml',
         'data/tms_data.xml',
         'data/sat_regimen_fiscal.xml',
+        'data/tms.sat.zona.especial.csv',
 
 
         # 3. Wizard de importación
@@ -115,10 +116,13 @@
         'wizard/tms_cotizacion_wizard_views.xml',
         'wizard/tms_onboarding_wizard_views.xml',
         'wizard/tms_stamp_validation_wizard_views.xml',
+        'wizard/tms_invoice_wizard_views.xml',
+        'wizard/tms_cancel_invoice_wizard_views.xml',
 
         # 7. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',
         'views/tms_fuel_history_views.xml',
+        'views/account_move_tms_views.xml',
 
         # 8. Dashboard
         'views/tms_dashboard_views.xml',
@@ -132,6 +136,7 @@
         'reports/tms_cotizacion_report_template.xml',
         'reports/tms_carta_porte_report.xml',
         'reports/tms_carta_porte_report_template.xml',
+        'reports/tms_invoice_report.xml',
         'data/mail_template_data.xml',
         'data/mail_template_cotizacion.xml',
 

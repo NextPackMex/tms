@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-24 — V2.2.2 COMPLETADA + fixes post-timbrado
+# Última actualización: 2026-04-15 — V2.3 COMPLETADA (CFDI Ingreso / Facturación Real)
 # ══════════════════════════════════════════════════════════════
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
@@ -18,8 +18,8 @@
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.2
-**Progreso actual:** ~65% — V2.2.2 completado
+**Versión módulo:** 19.0.2.3
+**Progreso actual:** ~75% — V2.3 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -169,20 +169,26 @@ tms/                                    # Módulo principal
 │   ├── res_partner_tms.py              # _inherit contactos SAT
 │   ├── res_company.py                  # _inherit empresa
 │   ├── res_config_settings.py          # _inherit APIs + seguros
-│   └── sat_*.py                        # 11 catálogos SAT
+│   ├── account_move_tms.py             # _inherit account.move (CFDI Ingreso V2.3)
+│   ├── tms_sat_zona_especial.py        # Catálogo ZEDE IVA 0% (V2.3)
+│   └── sat_*.py                        # 12 catálogos SAT
 ├── views/
 │   ├── tms_waybill_views.xml
 │   ├── tms_fleet_vehicle_views.xml
 │   ├── tms_destination_views.xml
+│   ├── account_move_tms_views.xml      # Pestaña TMS + botones en factura (V2.3)
 │   └── res_config_settings_views.xml
 ├── reports/
 │   ├── tms_waybill_report.xml
 │   ├── tms_cotizacion_report.xml
 │   ├── tms_cotizacion_report_template.xml
 │   ├── tms_carta_porte_report.xml          # Acción reporte PDF CP timbrada (V2.2.1)
-│   └── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
+│   ├── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
+│   └── tms_invoice_report.xml              # PDF Factura CFDI Ingreso (V2.3)
 ├── wizard/
 │   ├── tms_cotizacion_wizard.py        # Wizard cotización 2 pasos
+│   ├── tms_invoice_wizard.py           # Wizard facturación 4 pasos (V2.3)
+│   ├── tms_cancel_invoice_wizard.py    # Wizard cancelación CFDI motivos 01/02/03 (V2.3)
 │   └── tms_cotizacion_wizard_views.xml
 ├── security/
 │   ├── tms_security.xml
@@ -271,10 +277,21 @@ tms_analytics/                          # Datos de mercado (Fase 3)
   - Wizard ampliado a 20 checks en 7 secciones
   - Banner rojo/verde en formulario waybill (tms_stamp_ready)
   - decoration-danger en product_sat_id y uom_sat_id
+- ✅ chore: comentarios históricos draft/en_pedido/assigned limpiados en tms_waybill.py (2026-03-24)
 
-### 📋 V2.3 — Facturación Real
-- CFDI de ingreso vinculado al waybill via `account.move`
-- ⚠️ SEMILLA: activar hook `waybill.closed → _update_from_waybill()`
+### ✅ V2.3 — Facturación Real (COMPLETADO — 2026-04-15)
+**Hitos técnicos:**
+- ✅ `account.move` extendido: 12 campos `tms_*`, timbrado CFDI Ingreso, cancelación, helpers PDF
+- ✅ Wizard 4 pasos: modo (simple/consolidado), cliente+viajes, datos fiscales, resultado+UUID
+- ✅ Cancelación motivos 01/02/03: liberación automática waybills en 02/03, sustituta en 01
+- ✅ `xml_builder.py` dispatch: `build(waybill_or_move, tipo='T'|'I')` — retrocompatible
+- ✅ CFDI Ingreso: N pares OR/DE, N conceptos, IVA 16%, Retención 4% condicional, ZEDE IVA 0%
+- ✅ Catálogo `tms.sat.zona.especial` (Istmo Tehuantepec — 8 zonas ZEDE)
+- ✅ PDF 7 secciones: header, receptor, conceptos, totales, detalles viajes, cadena TFD, QR SAT
+- ✅ Botón Facturar desde estado `aprobado` en adelante
+- ✅ Estado `closed` solo cuando `tms_cfdi_status='timbrada'` (compute, no write directo)
+- ✅ Botón "Volver a facturar" en facturas canceladas (motivo 02/03)
+- ✅ ⚠️ SEMILLA PENDIENTE: activar hook `waybill.closed → _update_from_waybill()`
 
 ### 📋 V2.4 🆕 — Combustible y Rendimiento (`tms_fuel/`)
 - `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
@@ -508,24 +525,136 @@ chore: descripción           ← mantenimiento
 
 ## 15. Formato SDD Obligatorio
 
-Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar:
+> ⚠️ Todo SDD generado para este proyecto debe incluir las siguientes secciones
+> en este orden exacto. Sin excepciones. Aplica para Claude, Gemini CLI, Antigravity y Claude Code.
+
+Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar.
+
+### Encabezado
 
 ```markdown
 # SDD — Etapa X.X.X: Nombre
-Módulo, Fecha, Prioridad, Branch GIT
-
-## GIT (solo primer prompt de etapa)
-## PROBLEMA
-## SOLUCIÓN
-## CAMBIOS (tablas de campos, modelos)
-## ACCEPTANCE CRITERIA (AC-01, AC-02...)
-## UPGRADE COMMAND
-## Context Blueprint
-  - Modelos _name
-  - File Manifest (ruta + Crear/Modificar)
-  - Decoradores + campos nuevos
-  - Seguridad (access.csv + groups)
+Módulo:   tms
+Fecha:    YYYY-MM-DD
+Branch:   feat/etapa-X.X.X-nombre
+Estado:   Draft | En progreso | Completado
 ```
+
+### Sección 1 — GIT (solo primer prompt de etapa)
+```bash
+git checkout main && git pull origin main
+git checkout -b feat/etapa-X.X.X-nombre
+```
+
+### Sección 2 — Problema
+Descripción funcional del problema o necesidad en lenguaje de negocio.
+
+### Sección 3 — Solución
+Descripción de la solución técnica propuesta.
+
+### Sección 4 — Modelos afectados
+| Modelo | Acción | Archivo |
+|--------|--------|---------|
+| tms.waybill | _inherit | models/tms_waybill.py |
+| tms.nuevo.modelo | Create | models/tms_nuevo_modelo.py |
+
+### Sección 5 — File Manifest
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| models/tms_waybill.py | Modify | Agregar campo X |
+| views/tms_waybill_views.xml | Modify | Agregar campo en form |
+| security/ir.model.access.csv | Modify | Nuevos grupos si aplica |
+
+### Sección 6 — Campos nuevos
+| Nombre | Tipo | Descripción | Requerido |
+|--------|------|-------------|-----------|
+| campo_nuevo | Char | Descripción clara | Sí/No |
+
+### Sección 7 — Flujo funcional
+Pasos numerados desde el punto de vista del usuario final.
+
+### Sección 8 — Criterios de aceptación
+- [ ] AC-01: criterio verificable
+- [ ] AC-02: criterio verificable
+(mínimo 5 ACs)
+
+### Sección 9 — Tests requeridos ← NIVEL 4
+Mínimo 5 tests. Formato: `test_nombre → qué valida`
+- [ ] test_waybill_state_flow → estados cotizado→aprobado→waybill funcionan
+- [ ] test_proposal_calculation → las 3 propuestas calculan valores positivos
+- [ ] test_retention_only_company → retención 4% solo si is_company=True
+- [ ] test_sat_catalog_global → catálogos SAT no tienen company_id
+- [ ] test_tollguru_cache → segunda llamada usa tms.destination en caché
+
+### Sección 10 — Definition of Done ← NIVEL 4
+- [ ] Todos los tests pasan sin error
+- [ ] Sin errores ni warnings en log de Odoo al instalar
+- [ ] Vista XML carga correctamente (list, form, search según aplique)
+- [ ] access.csv actualizado con todos los grupos necesarios
+- [ ] Estados del waybill NO alterados (solo los 7 válidos existen)
+- [ ] No hay campos/métodos duplicados (verificar con grep)
+- [ ] CLAUDE.md actualizado: fecha, versión, tabla de etapas
+
+### Sección 11 — Restricciones ← NIVEL 4
+- NO modificar modelos nativos de Odoo — siempre `_inherit`
+- Compatible exclusivamente con Odoo 19 Community Edition
+- Vistas: `<list>` NO `<tree>`, `invisible=` NO `attrs=`
+- Catálogos SAT NUNCA llevan `company_id`
+- Modelos operativos SIEMPRE llevan `company_id` + `check_company=True`
+- NUNCA `required=True` en campos de modelos heredados
+- Estados válidos del waybill: SOLO los 7 documentados en sección 4
+- [restricciones específicas del stage]
+
+### Sección 12 — Para Claude Code ← NIVEL 4
+```
+INPUT:  Este SDD + archivos actuales en /tms
+OUTPUT:
+  - [lista exacta de archivos a CREAR]
+  - [lista exacta de archivos a MODIFICAR]
+VALIDACIÓN:
+  - Correr: python3 odoo-bin -c odoo.conf -u tms --test-enable --stop-after-init -d tms_v2
+  - Confirmar que TODOS los tests pasan antes de reportar listo
+  - grep -n "WARNING\|ERROR" odoo.log | tail -20 → debe estar limpio
+  - Verificar que estados del waybill no fueron alterados
+```
+
+### Sección 13 — Upgrade command
+```bash
+python3 odoo-bin -c odoo.conf -u tms -d tms_v2 --stop-after-init
+```
+
+### Sección 14 — 🛠 Context Blueprint para Gemini
+```
+_name: [nombre exacto del modelo principal]
+
+File Manifest:
+| Archivo | Create/Modify |
+|---------|---------------|
+| path/archivo.py | Create/Modify |
+
+Decorators + fields explícitos:
+  _name = 'tms.xxx'
+  _description = '...'
+  _order = '...'
+  campo1 = fields.Tipo(string='...', required=True/False, company_dependent=True/False)
+  campo2 = fields.Tipo(string='...')
+
+Security:
+  access.csv: model_tms_xxx,tms.xxx,tms.group_tms_user,1,1,1,0
+  groups: tms.group_tms_user / tms.group_tms_manager
+
+Manifest Update:
+  'depends': [agregar si requiere módulo externo]
+  'data': [agregar rutas de nuevos XML/CSV]
+```
+
+### Reglas adicionales de SDDs
+- Tasks, walkthrough, thoughts e implementation plan → siempre en **español**
+- Comentarios en código generado → siempre en **español**
+- Cada función/método → docstring en español explicando qué hace
+- Si el stage toca el wizard de cotización → documentar impacto en los 2 pasos
+- Si el stage toca XML/timbrado → documentar impacto en xml_builder y pac_manager
+- Al finalizar cada etapa → explicar brevemente los conceptos clave del código generado
 
 ---
 
@@ -565,15 +694,15 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 
 ---
 
+## Próxima etapa
+**V2.3.1 — Notas de Crédito/Cargo y Cancelación CFDI Traslado**
+Pendiente definir SDD. Opciones:
+- CFDI Egreso tipo E (nota de crédito sin Carta Porte) — ajustes al Ingreso
+- Cancelación CFDI Traslado: mismos motivos 01/02/03, motivo 01 requiere Traslado sustituto
+- Cobro desde portal: botón de pago para receptor (MercadoPago / SPEI)
+
+---
+
 _Este archivo es el contexto técnico del proyecto._
 _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `contexto_maestro_tms_final.md`_
 _Actualizar después de cada etapa completada._
-
-## Próxima etapa
-**V2.3 — Facturación Real**
-- Auditoría previa antes de construir (metodología confirmada)
-- CFDI de ingreso vinculado al waybill via account.move
-- Retención IVA 4% (solo PM, no RESICO, nunca en Traslado)
-- IVA 0% para receptores en zonas ZEDE (validar receptor.zip)
-- Mover validaciones de estado al nuevo flujo
-

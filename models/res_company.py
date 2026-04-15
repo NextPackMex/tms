@@ -124,3 +124,14 @@ class ResCompany(models.Model):
         default=True,
         help='Si el PAC primario falla, intentar automáticamente con el secundario'
     )
+
+    # ============================================================
+    # FACTURACIÓN TMS (V2.3)
+    # ============================================================
+    tms_sales_journal_id = fields.Many2one(
+        'account.journal',
+        string='Diario de Ventas TMS',
+        domain="[('type', '=', 'sale'), ('company_id', '=', id)]",
+        help='Diario contable que se usará al generar facturas (CFDI Ingreso) desde el TMS. '
+             'Si no se configura, el wizard permitirá seleccionarlo manualmente.'
+    )

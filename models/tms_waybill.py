@@ -944,6 +944,32 @@ class TmsWaybill(models.Model):
         help='Retención de IVA (4%)'
     )
 
+    # ============================================================
+    # FACTURACIÓN (V2.3)
+    # ============================================================
+
+    invoice_ids = fields.Many2many(
+        'account.move',
+        'account_move_tms_waybill_rel',
+        'waybill_id',
+        'move_id',
+        string='Facturas',
+        domain=[('tms_is_invoice', '=', True)],
+        copy=False,
+        help='Facturas CFDI Ingreso que incluyen este viaje'
+    )
+
+    invoice_status = fields.Selection([
+        ('no_invoice', 'Sin facturar'),
+        ('invoiced',   'Facturado'),
+    ],
+        string='Estado Factura',
+        compute='_compute_invoice_status',
+        store=True,
+        default='no_invoice',
+        help='Sin facturar: no hay CFDI Ingreso timbrado. Facturado: al menos una factura timbrada.'
+    )
+
     # ==========================================
     # API EXTERNA: CÁLCULO DE RUTA (GOOGLE ROUTES API + CACHÉ)
     # ==========================================
@@ -1335,6 +1361,20 @@ class TmsWaybill(models.Model):
             record.amount_tax = iva
             record.amount_retention = ret
             record.amount_total = base + iva - ret
+
+    @api.depends('invoice_ids', 'invoice_ids.tms_cfdi_status')
+    def _compute_invoice_status(self):
+        """
+        Determina si el viaje tiene al menos una factura CFDI Ingreso timbrada.
+        'invoiced' → existe account.move con tms_cfdi_status='timbrada'.
+        'no_invoice' → sin facturas o todas canceladas/borrador.
+        El estado 'closed' del waybill se activa desde este compute.
+        """
+        for rec in self:
+            timbradas = rec.invoice_ids.filtered(
+                lambda m: m.tms_cfdi_status == 'timbrada'
+            )
+            rec.invoice_status = 'invoiced' if timbradas else 'no_invoice'
 
     # ============================================================
     # MÉTODOS COMPUTADOS
@@ -2343,20 +2383,73 @@ class TmsWaybill(models.Model):
 
     def action_create_invoice(self):
         """
-        MANUAL: Crear Factura → Facturado.
-        Marca el viaje como cerrado.
+        Abre el wizard de facturación (CFDI Ingreso) pre-configurado con este viaje.
+        Reemplaza el stub anterior que solo hacía write({'state': 'closed'}).
+
+        El estado 'closed' ya NO lo activa este método — lo activa
+        _compute_invoice_status cuando existe un CFDI Ingreso timbrado.
         """
         self.ensure_one()
 
-        # Validar que tenga monto
         if not self.amount_total:
             raise UserError(_('Debe definir el valor del viaje antes de facturar.'))
 
-        # TODO: Aquí se puede integrar la creación real de factura
-        # account_invoice = self.env['account.move'].create({...})
+        return {
+            'type':      'ir.actions.act_window',
+            'name':      _('Facturar Viaje'),
+            'res_model': 'tms.invoice.wizard',
+            'view_mode': 'form',
+            'target':    'new',
+            'context': {
+                'default_modo':         'simple',
+                'default_partner_id':   self.partner_invoice_id.id,
+                'default_waybill_ids':  [(6, 0, [self.id])],
+            },
+        }
 
-        # Cambia el estado a 'closed' (Facturado/Cerrado) - estado declarado en fields.Selection
-        self.write({'state': 'closed'})
+    def action_release_from_invoice(self):
+        """
+        Libera el waybill de vuelta a estado 'arrived' cuando su CFDI Ingreso
+        es cancelado con motivo 02 (errores sin relación) o 03 (operación no realizada).
+
+        NUNCA llamar si tms_cfdi_status='en_cancelacion' — solo cuando el SAT
+        confirma la cancelación y account_move_tms llama a este método.
+        El invoice_status volverá a 'no_invoice' automáticamente por el compute.
+        """
+        for rec in self:
+            if rec.state == 'closed':
+                rec.write({'state': 'arrived'})
+                rec.message_post(
+                    body=_(
+                        'Viaje liberado a estado "En Destino" — '
+                        'CFDI Ingreso cancelado (motivo 02/03). Listo para refacturar.'
+                    )
+                )
+
+    def action_view_invoices(self):
+        """
+        Abre las facturas (account.move) vinculadas a este viaje.
+        Usado por el smart button "Ver Factura(s)" en el formulario del waybill.
+        """
+        self.ensure_one()
+        invoices = self.invoice_ids
+        if len(invoices) == 1:
+            return {
+                'type':      'ir.actions.act_window',
+                'name':      _('Factura'),
+                'res_model': 'account.move',
+                'res_id':    invoices.id,
+                'view_mode': 'form',
+                'target':    'current',
+            }
+        return {
+            'type':      'ir.actions.act_window',
+            'name':      _('Facturas del Viaje'),
+            'res_model': 'account.move',
+            'domain':    [('id', 'in', invoices.ids)],
+            'view_mode': 'list,form',
+            'target':    'current',
+        }
 
     def _action_sign(self, signature, signed_by):
         """

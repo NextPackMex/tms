@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         EXTENSIÓN DEL FORMULARIO DE FACTURAS (account.move)
+         Agrega pestaña TMS visible solo cuando tms_is_invoice = True
+         ================================================================ -->
+
+    <record id="view_move_form_tms_inherit" model="ir.ui.view">
+        <field name="name">account.move.form.tms</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Inyectar campos invisibles en el header para usar en condiciones -->
+            <xpath expr="//header" position="before">
+                <field name="tms_is_invoice" invisible="1"/>
+                <field name="tms_cfdi_status" invisible="1"/>
+            </xpath>
+
+            <!-- Botones de acción TMS en el header de la factura -->
+            <xpath expr="//header/button[last()]" position="after">
+                <!-- Botón Imprimir PDF: visible solo cuando está timbrada -->
+                <button name="action_print_tms_invoice"
+                        string="Imprimir Factura TMS"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="not tms_is_invoice or tms_cfdi_status != 'timbrada'"/>
+
+                <!-- Botón Timbrar CFDI Ingreso: visible en borradores TMS no timbrados -->
+                <button name="action_tms_stamp_ingreso"
+                        string="Timbrar CFDI Ingreso"
+                        type="object"
+                        class="btn-primary oe_highlight"
+                        invisible="not tms_is_invoice or tms_cfdi_status == 'timbrada'"
+                        confirm="¿Timbrar el CFDI Ingreso? Esta acción es irreversible sin cancelación."/>
+
+                <!-- Botón Corregir Factura: motivo 01 — requiere sustituta -->
+                <button name="action_tms_open_cancel_wizard"
+                        string="Corregir Factura (Motivo 01)"
+                        type="object"
+                        class="btn-warning"
+                        invisible="not tms_is_invoice or tms_cfdi_status != 'timbrada'"/>
+
+                <!-- Botón Cancelar CFDI: motivos 02/03 sin sustituta -->
+                <button name="action_tms_open_cancel_wizard"
+                        string="Cancelar CFDI"
+                        type="object"
+                        class="btn-danger"
+                        invisible="not tms_is_invoice or tms_cfdi_status != 'timbrada'"/>
+
+                <!-- Botón Volver a Facturar: solo en facturas canceladas motivo 02/03 -->
+                <button name="action_tms_reopen_invoice_wizard"
+                        string="Volver a Facturar"
+                        type="object"
+                        class="btn-primary"
+                        invisible="not tms_is_invoice or tms_cfdi_status != 'cancelada'"/>
+            </xpath>
+
+            <!-- Pestaña TMS: solo visible si tms_is_invoice = True -->
+            <xpath expr="//notebook" position="inside">
+                <page string="TMS — Carta Porte"
+                      invisible="not tms_is_invoice"
+                      name="tms_page">
+
+                    <!-- Estado del CFDI TMS -->
+                    <group string="Estado CFDI Ingreso">
+                        <field name="tms_cfdi_status" widget="badge"
+                               decoration-success="tms_cfdi_status == 'timbrada'"
+                               decoration-warning="tms_cfdi_status == 'en_cancelacion'"
+                               decoration-danger="tms_cfdi_status in ('cancelada','sustituida')"
+                               decoration-muted="tms_cfdi_status == 'borrador'"/>
+                        <field name="tms_cfdi_uuid" readonly="1"
+                               invisible="not tms_cfdi_uuid"/>
+                        <field name="tms_id_ccp_ingreso" readonly="1"
+                               invisible="not tms_id_ccp_ingreso"/>
+                        <field name="tms_cfdi_fecha" readonly="1"
+                               invisible="not tms_cfdi_fecha"/>
+                        <field name="tms_cfdi_pac" readonly="1"
+                               invisible="not tms_cfdi_pac"/>
+                        <field name="tms_cfdi_no_cert_sat" readonly="1"
+                               invisible="not tms_cfdi_no_cert_sat"/>
+                    </group>
+
+                    <!-- Cancelación -->
+                    <group string="Cancelación"
+                           invisible="tms_cfdi_status not in ('cancelada','sustituida','en_cancelacion')">
+                        <field name="tms_cfdi_motivo" readonly="1"/>
+                        <field name="tms_cfdi_uuid_sustituta" readonly="1"
+                               invisible="not tms_cfdi_uuid_sustituta"/>
+                    </group>
+
+                    <!-- Viajes vinculados -->
+                    <group string="Viajes incluidos en esta factura">
+                        <field name="tms_waybill_ids" nolabel="1"
+                               readonly="tms_cfdi_status == 'timbrada'">
+                            <list>
+                                <field name="name"/>
+                                <field name="route_name"/>
+                                <field name="state"/>
+                                <field name="amount_untaxed"/>
+                                <field name="amount_total"/>
+                                <field name="currency_id" column_invisible="1"/>
+                            </list>
+                        </field>
+                    </group>
+
+                    <!-- Error (si existe) -->
+                    <group string="Error último intento"
+                           invisible="not tms_cfdi_error_msg">
+                        <field name="tms_cfdi_error_msg" readonly="1" nolabel="1"
+                               widget="text"/>
+                    </group>
+
+                    <!-- XML para descarga -->
+                    <group string="Archivo XML"
+                           invisible="not tms_cfdi_xml">
+                        <field name="tms_cfdi_xml" readonly="1"
+                               filename="tms_cfdi_xml_fname" widget="binary"/>
+                        <field name="tms_cfdi_xml_fname" invisible="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -109,18 +109,52 @@ def _normalize_id_ubicacion(tipo, numero):
 
 class CartaPorteXmlBuilder:
     """
-    Construye el XML CFDI 4.0 con Complemento Carta Porte 3.1
-    a partir de un registro tms.waybill.
+    Construye el XML CFDI 4.0 con Complemento Carta Porte 3.1.
+
+    Soporta dos tipos de CFDI:
+      - tipo='T' (Traslado): Carta Porte para circular en ruta. El origen es tms.waybill.
+      - tipo='I' (Ingreso):  Factura de flete con CP 3.1. El origen es account.move con
+                              tms_waybill_ids vinculados. SAT obliga complemento CP en
+                              facturas de transportistas.
 
     Uso:
         builder = CartaPorteXmlBuilder()
-        xml_bytes = builder.build(waybill)
+        # Traslado (Carta Porte):
+        xml_bytes = builder.build(waybill, tipo='T')
+        # Ingreso (Factura de flete):
+        xml_bytes = builder.build(account_move, tipo='I')
         # Pasar xml_bytes a CfdiSigner.sign()
     """
 
-    def build(self, waybill):
+    def build(self, waybill_or_move, tipo='T'):
         """
-        Construye el XML sin sellar.
+        Punto de entrada principal. Despacha al builder correcto según tipo.
+
+        Args:
+            waybill_or_move: tms.waybill (tipo='T') o account.move (tipo='I')
+            tipo (str): 'T' para Traslado, 'I' para Ingreso. Default='T'.
+
+        Returns:
+            bytes: XML serializado, listo para firmar con CfdiSigner.
+
+        Mantiene compatibilidad hacia atrás — llamadas existentes sin tipo='T'
+        siguen funcionando exactamente igual.
+        """
+        if tipo == 'T':
+            return self._build_traslado(waybill_or_move)
+        elif tipo == 'I':
+            return self._build_ingreso(waybill_or_move)
+        else:
+            raise ValueError('tipo debe ser "T" (Traslado) o "I" (Ingreso). Recibido: %r' % tipo)
+
+    # ------------------------------------------------------------------
+    # CFDI Traslado (tipo='T') — lógica original sin cambios
+    # ------------------------------------------------------------------
+
+    def _build_traslado(self, waybill):
+        """
+        Construye el XML CFDI Traslado (Carta Porte) sin sellar.
+        Lógica original — no modificar.
 
         Args:
             waybill: registro tms.waybill con todos los datos
@@ -128,7 +162,7 @@ class CartaPorteXmlBuilder:
         Returns:
             bytes: XML serializado, listo para firmar con CfdiSigner
         """
-        _logger.info('Construyendo XML CFDI 4.0 para waybill %s', waybill.name)
+        _logger.info('Construyendo XML CFDI 4.0 Traslado para waybill %s', waybill.name)
 
         company = waybill.company_id
         # Validar campos requeridos antes de construir el XML
@@ -156,7 +190,6 @@ class CartaPorteXmlBuilder:
         comprobante.append(self._build_conceptos(waybill))
         # cfdi:Impuestos está PROHIBIDO para TipoDeComprobante="T" (Traslado)
         # CFDI40201: "Cuando TipoDeComprobante sea T o P, Impuestos no debe existir"
-        # _build_impuestos() queda disponible para facturas de ingreso (V2.3)
 
         # Complemento Carta Porte 3.1
         complemento = etree.SubElement(
@@ -170,10 +203,423 @@ class CartaPorteXmlBuilder:
             pretty_print=False,
         )
         _logger.warning(
-            'XML COMPLETO generado (sin sellar):\n%s',
+            'XML COMPLETO Traslado generado (sin sellar):\n%s',
             etree.tostring(comprobante, pretty_print=True, encoding='unicode'),
         )
         return xml_bytes
+
+    # ------------------------------------------------------------------
+    # CFDI Ingreso (tipo='I') — nuevo en V2.3
+    # ------------------------------------------------------------------
+
+    def _build_ingreso(self, move):
+        """
+        Construye el XML CFDI Ingreso con Complemento Carta Porte 3.1.
+
+        El SAT obliga a los transportistas a incluir el complemento CP en facturas
+        de flete (regla CP.R.1 del Apéndice 10 del instructivo SAT).
+
+        Para facturas consolidadas (N viajes), genera:
+          - N pares Ubicacion OR/DE (uno por waybill)
+          - Todas las mercancías de todos los waybills
+          - El Autotransporte del primer waybill (vehículo principal)
+          - N Conceptos CFDI con el monto de cada viaje
+          - Impuestos: IVA 16% + Retención 4% condicional
+
+        Args:
+            move: account.move con tms_waybill_ids vinculados
+
+        Returns:
+            bytes: XML serializado, listo para firmar con CfdiSigner
+        """
+        _logger.info('Construyendo XML CFDI 4.0 Ingreso para move %s', move.name)
+
+        company = move.company_id
+        waybills = move.tms_waybill_ids
+
+        if not waybills:
+            raise UserError('La factura %s no tiene viajes vinculados.' % move.name)
+
+        datos = self._get_datos_fiscales_ingreso(company, move)
+
+        if company.fd_ambiente == 'pruebas':
+            _logger.warning(
+                'AMBIENTE PRUEBAS — Datos fiscales Ingreso sustituidos. RFC Emisor: %s, RFC Receptor: %s',
+                datos['rfc_emisor'], datos['rfc_receptor'],
+            )
+
+        # Nodo raíz Ingreso
+        comprobante = self._build_comprobante_ingreso(move, datos)
+
+        # CfdiRelacionados (solo motivo 01 — corrección de factura)
+        uuid_original = getattr(move, 'tms_cfdi_uuid_sustituta', None)
+        if uuid_original:
+            comprobante.append(self._build_cfdi_relacionados(uuid_original))
+
+        comprobante.append(self._build_emisor(company, datos))
+        comprobante.append(self._build_receptor_ingreso(move, datos))
+        comprobante.append(self._build_conceptos_ingreso(move, datos))
+        comprobante.append(self._build_impuestos_ingreso(move, datos))
+
+        # Complemento Carta Porte 3.1 — obligatorio para transportistas
+        complemento = etree.SubElement(
+            comprobante, etree.QName(NS_CFDI, 'Complemento'))
+        complemento.append(self._build_complemento_carta_porte_ingreso(move, datos))
+
+        xml_bytes = etree.tostring(
+            comprobante,
+            xml_declaration=True,
+            encoding='UTF-8',
+            pretty_print=False,
+        )
+        _logger.warning(
+            'XML COMPLETO Ingreso generado (sin sellar):\n%s',
+            etree.tostring(comprobante, pretty_print=True, encoding='unicode'),
+        )
+        return xml_bytes
+
+    def _build_comprobante_ingreso(self, move, datos):
+        """
+        Construye el nodo raíz cfdi:Comprobante para tipo Ingreso.
+
+        Diferencias vs Traslado:
+          - TipoDeComprobante = 'I'
+          - SubTotal = suma de amount_untaxed de todos los waybills
+          - Total = suma de amount_total de todos los waybills
+          - Moneda = 'MXN'
+        """
+        fecha = datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S')
+
+        subtotal = sum(w.amount_untaxed for w in move.tms_waybill_ids)
+        total    = sum(w.amount_total   for w in move.tms_waybill_ids)
+
+        comp = etree.Element(
+            etree.QName(NS_CFDI, 'Comprobante'),
+            nsmap=NSMAP,
+        )
+        comp.set(etree.QName(NS_XSI, 'schemaLocation'), SCHEMA_LOCATION)
+        comp.set('Version',           '4.0')
+        comp.set('Fecha',             fecha)
+        comp.set('Sello',             '')          # se rellena al firmar
+        comp.set('NoCertificado',     '')          # se rellena al firmar
+        comp.set('Certificado',       '')          # se rellena al firmar
+        comp.set('SubTotal',          '{:.2f}'.format(subtotal))
+        comp.set('Total',             '{:.2f}'.format(total))
+        comp.set('Moneda',            'MXN')
+        comp.set('TipoDeComprobante', 'I')         # I = Ingreso
+        comp.set('MetodoPago',        'PPD')       # PPD = Pago en Parcialidades o Diferido
+        comp.set('FormaPago',         '99')        # 99 = Por definir
+        comp.set('Exportacion',       '01')        # 01 = No aplica
+        comp.set('LugarExpedicion',   datos['lugar_expedicion'])
+
+        return comp
+
+    def _build_receptor_ingreso(self, move, datos):
+        """
+        Construye cfdi:Receptor para CFDI Ingreso.
+
+        En Ingreso (TipoDeComprobante='I'), el Receptor es el CLIENTE del viaje
+        (partner_id de la factura), no la empresa emisora como en el Traslado.
+        UsoCFDI: G03 (Gastos en General) es el valor default para servicios de flete.
+        """
+        receptor = etree.Element(etree.QName(NS_CFDI, 'Receptor'))
+        receptor.set('Rfc',                     datos['rfc_receptor'])
+        receptor.set('Nombre',                  datos['nombre_receptor'])
+        receptor.set('DomicilioFiscalReceptor', datos['domicilio_fiscal_receptor'])
+        receptor.set('RegimenFiscalReceptor',   datos['regimen_receptor'])
+        receptor.set('UsoCFDI',                 datos.get('uso_cfdi', 'G03'))
+        return receptor
+
+    def _build_conceptos_ingreso(self, move, datos):
+        """
+        Construye cfdi:Conceptos para CFDI Ingreso.
+
+        Un Concepto por cada waybill vinculado, con el monto real del flete.
+        ClaveProdServ: 78101800 (Servicios de transporte de carga por carretera)
+        ClaveUnidad: E48 (Unidad de servicio)
+        ObjetoImp: '02' (Sí objeto de impuesto) — a diferencia del Traslado que usa '01'
+        """
+        conceptos = etree.Element(etree.QName(NS_CFDI, 'Conceptos'))
+
+        for waybill in move.tms_waybill_ids:
+            concepto = etree.SubElement(conceptos, etree.QName(NS_CFDI, 'Concepto'))
+            concepto.set('ClaveProdServ', '78101800')
+            concepto.set('Cantidad',      '1')
+            concepto.set('ClaveUnidad',   'E48')
+            concepto.set('Descripcion',
+                         ('SERVICIO DE FLETE — %s' % (waybill.name or waybill.route_name or 'VIAJE'))[:100])
+            concepto.set('ValorUnitario', '{:.2f}'.format(waybill.amount_untaxed))
+            concepto.set('Importe',       '{:.2f}'.format(waybill.amount_untaxed))
+            concepto.set('ObjetoImp',     '02')  # 02 = Sí objeto de impuesto
+
+        return conceptos
+
+    def _build_impuestos_ingreso(self, move, datos):
+        """
+        Construye cfdi:Impuestos para CFDI Ingreso.
+
+        Siempre incluye:
+          - Traslados: IVA 16% (o 0% si receptor en zona ZEDE)
+
+        Incluye condicionalmente (solo si receptor is_company=True):
+          - Retenciones: IVA 4% (Art. 1-A LIVA + Art. 3 RLIVA)
+
+        Estructura del nodo según reglas SAT CFDI 4.0:
+          cfdi:Impuestos
+            cfdi:Retenciones (solo PM)
+              cfdi:Retencion Impuesto="002" Importe="..."
+            cfdi:Traslados
+              cfdi:Traslado Base="..." Impuesto="002" TipoFactor="Tasa"
+                              TasaOCuota="0.160000|0.000000" Importe="..."
+        """
+        subtotal = sum(w.amount_untaxed for w in move.tms_waybill_ids)
+        partner  = move.partner_id
+        tasa_iva = self._get_tasa_iva(move)
+
+        iva_importe = round(subtotal * tasa_iva, 2)
+        ret_importe = round(subtotal * 0.04, 2) if (partner and partner.is_company) else 0.0
+
+        impuestos = etree.Element(etree.QName(NS_CFDI, 'Impuestos'))
+
+        # Total de impuestos trasladados y retenidos
+        impuestos.set('TotalImpuestosRetenidos',  '{:.2f}'.format(ret_importe))
+        impuestos.set('TotalImpuestosTrasladados', '{:.2f}'.format(iva_importe))
+
+        # Retenciones (solo personas morales)
+        if ret_importe > 0:
+            retenciones = etree.SubElement(impuestos, etree.QName(NS_CFDI, 'Retenciones'))
+            ret = etree.SubElement(retenciones, etree.QName(NS_CFDI, 'Retencion'))
+            ret.set('Impuesto', '002')               # 002 = IVA
+            ret.set('Importe',  '{:.2f}'.format(ret_importe))
+
+        # Traslados — IVA
+        traslados = etree.SubElement(impuestos, etree.QName(NS_CFDI, 'Traslados'))
+        traslado  = etree.SubElement(traslados, etree.QName(NS_CFDI, 'Traslado'))
+        traslado.set('Base',         '{:.2f}'.format(subtotal))
+        traslado.set('Impuesto',     '002')          # 002 = IVA
+        traslado.set('TipoFactor',   'Tasa')
+        traslado.set('TasaOCuota',   '{:.6f}'.format(tasa_iva))
+        traslado.set('Importe',      '{:.2f}'.format(iva_importe))
+
+        return impuestos
+
+    def _get_tasa_iva(self, move):
+        """
+        Determina la tasa de IVA para el receptor del account.move.
+
+        Reglas:
+          - Si partner.zip está en zona ZEDE activa → tasa 0.0 (IVA 0%)
+          - Cualquier otro caso → tasa 0.16 (IVA 16%)
+
+        La verificación ZEDE consulta el catálogo tms.sat.zona.especial
+        que es global (sin company_id).
+
+        Args:
+            move: account.move con partner_id
+
+        Returns:
+            float: 0.0 (ZEDE) o 0.16 (estándar)
+        """
+        partner = move.partner_id
+        if not partner or not partner.zip:
+            return 0.16
+        es_zede = move.env['tms.sat.zona.especial'].es_zona_especial(partner.zip)
+        return 0.0 if es_zede else 0.16
+
+    def _build_cfdi_relacionados(self, uuid_original):
+        """
+        Construye el nodo cfdi:CfdiRelacionados para sustitución de CFDI (motivo 01).
+
+        SAT exige este nodo cuando se cancela una factura con motivo 01
+        (errores con relación) y se emite una sustituta.
+        TipoRelacion='04' = Sustitución de los CFDI previos.
+
+        Args:
+            uuid_original (str): UUID del CFDI que está siendo sustituido.
+
+        Returns:
+            lxml.etree.Element: nodo cfdi:CfdiRelacionados
+        """
+        cfdi_relacionados = etree.Element(etree.QName(NS_CFDI, 'CfdiRelacionados'))
+        cfdi_relacionados.set('TipoRelacion', '04')  # 04 = Sustitución de CFDI previos
+        cfdi_rel = etree.SubElement(cfdi_relacionados, etree.QName(NS_CFDI, 'CfdiRelacionado'))
+        cfdi_rel.set('Uuid', uuid_original)
+        return cfdi_relacionados
+
+    def _build_complemento_carta_porte_ingreso(self, move, datos):
+        """
+        Construye cartaporte31:CartaPorte para el CFDI Ingreso.
+
+        Para facturas consolidadas (N waybills):
+          - Genera N pares Ubicacion OR/DE (uno por waybill)
+          - Combina todas las mercancías de todos los waybills
+          - Usa el vehículo del primer waybill en Autotransporte
+          - Usa el chofer del primer waybill en FiguraTransporte
+
+        IdCCP: tms_id_ccp_ingreso del account.move (generado en action_tms_stamp_ingreso).
+        """
+        waybills = move.tms_waybill_ids
+        primer_waybill = waybills[0]
+
+        # IdCCP del Ingreso — distinto al del Traslado
+        id_ccp = move.tms_id_ccp_ingreso or self._generate_id_ccp()
+
+        distancia_total = sum(w.distance_km or 0 for w in waybills)
+
+        cp = etree.Element(etree.QName(NS_CP31, 'CartaPorte'))
+        cp.set('Version',        '3.1')
+        cp.set('IdCCP',          id_ccp)
+        cp.set('TranspInternac', 'No')
+        cp.set('TotalDistRec',   str(int(distancia_total)))
+
+        # Ubicaciones: N pares OR/DE, uno por waybill
+        cp.append(self._build_ubicaciones_ingreso(waybills, datos))
+
+        # Mercancias: todas las mercancías de todos los waybills combinadas
+        mercancias_node = self._build_mercancias_consolidadas(waybills)
+        # Autotransporte del primer waybill (vehículo principal del tren vehicular)
+        mercancias_node.append(self._build_autotransporte(primer_waybill))
+        cp.append(mercancias_node)
+
+        # FiguraTransporte del primer waybill (chofer principal)
+        cp.append(self._build_figura_transporte(primer_waybill, datos))
+
+        return cp
+
+    def _build_ubicaciones_ingreso(self, waybills, datos):
+        """
+        Construye el nodo Ubicaciones para CFDI Ingreso con N waybills.
+
+        Genera N pares OR/DE — uno por cada waybill incluido en la factura.
+        IDUbicacion: OR000001/DE000001, OR000002/DE000002, etc.
+        Regla CP107 NO aplica en Ingreso — el receptor es el cliente real.
+        """
+        es_pruebas = datos.get('es_pruebas', False)
+        ubicaciones = etree.Element(etree.QName(NS_CP31, 'Ubicaciones'))
+
+        for idx, waybill in enumerate(waybills, start=1):
+            # Origen
+            origen = etree.SubElement(ubicaciones, etree.QName(NS_CP31, 'Ubicacion'))
+            origen.set('TipoUbicacion', 'Origen')
+            origen.set('IDUbicacion',   'OR%06d' % idx)
+            origen.set('RFCRemitenteDestinatario',
+                       'EKU9003173C9' if es_pruebas else
+                       (_normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000'))
+            origen.set('NombreRemitenteDestinatario',
+                       (waybill.partner_origin_id.name or '').upper()[:254])
+            origen.set('FechaHoraSalidaLlegada',
+                       datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
+            dom_o = etree.SubElement(origen, etree.QName(NS_CP31, 'Domicilio'))
+            dom_o.set('CodigoPostal', waybill.origin_zip or '00000')
+            dom_o.set('Estado',       self._get_estado_from_zip(waybill, waybill.origin_zip) or 'JAL')
+            dom_o.set('Pais',         'MEX')
+
+            # Destino
+            destino = etree.SubElement(ubicaciones, etree.QName(NS_CP31, 'Ubicacion'))
+            destino.set('TipoUbicacion',   'Destino')
+            destino.set('IDUbicacion',     'DE%06d' % idx)
+            destino.set('RFCRemitenteDestinatario',
+                        'EKU9003173C9' if es_pruebas else
+                        (_normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000'))
+            destino.set('NombreRemitenteDestinatario',
+                        (waybill.partner_dest_id.name or '').upper()[:254])
+            destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
+            destino.set('FechaHoraSalidaLlegada',
+                        datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
+            dom_d = etree.SubElement(destino, etree.QName(NS_CP31, 'Domicilio'))
+            dom_d.set('CodigoPostal', waybill.dest_zip or '00000')
+            dom_d.set('Estado',       self._get_estado_from_zip(waybill, waybill.dest_zip) or 'JAL')
+            dom_d.set('Pais',         'MEX')
+
+        return ubicaciones
+
+    def _build_mercancias_consolidadas(self, waybills):
+        """
+        Construye el nodo Mercancias combinando todas las líneas de todos los waybills.
+        Se usa en CFDI Ingreso consolidado (N viajes en una factura).
+        El peso total es la suma de todas las mercancías de todos los viajes.
+        """
+        peso_total = sum(
+            (line.weight_kg or 0) * (line.quantity or 1)
+            for waybill in waybills
+            for line in waybill.line_ids
+        )
+        total_mercancias = sum(len(w.line_ids) for w in waybills)
+
+        mercancias = etree.Element(etree.QName(NS_CP31, 'Mercancias'))
+        mercancias.set('PesoBrutoTotal',     '{:.3f}'.format(peso_total or 0))
+        mercancias.set('UnidadPeso',         'KGM')
+        mercancias.set('NumTotalMercancias', str(total_mercancias or 1))
+
+        # Iterar todas las líneas de todos los waybills
+        for waybill in waybills:
+            for line in waybill.line_ids:
+                merc = etree.SubElement(mercancias, etree.QName(NS_CP31, 'Mercancia'))
+                merc.set('BienesTransp',
+                         _normalize_sat_code(line.product_sat_id.code if line.product_sat_id else '47131500'))
+                merc.set('Descripcion', (line.description or 'MERCANCIA GENERAL')[:100])
+                merc.set('Cantidad',    '{:.3f}'.format(line.quantity or 1))
+                merc.set('ClaveUnidad',
+                         _normalize_sat_code(line.uom_sat_id.code if line.uom_sat_id else 'KGM'))
+                merc.set('PesoEnKg',   '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
+                merc.set('Dimensiones', line.dimensions or '000/000/000cm')
+
+        return mercancias
+
+    def _get_datos_fiscales_ingreso(self, company, move):
+        """
+        Retorna diccionario con datos fiscales para el CFDI Ingreso.
+
+        Diferencia clave vs Traslado:
+          En Ingreso, el Receptor es el CLIENTE (move.partner_id), no la empresa.
+          El cliente puede ser persona moral (RFC 12 chars) o física (RFC 13 chars).
+
+        En pruebas: RFC receptor → EKU9003173C9 (PM válida en dev33).
+        En producción: RFC receptor → move.partner_id.vat.
+        """
+        es_pruebas = (company.fd_ambiente == 'pruebas')
+
+        if es_pruebas:
+            rfc_pruebas    = self._get_rfc_from_cer(company) or company.vat or 'EKU9003173C9'
+            nombre_pruebas = (company.name or '').upper()[:254]
+            cp_pruebas     = company.zip or '44970'
+            return {
+                'rfc_emisor':               rfc_pruebas,
+                'nombre_emisor':            nombre_pruebas,
+                'regimen_fiscal':           '616',
+                # En pruebas el receptor también usa RFC de pruebas
+                'rfc_receptor':             'EKU9003173C9',
+                'nombre_receptor':          nombre_pruebas,
+                'regimen_receptor':         '616',
+                'uso_cfdi':                 'G03',
+                'lugar_expedicion':         cp_pruebas,
+                'domicilio_fiscal_receptor': cp_pruebas,
+                'rfc_chofer':               'CACX7605101P8',
+                'es_pruebas':               True,
+            }
+        else:
+            rfc_real        = (company.vat or '').upper().strip()
+            partner         = move.partner_id
+            rfc_receptor    = (_normalize_rfc(partner.vat) if partner else '') or 'XAXX010101000'
+            nombre_receptor = (partner.name or '').upper()[:254] if partner else ''
+            cp_receptor     = (partner.zip or company.zip or '00000') if partner else company.zip or '00000'
+            # Régimen fiscal del receptor: usar l10n_mx_edi_fiscal_regime si existe, sino '616'
+            regimen_receptor = (
+                getattr(partner, 'l10n_mx_edi_fiscal_regime', None) or '616'
+            ) if partner else '616'
+            return {
+                'rfc_emisor':               rfc_real,
+                'nombre_emisor':            (company.name or '').upper()[:254],
+                'regimen_fiscal':           (company.tms_regimen_fiscal_id.code or '612'),
+                'rfc_receptor':             rfc_receptor,
+                'nombre_receptor':          nombre_receptor,
+                'regimen_receptor':         regimen_receptor,
+                'uso_cfdi':                 'G03',  # G03 = Gastos en General (default flete)
+                'lugar_expedicion':         company.zip or '00000',
+                'domicilio_fiscal_receptor': cp_receptor,
+                'rfc_chofer':               '',
+                'es_pruebas':               False,
+            }
 
     # ------------------------------------------------------------------
     # Validación previa al build

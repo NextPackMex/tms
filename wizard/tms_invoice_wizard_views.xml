@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         WIZARD FACTURACIÓN TMS — CFDI INGRESO
+         4 pasos: Modo → Cliente+Viajes → Datos Fiscales → Resultado
+         ================================================================ -->
+
+    <record id="view_tms_invoice_wizard_form" model="ir.ui.view">
+        <field name="name">tms.invoice.wizard.form</field>
+        <field name="model">tms.invoice.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Facturar Viaje(s)">
+
+                <!-- Campo oculto para controlar el paso visible -->
+                <field name="step" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+
+                <!-- ══════════════════════════════════════
+                     PASO 1 — MODO DE FACTURACIÓN
+                     ══════════════════════════════════════ -->
+                <group invisible="step != 1">
+                    <div class="o_form_label">
+                        <h4 style="color: #035d96;">Paso 1 — ¿Cómo deseas facturar?</h4>
+                    </div>
+                    <div class="row mt16">
+                        <!-- Tarjeta: Modo Simple -->
+                        <div class="col-md-6">
+                            <div class="card p-3"
+                                 style="border: 2px solid #035d96; border-radius: 8px; cursor: pointer;">
+                                <h5 style="color: #035d96;">
+                                    <i class="fa fa-file-text-o"/> Un solo viaje
+                                </h5>
+                                <p class="text-muted small">
+                                    Una factura por cada viaje.<br/>
+                                    Ideal para clientes que piden factura al concluir el flete.
+                                </p>
+                                <field name="modo" widget="radio"
+                                       options="{'horizontal': false}"
+                                       invisible="1"/>
+                            </div>
+                        </div>
+                        <!-- Tarjeta: Modo Consolidado -->
+                        <div class="col-md-6">
+                            <div class="card p-3"
+                                 style="border: 2px solid #e1a13e; border-radius: 8px; cursor: pointer;">
+                                <h5 style="color: #e1a13e;">
+                                    <i class="fa fa-files-o"/> Varios viajes
+                                </h5>
+                                <p class="text-muted small">
+                                    Una factura para múltiples viajes del mismo cliente.<br/>
+                                    Ideal para cortes quincenales o mensuales.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Selector real del modo -->
+                    <group>
+                        <field name="modo" widget="radio" string="Modo seleccionado"/>
+                    </group>
+                </group>
+
+                <!-- ══════════════════════════════════════
+                     PASO 2 — CLIENTE Y VIAJES
+                     ══════════════════════════════════════ -->
+                <group invisible="step != 2">
+                    <div>
+                        <h4 style="color: #035d96;">Paso 2 — Cliente y viajes a facturar</h4>
+                    </div>
+
+                    <group>
+                        <field name="partner_id" required="step == 2"/>
+                    </group>
+
+                    <!-- Advertencia vehículos mixtos (solo consolidado) -->
+                    <div class="alert alert-warning" role="alert"
+                         invisible="not vehicle_warning or modo != 'consolidado'">
+                        <i class="fa fa-exclamation-triangle" title="Advertencia"/>
+                        <field name="vehicle_warning" readonly="1" nolabel="1"/>
+                    </div>
+
+                    <!-- Viajes seleccionados -->
+                    <group string="Viajes a incluir">
+                        <field name="waybill_ids"
+                               widget="many2many_checkboxes"
+                               domain="[('partner_invoice_id','=',partner_id),
+                                        ('state','in',['arrived','waybill','in_transit','aprobado']),
+                                        ('invoice_status','=','no_invoice')]"
+                               required="step == 2"
+                               nolabel="1">
+                            <list>
+                                <field name="name"/>
+                                <field name="route_name"/>
+                                <field name="distance_km"/>
+                                <field name="state"/>
+                                <field name="amount_untaxed"/>
+                                <field name="amount_total"/>
+                                <field name="currency_id" column_invisible="1"/>
+                            </list>
+                        </field>
+                    </group>
+
+                    <!-- Resumen de montos en tiempo real -->
+                    <group string="Resumen" invisible="not waybill_ids">
+                        <div class="o_td_label">
+                            <table class="table table-sm" style="font-size: 13px;">
+                                <tr>
+                                    <td>Subtotal:</td>
+                                    <td class="text-end">
+                                        <field name="subtotal_total" readonly="1"
+                                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>IVA (16%):</td>
+                                    <td class="text-end">
+                                        <field name="iva_total" readonly="1"
+                                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    </td>
+                                </tr>
+                                <tr style="color: #dc3545;" invisible="retencion_total == 0">
+                                    <td>Retención (4%):</td>
+                                    <td class="text-end">
+                                        - <field name="retencion_total" readonly="1"
+                                                  widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    </td>
+                                </tr>
+                                <tr style="font-weight: bold; font-size: 15px; border-top: 2px solid #333;">
+                                    <td>Total:</td>
+                                    <td class="text-end">
+                                        <field name="total_factura" readonly="1"
+                                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </group>
+                </group>
+
+                <!-- ══════════════════════════════════════
+                     PASO 3 — DATOS FISCALES
+                     ══════════════════════════════════════ -->
+                <group invisible="step != 3">
+                    <div>
+                        <h4 style="color: #035d96;">Paso 3 — Datos fiscales del CFDI</h4>
+                    </div>
+                    <group>
+                        <field name="uso_cfdi" required="step == 3"
+                               help="G03 = Gastos en General es el uso estándar para servicios de flete."/>
+                        <field name="journal_id" required="step == 3"/>
+                    </group>
+
+                    <!-- Resumen final antes de timbrar -->
+                    <group string="Confirmación" invisible="not waybill_ids">
+                        <div class="alert alert-info" role="status">
+                            <strong>Revise antes de timbrar:</strong><br/>
+                            Cliente: <field name="partner_id" readonly="1" nolabel="1"/><br/>
+                            Viajes: <field name="waybill_ids" readonly="1" nolabel="1"
+                                          widget="many2many_tags"/><br/>
+                            Total: <field name="total_factura" readonly="1" nolabel="1"
+                                         widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        </div>
+                    </group>
+                </group>
+
+                <!-- ══════════════════════════════════════
+                     PASO 4 — RESULTADO
+                     ══════════════════════════════════════ -->
+                <group invisible="step != 4">
+                    <!-- Éxito -->
+                    <div invisible="not result_uuid">
+                        <div class="alert alert-success" role="status">
+                            <h5><i class="fa fa-check-circle"/> ¡CFDI Ingreso timbrado exitosamente!</h5>
+                            <strong>UUID:</strong>
+                            <field name="result_uuid" readonly="1" nolabel="1"/>
+                        </div>
+                        <div class="text-center mt8">
+                            <button name="action_view_invoice"
+                                    string="Ver Factura"
+                                    type="object"
+                                    class="btn-primary"
+                                    icon="fa-file-text-o"/>
+                        </div>
+                    </div>
+                    <!-- Error -->
+                    <div invisible="not result_error">
+                        <div class="alert alert-danger" role="alert">
+                            <h5><i class="fa fa-times-circle"/> Error al timbrar</h5>
+                            <field name="result_error" readonly="1" nolabel="1"/>
+                        </div>
+                        <p class="text-muted small">
+                            Corrija el error y vuelva a intentarlo desde el viaje.
+                        </p>
+                    </div>
+                </group>
+
+                <!-- ════════════════════════════
+                     BARRA DE BOTONES DE NAVEGACIÓN
+                     ════════════════════════════ -->
+                <footer>
+                    <!-- Paso 1 -->
+                    <button name="action_next_step" string="Siguiente →"
+                            type="object" class="btn-primary"
+                            invisible="step != 1"/>
+
+                    <!-- Paso 2 -->
+                    <button name="action_prev_step" string="← Anterior"
+                            type="object" class="btn-secondary"
+                            invisible="step != 2"/>
+                    <button name="action_next_step" string="Siguiente →"
+                            type="object" class="btn-primary"
+                            invisible="step != 2"/>
+
+                    <!-- Paso 3 — el clic llama action_create_and_stamp() desde action_next_step -->
+                    <button name="action_prev_step" string="← Anterior"
+                            type="object" class="btn-secondary"
+                            invisible="step != 3"/>
+                    <button name="action_next_step" string="Timbrar CFDI Ingreso"
+                            type="object" class="btn-primary oe_highlight"
+                            invisible="step != 3"
+                            confirm="¿Confirma que desea timbrar la factura? Esta acción es irreversible sin proceso de cancelación."/>
+
+                    <!-- Paso 4 — solo Cerrar -->
+                    <button string="Cerrar"
+                            class="btn-secondary"
+                            special="cancel"
+                            invisible="step != 4"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el wizard de facturación -->
+    <record id="action_tms_invoice_wizard" model="ir.actions.act_window">
+        <field name="name">Facturar Viaje</field>
+        <field name="res_model">tms.invoice.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

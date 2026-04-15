@@ -17,6 +17,7 @@ from . import sat_config_autotransporte  # c_ConfigAutotransporte
 from . import sat_tipo_permiso        # c_TipoPermiso
 from . import sat_figura_transporte   # c_FiguraTransporte
 from . import sat_regimen_fiscal      # c_RegimenFiscal
+from . import tms_sat_zona_especial   # Zonas ZEDE (IVA 0%) — global sin company_id
 
 # ============================================================
 # MODELOS OPERATIVOS - PRIVADOS (CON company_id OBLIGATORIO)
@@ -31,4 +32,5 @@ from . import tms_waybill             # Modelo Maestro (Viajes)
 from . import tms_tracking_event      # Bitácora GPS
 
 from . import tms_fuel_history
+from . import account_move_tms        # Extensión de account.move (CFDI Ingreso TMS)
 from . import res_config_settings     # Configuración
