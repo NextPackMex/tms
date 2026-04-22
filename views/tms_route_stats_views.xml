@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         VISTAS: tms.route.stats — Estadísticas de Rentabilidad por Ruta
+         ================================================================ -->
+
+    <!-- Vista Lista -->
+    <record id="view_tms_route_stats_list" model="ir.ui.view">
+        <field name="name">tms.route.stats.list</field>
+        <field name="model">tms.route.stats</field>
+        <field name="arch" type="xml">
+            <list string="Rentabilidad por Ruta" create="false" edit="false"
+                  decoration-success="total_viajes >= 10"
+                  decoration-muted="total_viajes == 0">
+                <field name="route_name" string="Ruta"/>
+                <field name="origin_zip" string="CP Origen" optional="show"/>
+                <field name="dest_zip" string="CP Destino" optional="show"/>
+                <field name="total_viajes" string="Total Viajes"
+                       decoration-warning="total_viajes &lt; 3"/>
+                <field name="ingreso_promedio" string="Ingreso Promedio"
+                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="ingreso_total" string="Ingreso Total"
+                       widget="monetary" options="{'currency_field': 'currency_id'}"
+                       optional="show"/>
+                <field name="last_price" string="Último Precio"
+                       widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="last_waybill_date" string="Último Cierre"/>
+                <field name="distance_km" string="Distancia Prom. (km)"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="company_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Form (solo lectura — los datos los genera el sistema) -->
+    <record id="view_tms_route_stats_form" model="ir.ui.view">
+        <field name="name">tms.route.stats.form</field>
+        <field name="model">tms.route.stats</field>
+        <field name="arch" type="xml">
+            <form string="Rentabilidad de Ruta" create="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="route_name" readonly="1"/></h1>
+                    </div>
+
+                    <group string="Identificación">
+                        <field name="origin_zip" readonly="1"/>
+                        <field name="dest_zip" readonly="1"/>
+                        <field name="company_id" readonly="1"/>
+                        <field name="distance_km" readonly="1" string="Distancia Promedio (km)"/>
+                    </group>
+
+                    <group string="Acumuladores">
+                        <field name="total_viajes" readonly="1"/>
+                        <field name="ingreso_total" readonly="1"
+                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        <field name="ingreso_promedio" readonly="1"
+                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+
+                    <group string="Último Viaje">
+                        <field name="last_price" readonly="1"
+                               widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                        <field name="last_waybill_date" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Search -->
+    <record id="view_tms_route_stats_search" model="ir.ui.view">
+        <field name="name">tms.route.stats.search</field>
+        <field name="model">tms.route.stats</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Estadísticas de Ruta">
+                <field name="route_name" string="Ruta"/>
+                <field name="origin_zip" string="CP Origen"/>
+                <field name="dest_zip" string="CP Destino"/>
+                <separator/>
+                <filter name="filter_active_routes" string="Rutas Activas"
+                        domain="[('total_viajes', '>', 0)]"/>
+                <filter name="filter_top_routes" string="Rutas Frecuentes (10+ viajes)"
+                        domain="[('total_viajes', '>=', 10)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción -->
+    <record id="action_tms_route_stats" model="ir.actions.act_window">
+        <field name="name">Rentabilidad por Ruta</field>
+        <field name="res_model">tms.route.stats</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tms_route_stats_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Aún no hay estadísticas de rutas.
+            </p>
+            <p>
+                Las estadísticas se generan automáticamente cuando los viajes
+                se marcan como <strong>Facturado (closed)</strong>.
+                Completa y cierra tu primer viaje para ver datos aquí.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú bajo Operaciones -->
+    <menuitem id="menu_tms_route_stats"
+              name="Rentabilidad por Ruta"
+              parent="menu_tms_operations"
+              action="action_tms_route_stats"
+              sequence="35"
+              groups="tms.group_tms_manager"/>
+
+</odoo>

@@ -31,4 +31,5 @@ from . import tms_waybill             # Modelo Maestro (Viajes)
 from . import tms_tracking_event      # Bitácora GPS
 
 from . import tms_fuel_history
+from . import tms_route_stats         # Estadísticas de rentabilidad por ruta (V2.4)
 from . import res_config_settings     # Configuración

@@ -2562,9 +2562,8 @@ class TmsWaybill(models.Model):
             })
 
         res = super(TmsWaybill, self).write(vals)
-        # SEMILLA V2.3: activar cuando se implemente tms.route.analytics
-        # if vals.get('state') == 'closed':
-        #     self.env['tms.route.analytics']._update_from_waybill(self)
+        if vals.get('state') == 'closed':
+            self.env['tms.route.stats']._update_from_waybill(self)
         return res
 
     @api.model_create_multi

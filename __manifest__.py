@@ -120,7 +120,8 @@
         'views/tms_waybill_views.xml',
         'views/tms_fuel_history_views.xml',
 
-        # 8. Dashboard
+        # 8. Dashboard y Analytics
+        'views/tms_route_stats_views.xml',
         'views/tms_dashboard_views.xml',
 
         # 9. Plantillas del Portal Web (Firma Digital)
