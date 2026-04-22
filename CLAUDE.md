@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-04-21 — Fix IVA/Retención en wizard facturación + header reorganizado
+# Última actualización: 2026-04-22 — V2.3.2 Wizard cancelación Traslado + re-timbrado post-cancelación
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -50,7 +50,7 @@ claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.3
+**Versión módulo:** 19.0.2.3.2
 **Progreso actual:** ~75% — V2.3 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
@@ -324,6 +324,7 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - ✅ Estado `closed` solo cuando `tms_cfdi_status='timbrada'` (compute, no write directo)
 - ✅ Botón "Volver a facturar" en facturas canceladas (motivo 02/03)
 - ✅ ⚠️ SEMILLA PENDIENTE: activar hook `waybill.closed → _update_from_waybill()`
+- ✅ V2.3.2: Wizard cancelación CFDI Traslado con motivos SAT 01/02/03, re-timbrado post-cancelación (2026-04-22)
 
 ### 📋 V2.4 🆕 — Combustible y Rendimiento (`tms_fuel/`)
 - `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
@@ -728,10 +729,9 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 ---
 
 ## Próxima etapa
-**V2.3.1 — Notas de Crédito/Cargo y Cancelación CFDI Traslado**
+**V2.3.3 — Notas de Crédito/Cargo y Ajustes de Facturación**
 Pendiente definir SDD. Opciones:
 - CFDI Egreso tipo E (nota de crédito sin Carta Porte) — ajustes al Ingreso
-- Cancelación CFDI Traslado: mismos motivos 01/02/03, motivo 01 requiere Traslado sustituto
 - Cobro desde portal: botón de pago para receptor (MercadoPago / SPEI)
 
 ---
