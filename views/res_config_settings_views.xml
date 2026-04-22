@@ -76,6 +76,20 @@
                     </block>
 
                     <!-- ══════════════════════════════════════════════════════════
+                         FACTURACIÓN TMS (V2.3)
+                         Diario contable para facturas CFDI Ingreso
+                         ══════════════════════════════════════════════════════════ -->
+                    <block title="Facturación TMS" name="tms_invoicing_setting_container">
+                        <setting string="Diario de Ventas"
+                                 help="Diario contable que se usará al generar facturas de flete (CFDI Ingreso). Debe ser un diario de tipo Ventas.">
+                            <div class="row mt16">
+                                <label for="tms_sales_journal_id" class="col-lg-4 o_light_label"/>
+                                <field name="tms_sales_journal_id"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <!-- ══════════════════════════════════════════════════════════
                          PAC — Formas Digitales
                          URL pruebas:    https://dev33.facturacfdi.mx
                          URL producción: https://v33.facturacfdi.mx

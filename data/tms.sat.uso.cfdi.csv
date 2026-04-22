@@ -1,0 +1,24 @@
+id,code,name
+tms_sat_uso_cfdi_g01,G01,Adquisición de mercancias
+tms_sat_uso_cfdi_g02,G02,"Devoluciones, descuentos o bonificaciones"
+tms_sat_uso_cfdi_g03,G03,Gastos en general
+tms_sat_uso_cfdi_i01,I01,Construcciones
+tms_sat_uso_cfdi_i02,I02,Mobiliario y equipo de oficina por inversiones
+tms_sat_uso_cfdi_i03,I03,Equipo de transporte
+tms_sat_uso_cfdi_i04,I04,Equipo de computo y accesorios
+tms_sat_uso_cfdi_i05,I05,"Dados, troqueles, moldes, matrices y herramental"
+tms_sat_uso_cfdi_i06,I06,Comunicaciones telefónicas
+tms_sat_uso_cfdi_i07,I07,Comunicaciones satelitales
+tms_sat_uso_cfdi_i08,I08,Otra maquinaria y equipo
+tms_sat_uso_cfdi_d01,D01,"Honorarios médicos, dentales y gastos hospitalarios"
+tms_sat_uso_cfdi_d02,D02,Gastos médicos por incapacidad o discapacidad
+tms_sat_uso_cfdi_d03,D03,Gastos funerales
+tms_sat_uso_cfdi_d04,D04,Donativos
+tms_sat_uso_cfdi_d05,D05,Intereses reales efectivamente pagados por créditos hipotecarios
+tms_sat_uso_cfdi_d06,D06,Aportaciones voluntarias al SAR
+tms_sat_uso_cfdi_d07,D07,Primas por seguros de gastos médicos
+tms_sat_uso_cfdi_d08,D08,Gastos de transportación escolar obligatoria
+tms_sat_uso_cfdi_d09,D09,Depósitos en cuentas para el ahorro y planes de pensiones
+tms_sat_uso_cfdi_d10,D10,Pagos por servicios educativos (colegiaturas)
+tms_sat_uso_cfdi_s01,S01,Sin efectos fiscales
+tms_sat_uso_cfdi_cp01,CP01,Pagos

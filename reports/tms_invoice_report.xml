@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         FORMATO DE PAPEL — FACTURA TMS
+         ================================================================ -->
+    <record id="paperformat_tms_invoice" model="report.paperformat">
+        <field name="name">Factura TMS Letter</field>
+        <field name="default" eval="False"/>
+        <field name="format">Letter</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">100</field>
+    </record>
+
+    <!-- ================================================================
+         ACCIÓN DE REPORTE — CFDI INGRESO TMS
+         Se accede desde el botón "Imprimir Factura TMS" en account.move
+         ================================================================ -->
+    <record id="action_report_tms_invoice" model="ir.actions.report">
+        <field name="name">Factura TMS (CFDI Ingreso)</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tms.report_tms_invoice</field>
+        <field name="report_file">tms.report_tms_invoice</field>
+        <field name="paperformat_id" ref="paperformat_tms_invoice"/>
+        <field name="print_report_name">'Factura_TMS_%s' % (object.name or 'Sin_Folio').replace('/', '_')</field>
+    </record>
+
+    <!-- ================================================================
+         PLANTILLA QWEB — FACTURA TMS (CFDI INGRESO 4.0)
+         Secciones:
+           1. Header: Logo + Emisor + Datos CFDI (UUID, fecha, folio)
+           2. Receptor: RFC, nombre, CP fiscal, uso CFDI, régimen
+           3. Conceptos: tabla 1 fila por viaje incluido
+           4. Impuestos y Totales: subtotal, IVA, retención, total
+           5. Detalles de Viajes: ruta, vehículo, chofer
+           6. Cadena Original TFD + sellos digitales
+           7. QR SAT + leyenda legal obligatoria
+         ================================================================ -->
+    <template id="report_tms_invoice">
+        <t t-name="tms.report_tms_invoice">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+
+                    <t t-set="cfdi"   t-value="o._parse_tms_cfdi_xml()"/>
+                    <t t-set="qr_img" t-value="o._get_tms_invoice_qr_image()"/>
+
+                    <meta charset="UTF-8"/>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+                    <div class="page" style="font-family:Arial,Helvetica,sans-serif; font-size:16px;
+                         padding:0; margin:0; line-height:1.4;">
+
+                        <!-- ============================================================ -->
+                        <!-- 1. HEADER: Logo + Emisor + Datos CFDI                       -->
+                        <!-- ============================================================ -->
+                        <table style="width:100%; border-collapse:collapse; border:2px solid #1a5276; margin-bottom:6px;">
+                            <tr>
+                                <!-- Logo y datos del emisor -->
+                                <td style="width:55%; vertical-align:top; padding:6px 10px; border-right:2px solid #1a5276;">
+                                    <table style="width:100%; border-collapse:collapse;">
+                                        <tr>
+                                            <td style="width:80px; vertical-align:middle; padding-right:8px;">
+                                                <img t-if="o.company_id.logo"
+                                                     t-att-src="image_data_uri(o.company_id.logo)"
+                                                     style="max-width:70px; max-height:70px;"/>
+                                            </td>
+                                            <td style="vertical-align:top;">
+                                                <div style="font-size:18px; font-weight:bold; color:#1a5276; margin-bottom:2px;">
+                                                    <t t-out="o.company_id.name or ''"/>
+                                                </div>
+                                                <div style="font-size:13px;">
+                                                    <b>RFC:</b>&#160;<t t-out="cfdi.get('rfc_emisor') or o.company_id.vat or ''"/>
+                                                    &#160;&#160;<b>Rég.:</b>&#160;<t t-out="cfdi.get('regimen_emisor') or o.company_id.tms_regimen_fiscal_id.code or ''"/>
+                                                </div>
+                                                <div t-if="o.company_id.street" style="font-size:12px;">
+                                                    <t t-out="o.company_id.street"/>
+                                                </div>
+                                                <div style="font-size:12px;">
+                                                    <t t-out="o.company_id.city or ''"/>
+                                                    <t t-if="o.company_id.state_id">, <t t-out="o.company_id.state_id.name"/></t>
+                                                    <t t-if="o.company_id.zip">, CP <t t-out="o.company_id.zip"/></t>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+
+                                <!-- Datos del CFDI Ingreso -->
+                                <td style="width:45%; vertical-align:top; padding:6px 10px; background:#eaf0fb;">
+                                    <div style="font-size:20px; font-weight:bold; color:#1a5276; text-align:center; margin-bottom:4px;">
+                                        FACTURA
+                                    </div>
+                                    <div style="font-size:13px; margin-bottom:2px;">
+                                        <b>Folio:</b>&#160;<t t-out="o.name or 'Sin folio'"/>
+                                    </div>
+                                    <div style="font-size:12px; margin-bottom:2px;">
+                                        <b>Fecha emisión:</b>&#160;<t t-out="str(o.invoice_date or '')"/>
+                                    </div>
+                                    <div style="font-size:12px; margin-bottom:2px;">
+                                        <b>Fecha timbrado:</b>&#160;
+                                        <t t-out="cfdi.get('fecha_timbrado') or str(o.tms_cfdi_fecha or '')"/>
+                                    </div>
+                                    <div style="font-size:11px; margin-bottom:2px; word-break:break-all;">
+                                        <b>Folio Fiscal (UUID):</b><br/>
+                                        <t t-out="cfdi.get('uuid') or o.tms_cfdi_uuid or 'Sin timbrar'"/>
+                                    </div>
+                                    <div style="font-size:11px; margin-bottom:2px;">
+                                        <b>No. Cert. Emisor:</b>&#160;
+                                        <t t-out="cfdi.get('no_cert_emisor') or ''"/>
+                                    </div>
+                                    <div style="font-size:11px;">
+                                        <b>No. Cert. SAT:</b>&#160;
+                                        <t t-out="cfdi.get('no_cert_sat') or o.tms_cfdi_no_cert_sat or ''"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ============================================================ -->
+                        <!-- 2. RECEPTOR                                                  -->
+                        <!-- ============================================================ -->
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                            <tr>
+                                <td style="background:#1a5276; color:white; padding:3px 8px;
+                                           font-size:13px; font-weight:bold;">
+                                    RECEPTOR
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #999; padding:5px 10px; font-size:14px;">
+                                    <b>Nombre:</b>&#160;<t t-out="cfdi.get('nombre_receptor') or o.partner_id.name or ''"/>
+                                    &#160;&#160;<b>RFC:</b>&#160;<t t-out="cfdi.get('rfc_receptor') or o.partner_id.vat or ''"/>
+                                    &#160;&#160;<b>CP Fiscal:</b>&#160;<t t-out="cfdi.get('dom_fiscal_rec') or o.partner_id.zip or ''"/>
+                                    <br/>
+                                    <b>Uso CFDI:</b>&#160;<t t-out="cfdi.get('uso_cfdi') or 'G03'"/>
+                                    &#160;&#160;<b>Rég. Fiscal Receptor:</b>&#160;<t t-out="cfdi.get('regimen_receptor') or ''"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ============================================================ -->
+                        <!-- 3. CONCEPTOS (1 por viaje incluido)                         -->
+                        <!-- ============================================================ -->
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                            <tr>
+                                <td colspan="6" style="background:#1a5276; color:white; padding:3px 8px;
+                                                       font-size:13px; font-weight:bold;">
+                                    CONCEPTOS
+                                </td>
+                            </tr>
+                            <tr style="background:#d6e4f7; font-size:12px; font-weight:bold;">
+                                <td style="border:1px solid #999; padding:3px 6px; text-align:center; width:6%;">Cant.</td>
+                                <td style="border:1px solid #999; padding:3px 6px; text-align:center; width:8%;">Unidad</td>
+                                <td style="border:1px solid #999; padding:3px 6px; text-align:center; width:10%;">Clave SAT</td>
+                                <td style="border:1px solid #999; padding:3px 6px; width:46%;">Descripción</td>
+                                <td style="border:1px solid #999; padding:3px 6px; text-align:right; width:15%;">Precio Unit.</td>
+                                <td style="border:1px solid #999; padding:3px 6px; text-align:right; width:15%;">Importe</td>
+                            </tr>
+                            <!-- Una fila por viaje vinculado -->
+                            <t t-foreach="o.tms_waybill_ids" t-as="wb">
+                                <tr style="font-size:13px;">
+                                    <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">1</td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">E48</td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">84111500</td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px;">
+                                        Servicio de Autotransporte de Carga&#160;—&#160;<t t-out="wb.name or ''"/>
+                                        <t t-if="wb.route_name">
+                                            <br/><span style="font-size:11px; color:#555;">Ruta: <t t-out="wb.route_name"/></span>
+                                        </t>
+                                    </td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; text-align:right;">
+                                        $<t t-out="'{:,.2f}'.format(wb.amount_untaxed or 0.0)"/>
+                                    </td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; text-align:right;">
+                                        $<t t-out="'{:,.2f}'.format(wb.amount_untaxed or 0.0)"/>
+                                    </td>
+                                </tr>
+                            </t>
+                            <!-- Fallback: si no hay waybills pero hay líneas nativas -->
+                            <t t-if="not o.tms_waybill_ids">
+                                <t t-foreach="o.invoice_line_ids" t-as="line">
+                                    <tr style="font-size:13px;">
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">
+                                            <t t-out="int(line.quantity)"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">E48</td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:center;">84111500</td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px;"><t t-out="line.name or ''"/></td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:right;">
+                                            $<t t-out="'{:,.2f}'.format(line.price_unit or 0.0)"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:right;">
+                                            $<t t-out="'{:,.2f}'.format(line.price_subtotal or 0.0)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                        </table>
+
+                        <!-- ============================================================ -->
+                        <!-- 4. IMPUESTOS Y TOTALES                                      -->
+                        <!-- ============================================================ -->
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                            <tr>
+                                <td style="width:50%; vertical-align:top; padding-right:10px;">
+                                    <!-- Forma de pago y método -->
+                                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                                        <tr>
+                                            <td style="border:1px solid #999; padding:3px 8px; background:#d6e4f7; font-weight:bold;">
+                                                Forma de Pago
+                                            </td>
+                                            <td style="border:1px solid #999; padding:3px 8px;">
+                                                <t t-out="o.invoice_payment_term_id.name or 'PUE — Pago en una sola exhibición'"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border:1px solid #999; padding:3px 8px; background:#d6e4f7; font-weight:bold;">
+                                                Moneda
+                                            </td>
+                                            <td style="border:1px solid #999; padding:3px 8px;">
+                                                <t t-out="o.currency_id.name or 'MXN'"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border:1px solid #999; padding:3px 8px; background:#d6e4f7; font-weight:bold;">
+                                                IdCCP Ingreso
+                                            </td>
+                                            <td style="border:1px solid #999; padding:3px 8px; font-size:11px; word-break:break-all;">
+                                                <t t-out="o.tms_id_ccp_ingreso or '—'"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="border:1px solid #999; padding:3px 8px; background:#d6e4f7; font-weight:bold;">
+                                                PAC Certificador
+                                            </td>
+                                            <td style="border:1px solid #999; padding:3px 8px;">
+                                                <t t-out="o.tms_cfdi_pac or '—'"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+
+                                <!-- Totales alineados a la derecha -->
+                                <td style="width:50%; vertical-align:top;">
+                                    <table style="width:100%; border-collapse:collapse; font-size:14px; float:right;">
+                                        <tr>
+                                            <td style="border:1px solid #999; padding:4px 10px; background:#f2f8ff; text-align:right; font-weight:bold;">
+                                                SubTotal
+                                            </td>
+                                            <td style="border:1px solid #999; padding:4px 10px; text-align:right; min-width:120px;">
+                                                $<t t-out="'{:,.2f}'.format(o.amount_untaxed)"/>
+                                            </td>
+                                        </tr>
+                                        <!-- Líneas de impuesto del move (IVA, Retención) -->
+                                        <t t-foreach="o.line_ids.filtered(lambda l: l.display_type == 'tax')" t-as="tax_line">
+                                            <tr>
+                                                <td style="border:1px solid #999; padding:4px 10px; background:#f2f8ff; text-align:right; font-size:13px;">
+                                                    <t t-out="tax_line.name or ''"/>
+                                                </td>
+                                                <td style="border:1px solid #999; padding:4px 10px; text-align:right; font-size:13px;">
+                                                    $<t t-out="'{:,.2f}'.format(abs(tax_line.balance))"/>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <tr style="background:#1a5276; color:white; font-weight:bold; font-size:16px;">
+                                            <td style="border:1px solid #1a5276; padding:6px 10px; text-align:right;">
+                                                TOTAL
+                                            </td>
+                                            <td style="border:1px solid #1a5276; padding:6px 10px; text-align:right;">
+                                                $<t t-out="'{:,.2f}'.format(o.amount_total)"/>
+                                                &#160;<t t-out="o.currency_id.name or 'MXN'"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- ============================================================ -->
+                        <!-- 5. DETALLES DE VIAJES INCLUIDOS                             -->
+                        <!-- ============================================================ -->
+                        <t t-if="o.tms_waybill_ids">
+                            <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                                <tr>
+                                    <td colspan="5" style="background:#1a5276; color:white; padding:3px 8px;
+                                                           font-size:13px; font-weight:bold;">
+                                        DETALLE DE VIAJES INCLUIDOS
+                                    </td>
+                                </tr>
+                                <tr style="background:#d6e4f7; font-size:12px; font-weight:bold;">
+                                    <td style="border:1px solid #999; padding:3px 6px; width:12%;">Folio</td>
+                                    <td style="border:1px solid #999; padding:3px 6px; width:28%;">Ruta</td>
+                                    <td style="border:1px solid #999; padding:3px 6px; width:18%;">Vehículo</td>
+                                    <td style="border:1px solid #999; padding:3px 6px; width:18%;">Chofer</td>
+                                    <td style="border:1px solid #999; padding:3px 6px; width:24%; text-align:right;">Subtotal Viaje</td>
+                                </tr>
+                                <t t-foreach="o.tms_waybill_ids" t-as="wb">
+                                    <tr style="font-size:12px;">
+                                        <td style="border:1px solid #ccc; padding:3px 6px;">
+                                            <t t-out="wb.name or '—'"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px;">
+                                            <t t-out="wb.route_name or '—'"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px;">
+                                            <t t-out="wb.vehicle_id.name if wb.vehicle_id else '—'"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px;">
+                                            <t t-out="wb.driver_id.name if wb.driver_id else '—'"/>
+                                        </td>
+                                        <td style="border:1px solid #ccc; padding:3px 6px; text-align:right;">
+                                            $<t t-out="'{:,.2f}'.format(wb.amount_untaxed or 0.0)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </table>
+                        </t>
+
+                        <!-- ============================================================ -->
+                        <!-- 6. CADENA ORIGINAL TFD + SELLOS DIGITALES                  -->
+                        <!-- ============================================================ -->
+                        <t t-if="cfdi.get('cadena_original')">
+                            <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                                <tr>
+                                    <td style="background:#555; color:white; padding:3px 8px;
+                                               font-size:12px; font-weight:bold;">
+                                        CADENA ORIGINAL DEL COMPLEMENTO DE CERTIFICACIÓN DIGITAL DEL SAT
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border:1px solid #999; padding:4px 8px; font-size:9px;
+                                               word-break:break-all; font-family:Courier,monospace; background:#f9f9f9;">
+                                        <t t-out="cfdi.get('cadena_original') or ''"/>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table style="width:100%; border-collapse:collapse; margin-bottom:6px;">
+                                <tr style="background:#d9d9d9; font-size:11px; font-weight:bold;">
+                                    <td style="border:1px solid #999; padding:3px 8px; width:50%;">
+                                        Sello Digital del Emisor
+                                    </td>
+                                    <td style="border:1px solid #999; padding:3px 8px; width:50%;">
+                                        Sello Digital del SAT
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; font-size:8px;
+                                               word-break:break-all; font-family:Courier,monospace; background:#fafafa; vertical-align:top;">
+                                        <t t-out="cfdi.get('sello_cfd') or ''"/>
+                                    </td>
+                                    <td style="border:1px solid #ccc; padding:3px 6px; font-size:8px;
+                                               word-break:break-all; font-family:Courier,monospace; background:#fafafa; vertical-align:top;">
+                                        <t t-out="cfdi.get('sello_sat') or ''"/>
+                                    </td>
+                                </tr>
+                            </table>
+                        </t>
+
+                        <!-- ============================================================ -->
+                        <!-- 7. QR SAT + LEYENDA LEGAL OBLIGATORIA                      -->
+                        <!-- ============================================================ -->
+                        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+                            <tr>
+                                <!-- QR izquierda -->
+                                <td style="width:100px; vertical-align:middle; padding:4px; text-align:center; border:1px solid #ccc;">
+                                    <img t-if="qr_img"
+                                         t-att-src="qr_img"
+                                         style="width:90px; height:90px;"/>
+                                    <span t-else="" style="font-size:9px; color:#999;">Sin QR</span>
+                                </td>
+                                <!-- Leyenda SAT derecha -->
+                                <td style="vertical-align:middle; padding:6px 10px;">
+                                    <div style="font-size:10px; color:#333; border:1px solid #ccc; padding:6px; background:#fffef8;">
+                                        <b>Este documento es una representación impresa de un CFDI.</b><br/>
+                                        Verificable en:
+                                        <span style="font-family:Courier,monospace; font-size:9px;">
+                                            https://verificacfdi.facturaelectronica.sat.gob.mx
+                                        </span><br/>
+                                        UUID:&#160;
+                                        <span style="font-family:Courier,monospace; font-size:9px;">
+                                            <t t-out="cfdi.get('uuid') or o.tms_cfdi_uuid or '—'"/>
+                                        </span><br/>
+                                        Fecha certificación SAT:&#160;
+                                        <t t-out="cfdi.get('fecha_timbrado') or str(o.tms_cfdi_fecha or '')"/>
+                                        &#160;&#160;Proveedor certificación:&#160;
+                                        <t t-out="cfdi.get('rfc_prov_certif') or o.tms_cfdi_pac or '—'"/>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </div><!-- /page -->
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

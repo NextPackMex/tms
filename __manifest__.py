@@ -79,6 +79,12 @@
         'data/tms_sequence_data.xml',
         'data/tms_data.xml',
         'data/sat_regimen_fiscal.xml',
+        'data/tms.sat.zona.especial.csv',
+        'data/tms.sat.uso.cfdi.csv',
+        'data/tms.sat.forma.pago.csv',
+        'data/tms.sat.metodo.pago.csv',
+        'data/tms.sat.tipo.relacion.csv',
+        'data/tms.sat.periodicidad.pago.csv',
 
 
         # 3. Wizard de importación
@@ -98,7 +104,10 @@
         'views/sat_municipio_views.xml',
         'views/sat_tipo_permiso_views.xml',
 
-        # 3.1 Extensiones de modelos base SAT
+        # 3.1 Catálogos CFDI 4.0 (Sección 4: UsoCFDI, FormaPago, MetodoPago, TipoRelacion, Periodicidad)
+        'views/tms_sat_catalogos_views.xml',
+
+        # 3.2 Extensiones de modelos base SAT
         'views/res_company_views.xml',
         'views/res_partner_tms_view.xml',
         'views/res_partner_tms_modals_view.xml',
@@ -115,10 +124,14 @@
         'wizard/tms_cotizacion_wizard_views.xml',
         'wizard/tms_onboarding_wizard_views.xml',
         'wizard/tms_stamp_validation_wizard_views.xml',
+        'wizard/tms_invoice_wizard_views.xml',
+        'wizard/tms_cancel_invoice_wizard_views.xml',
+        'wizard/tms_cancel_traslado_wizard_views.xml',
 
         # 7. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',
         'views/tms_fuel_history_views.xml',
+        'views/account_move_tms_views.xml',
 
         # 8. Dashboard y Analytics
         'views/tms_route_stats_views.xml',
@@ -133,6 +146,7 @@
         'reports/tms_cotizacion_report_template.xml',
         'reports/tms_carta_porte_report.xml',
         'reports/tms_carta_porte_report_template.xml',
+        'reports/tms_invoice_report.xml',
         'data/mail_template_data.xml',
         'data/mail_template_cotizacion.xml',
 

@@ -2,7 +2,17 @@
 
 # INSTRUCCIONES DE OPERACIÓN — TMS "Hombre Camión"
 
-# Para: Antigravity IDE / Claude Code / Cualquier agente IA
+# Para: Claude Code Terminal / Claude Web
+# ⚠️ Ya NO se usa Antigravity. Ejecutor: Claude Code terminal.
+
+# 🤖 MODELOS DE IA — CUÁNDO USAR CUÁL
+
+| Situación | Modelo |
+|-----------|--------|
+| Módulo nuevo, etapa completa, API, orquestador | claude-opus-4-7 |
+| Bug difícil, refactor tms_waybill.py | claude-opus-4-7 |
+| Fix puntual, un solo archivo | claude-sonnet-4-6 |
+| Vista XML, label, color, fix línea | claude-sonnet-4-6 |
 
 # ══════════════════════════════════════════════════════════════
 

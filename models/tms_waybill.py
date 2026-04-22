@@ -944,6 +944,32 @@ class TmsWaybill(models.Model):
         help='Retención de IVA (4%)'
     )
 
+    # ============================================================
+    # FACTURACIÓN (V2.3)
+    # ============================================================
+
+    invoice_ids = fields.Many2many(
+        'account.move',
+        'account_move_tms_waybill_rel',
+        'waybill_id',
+        'move_id',
+        string='Facturas',
+        domain=[('tms_is_invoice', '=', True)],
+        copy=False,
+        help='Facturas CFDI Ingreso que incluyen este viaje'
+    )
+
+    invoice_status = fields.Selection([
+        ('no_invoice', 'Sin facturar'),
+        ('invoiced',   'Facturado'),
+    ],
+        string='Estado Factura',
+        compute='_compute_invoice_status',
+        store=True,
+        default='no_invoice',
+        help='Sin facturar: no hay CFDI Ingreso timbrado. Facturado: al menos una factura timbrada.'
+    )
+
     # ==========================================
     # API EXTERNA: CÁLCULO DE RUTA (GOOGLE ROUTES API + CACHÉ)
     # ==========================================
@@ -1335,6 +1361,20 @@ class TmsWaybill(models.Model):
             record.amount_tax = iva
             record.amount_retention = ret
             record.amount_total = base + iva - ret
+
+    @api.depends('invoice_ids', 'invoice_ids.tms_cfdi_status')
+    def _compute_invoice_status(self):
+        """
+        Determina si el viaje tiene al menos una factura CFDI Ingreso timbrada.
+        'invoiced' → existe account.move con tms_cfdi_status='timbrada'.
+        'no_invoice' → sin facturas o todas canceladas/borrador.
+        El estado 'closed' del waybill se activa desde este compute.
+        """
+        for rec in self:
+            timbradas = rec.invoice_ids.filtered(
+                lambda m: m.tms_cfdi_status == 'timbrada'
+            )
+            rec.invoice_status = 'invoiced' if timbradas else 'no_invoice'
 
     # ============================================================
     # MÉTODOS COMPUTADOS
@@ -1860,7 +1900,7 @@ class TmsWaybill(models.Model):
         7. Cambiar cfdi_status a 'timbrado'
         """
         self.ensure_one()
-        if self.state not in ('aprobado', 'waybill'):
+        if self.state not in ('aprobado', 'waybill') and self.cfdi_status != 'cancelado':
             raise UserError(_('Solo se puede timbrar una Carta Porte en estado "Aprobado" o "Carta Porte".'))
         if self.cfdi_status == 'timbrado':
             raise UserError(_('Este CFDI ya fue timbrado. UUID: %s') % self.cfdi_uuid)
@@ -1949,33 +1989,24 @@ class TmsWaybill(models.Model):
 
     def action_cancel_cfdi(self):
         """
-        Cancela el CFDI timbrado.
+        Abre el wizard de cancelación del CFDI Traslado para seleccionar motivo SAT.
         Solo ejecutable cuando cfdi_status='timbrado'.
-        V2.3: agregar wizard para seleccionar motivo.
+        La lógica de cancelación vive en tms.cancel.traslado.wizard.
         """
         self.ensure_one()
         if self.cfdi_status != 'timbrado':
             raise UserError(_('Solo se puede cancelar un CFDI en estado "Timbrado".'))
 
-        try:
-            from odoo.addons.tms.services.pac_manager import PacManager
-            manager = PacManager(self.env)
-            # Motivo 03 = no se llevó a cabo la operación (default)
-            manager.cancelar(self.cfdi_uuid, '03', self.company_id)
-
-            self.write({'cfdi_status': 'cancelado'})
-
-            if hasattr(self, 'message_post'):
-                self.message_post(
-                    body=_('CFDI cancelado. UUID: %s') % self.cfdi_uuid,
-                    subject=_('CFDI Cancelado'),
-                )
-
-        except UserError:
-            raise
-        except Exception as e:
-            _logger.error('TMS CANCELACION ERROR waybill %s: %s', self.id, str(e))
-            raise UserError(_('Error al cancelar CFDI: %s') % str(e))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Cancelar CFDI Traslado'),
+            'res_model': 'tms.cancel.traslado.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_waybill_id': self.id,
+            },
+        }
 
     def action_check_cfdi_status(self):
         """
@@ -2343,20 +2374,112 @@ class TmsWaybill(models.Model):
 
     def action_create_invoice(self):
         """
-        MANUAL: Crear Factura → Facturado.
-        Marca el viaje como cerrado.
+        Abre el wizard de facturación (CFDI Ingreso) pre-configurado con este viaje.
+        Reemplaza el stub anterior que solo hacía write({'state': 'closed'}).
+
+        El estado 'closed' ya NO lo activa este método — lo activa
+        _compute_invoice_status cuando existe un CFDI Ingreso timbrado.
         """
         self.ensure_one()
 
-        # Validar que tenga monto
         if not self.amount_total:
             raise UserError(_('Debe definir el valor del viaje antes de facturar.'))
 
-        # TODO: Aquí se puede integrar la creación real de factura
-        # account_invoice = self.env['account.move'].create({...})
+        return {
+            'type':      'ir.actions.act_window',
+            'name':      _('Facturar Viaje'),
+            'res_model': 'tms.invoice.wizard',
+            'view_mode': 'form',
+            'target':    'new',
+            'context': {
+                'default_modo':         'simple',
+                'default_partner_id':   self.partner_invoice_id.id,
+                'default_waybill_ids':  [(6, 0, [self.id])],
+            },
+        }
 
-        # Cambia el estado a 'closed' (Facturado/Cerrado) - estado declarado en fields.Selection
-        self.write({'state': 'closed'})
+    def action_release_from_invoice(self):
+        """
+        Libera el waybill de vuelta a estado 'arrived' cuando su CFDI Ingreso
+        es cancelado con motivo 02 (errores sin relación) o 03 (operación no realizada).
+
+        NUNCA llamar si tms_cfdi_status='en_cancelacion' — solo cuando el SAT
+        confirma la cancelación y account_move_tms llama a este método.
+        El invoice_status volverá a 'no_invoice' automáticamente por el compute.
+        """
+        for rec in self:
+            if rec.state == 'closed':
+                rec.write({'state': 'arrived'})
+                rec.message_post(
+                    body=_(
+                        'Viaje liberado a estado "En Destino" — '
+                        'CFDI Ingreso cancelado (motivo 02/03). Listo para refacturar.'
+                    )
+                )
+
+    def action_view_invoices(self):
+        """
+        Abre las facturas (account.move) vinculadas a este viaje.
+        Usado por el smart button "Ver Factura(s)" en el formulario del waybill.
+        """
+        self.ensure_one()
+        invoices = self.invoice_ids
+        if len(invoices) == 1:
+            return {
+                'type':      'ir.actions.act_window',
+                'name':      _('Factura'),
+                'res_model': 'account.move',
+                'res_id':    invoices.id,
+                'view_mode': 'form',
+                'target':    'current',
+            }
+        return {
+            'type':      'ir.actions.act_window',
+            'name':      _('Facturas del Viaje'),
+            'res_model': 'account.move',
+            'domain':    [('id', 'in', invoices.ids)],
+            'view_mode': 'list,form',
+            'target':    'current',
+        }
+
+    def action_print_invoice_pdf(self):
+        """
+        Proxy: imprime el PDF del CFDI Ingreso timbrado vinculado a este viaje.
+        Delega en account.move.action_print_tms_invoice() de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay factura CFDI Ingreso timbrada para este viaje.'))
+        return invoice.action_print_tms_invoice()
+
+    def action_download_invoice_xml(self):
+        """
+        Proxy: descarga el XML del CFDI Ingreso timbrado vinculado a este viaje.
+        Usa el campo tms_cfdi_xml (Binary attachment) de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay XML de CFDI Ingreso timbrado para este viaje.'))
+        return {
+            'type':   'ir.actions.act_url',
+            'url':    '/web/content/account.move/%s/tms_cfdi_xml/%s?download=true' % (
+                invoice.id, invoice.tms_cfdi_xml_fname or 'cfdi_ingreso.xml'
+            ),
+            'target': 'self',
+        }
+
+    def action_cancel_invoice_from_waybill(self):
+        """
+        Proxy: abre el wizard de cancelación del CFDI Ingreso vinculado a este viaje.
+        Delega en account.move.action_tms_open_cancel_wizard() de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay factura CFDI Ingreso timbrada para cancelar.'))
+        return invoice.action_tms_open_cancel_wizard()
 
     def _action_sign(self, signature, signed_by):
         """

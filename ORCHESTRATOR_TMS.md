@@ -1,15 +1,18 @@
 # ORCHESTRATOR.md — TMS Hombre Camión
-> Ubicación: `/tms/ORCHESTRATOR.md` (raíz del repo, junto a AGENTS.md y CLAUDE.md)
-> Uso: Claude Code CLI lee este archivo para dividir una etapa en sub-agentes paralelos
+> Ubicación: `/tms/ORCHESTRATOR.md`
+> Uso: Claude Code terminal lee este archivo para dividir una etapa en sub-agentes paralelos
+> ⚠️ Ya NO se usa Antigravity. Ejecutor: **Claude Code terminal** con `claude-opus-4-7`
 
 ---
 
+## MODELO RECOMENDADO PARA EL ORQUESTADOR
+
+Siempre usar `claude-opus-4-7` — maneja múltiples archivos, APIs y lógica compleja.
+
 ## CÓMO ACTIVAR EL ORQUESTADOR
 
-Cuando quieras implementar una etapa completa con sub-agentes paralelos, lanza Claude Code CLI con este comando desde la raíz del repo:
-
 ```bash
-claude "Lee ORCHESTRATOR.md y el SDD en docs/etapa-X.X.X.md, luego ejecuta el flujo multi-agente completo"
+claude --model claude-opus-4-7 "Lee ORCHESTRATOR.md y el SDD en docs/etapa-X.X.X.md, luego ejecuta el flujo multi-agente completo"
 ```
 
 Claude Code leerá este archivo, dividirá el SDD en 4 contratos y lanzará los agentes en paralelo usando Git Worktrees.
@@ -267,8 +270,8 @@ El orquestador es para etapas medianas o grandes. Para tareas pequeñas, es over
 |---|---|---|
 | Nueva etapa completa (modelo + vista + tests) | ✅ | |
 | Refactor grande de tms_waybill.py | ✅ | |
-| Fix de un bug en un archivo | | ✅ Antigravity |
-| Cambio de label en una vista | | ✅ Antigravity |
+| Fix de un bug en un archivo | | ✅ Claude Code (Sonnet 4.6) |
+| Cambio de label en una vista | | ✅ Claude Code (Sonnet 4.6) |
 | Pregunta sobre el código | | ✅ Claude Web |
 | Generar SDD | | ✅ Claude Web |
 

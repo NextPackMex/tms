@@ -1,0 +1,9 @@
+id,code,name
+tms_sat_tipo_relacion_01,01,Nota de crédito de los documentos relacionados
+tms_sat_tipo_relacion_02,02,Nota de débito de los documentos relacionados
+tms_sat_tipo_relacion_03,03,Devolución de mercancía sobre facturas o traslados previos
+tms_sat_tipo_relacion_04,04,Sustitución de los CFDI previos
+tms_sat_tipo_relacion_05,05,Traslados de mercancias facturados previamente
+tms_sat_tipo_relacion_06,06,Factura generada por los traslados previos
+tms_sat_tipo_relacion_07,07,CFDI por aplicación de anticipos
+tms_sat_tipo_relacion_08,08,Facturas generadas por pagos en parcialidades

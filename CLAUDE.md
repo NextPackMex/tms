@@ -1,9 +1,41 @@
 # CLAUDE.md — TMS "Hombre Camión" & Carta Porte 3.1
 
 # ══════════════════════════════════════════════════════════════
-# CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-03-24 — V2.2.2 COMPLETADA + fixes post-timbrado
+# CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
+# Última actualización: 2026-04-22 — V2.3.2 Wizard cancelación Traslado + re-timbrado post-cancelación
 # ══════════════════════════════════════════════════════════════
+
+## 0. 🤖 Modelos de IA — Cuándo usar cuál
+
+> Leer esto PRIMERO. El ejecutor es **Claude Code terminal** (ya NO Antigravity).
+
+> 📌 **REGLA OBLIGATORIA — Modelo en respuesta:** Indicar el modelo en uso al inicio de CADA respuesta.
+> Formato: `**Modelo:** claude-sonnet-4-6` (o el que corresponda).
+> Aplica a todas las respuestas sin excepción.
+
+> 📌 **REGLA OBLIGATORIA — Selección de modelo:** Claude Code debe inferir el modelo correcto
+> según el esfuerzo de la tarea usando la tabla siguiente, SIN esperar instrucción explícita del usuario.
+> Si la tarea es ambigua, elegir el modelo más capaz (Opus 4.7).
+
+| Situación | Modelo |
+|-----------|--------|
+| Módulo nuevo, etapa completa, orquestador multi-agente | `claude-opus-4-7` |
+| Integraciones API (TollGuru, PAC, CFDI, xml_builder) | `claude-opus-4-7` |
+| Bug difícil, refactor tms_waybill.py, deuda técnica | `claude-opus-4-7` |
+| Fix puntual, un solo archivo, campo simple | `claude-sonnet-4-6` |
+| Ajuste de vista XML, label, color, fix una línea | `claude-sonnet-4-6` |
+| Verificaciones, limpieza, comentarios | `claude-sonnet-4-6` |
+
+```bash
+# Tarea grande (etapa completa, orquestador, API)
+claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta etapa X.X.X..."
+
+# Fix rápido (un archivo, vista, campo)
+claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
+```
+
+> ⚠️ Ya NO se usa Antigravity. Ejecutor: **Claude Code terminal**.
+> Para imágenes / diseño visual → **Gemini Flash**.
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
 > Lee `contexto_maestro_tms_final.md` — es la fuente de verdad del proyecto.
@@ -18,8 +50,8 @@
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.2
-**Progreso actual:** ~65% — V2.2.2 completado
+**Versión módulo:** 19.0.2.3.2
+**Progreso actual:** ~75% — V2.3 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -169,20 +201,26 @@ tms/                                    # Módulo principal
 │   ├── res_partner_tms.py              # _inherit contactos SAT
 │   ├── res_company.py                  # _inherit empresa
 │   ├── res_config_settings.py          # _inherit APIs + seguros
-│   └── sat_*.py                        # 11 catálogos SAT
+│   ├── account_move_tms.py             # _inherit account.move (CFDI Ingreso V2.3)
+│   ├── tms_sat_zona_especial.py        # Catálogo ZEDE IVA 0% (V2.3)
+│   └── sat_*.py                        # 12 catálogos SAT
 ├── views/
 │   ├── tms_waybill_views.xml
 │   ├── tms_fleet_vehicle_views.xml
 │   ├── tms_destination_views.xml
+│   ├── account_move_tms_views.xml      # Pestaña TMS + botones en factura (V2.3)
 │   └── res_config_settings_views.xml
 ├── reports/
 │   ├── tms_waybill_report.xml
 │   ├── tms_cotizacion_report.xml
 │   ├── tms_cotizacion_report_template.xml
 │   ├── tms_carta_porte_report.xml          # Acción reporte PDF CP timbrada (V2.2.1)
-│   └── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
+│   ├── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
+│   └── tms_invoice_report.xml              # PDF Factura CFDI Ingreso (V2.3)
 ├── wizard/
 │   ├── tms_cotizacion_wizard.py        # Wizard cotización 2 pasos
+│   ├── tms_invoice_wizard.py           # Wizard facturación 4 pasos (V2.3)
+│   ├── tms_cancel_invoice_wizard.py    # Wizard cancelación CFDI motivos 01/02/03 (V2.3)
 │   └── tms_cotizacion_wizard_views.xml
 ├── security/
 │   ├── tms_security.xml
@@ -271,10 +309,22 @@ tms_analytics/                          # Datos de mercado (Fase 3)
   - Wizard ampliado a 20 checks en 7 secciones
   - Banner rojo/verde en formulario waybill (tms_stamp_ready)
   - decoration-danger en product_sat_id y uom_sat_id
+- ✅ chore: comentarios históricos draft/en_pedido/assigned limpiados en tms_waybill.py (2026-03-24)
 
-### 📋 V2.3 — Facturación Real
-- CFDI de ingreso vinculado al waybill via `account.move`
-- ⚠️ SEMILLA: activar hook `waybill.closed → _update_from_waybill()`
+### ✅ V2.3 — Facturación Real (COMPLETADO — 2026-04-15)
+**Hitos técnicos:**
+- ✅ `account.move` extendido: 12 campos `tms_*`, timbrado CFDI Ingreso, cancelación, helpers PDF
+- ✅ Wizard 4 pasos: modo (simple/consolidado), cliente+viajes, datos fiscales, resultado+UUID
+- ✅ Cancelación motivos 01/02/03: liberación automática waybills en 02/03, sustituta en 01
+- ✅ `xml_builder.py` dispatch: `build(waybill_or_move, tipo='T'|'I')` — retrocompatible
+- ✅ CFDI Ingreso: N pares OR/DE, N conceptos, IVA 16%, Retención 4% condicional, ZEDE IVA 0%
+- ✅ Catálogo `tms.sat.zona.especial` (Istmo Tehuantepec — 8 zonas ZEDE)
+- ✅ PDF 7 secciones: header, receptor, conceptos, totales, detalles viajes, cadena TFD, QR SAT
+- ✅ Botón Facturar desde estado `aprobado` en adelante
+- ✅ Estado `closed` solo cuando `tms_cfdi_status='timbrada'` (compute, no write directo)
+- ✅ Botón "Volver a facturar" en facturas canceladas (motivo 02/03)
+- ✅ ⚠️ SEMILLA PENDIENTE: activar hook `waybill.closed → _update_from_waybill()`
+- ✅ V2.3.2: Wizard cancelación CFDI Traslado con motivos SAT 01/02/03, re-timbrado post-cancelación (2026-04-22)
 
 ### 📋 V2.4 🆕 — Combustible y Rendimiento (`tms_fuel/`)
 - `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
@@ -473,59 +523,172 @@ chore: descripción           ← mantenimiento
 
 ## 14. Reglas de Trabajo por Herramienta
 
-### Claude Code (consola IDE)
+### Claude Code Terminal (ejecutor principal)
 - Lee `CLAUDE.md` automáticamente al iniciar
-- Modo **Ask** para cambios quirúrgicos y QA
-- Modo **Edit** para refactors grandes
+- Usar `--model claude-opus-4-7` para etapas completas y tareas complejas
+- Usar `--model claude-sonnet-4-6` para fixes rápidos y cambios de un archivo
 - NO hacer commit hasta que Mois lo apruebe explícitamente
 
-### Antigravity
-- Primer prompt de cada etapa: incluir SDD completo como contexto
-- Prompts siguientes dentro de la misma etapa: NO repetir contexto
+### Claude Web (claude.ai)
+- Generación de SDDs, planificación, revisión de roadmap
+- Consultas de arquitectura y decisiones técnicas
 
-### Prioridad de pensamiento Antigravity:
-- `Planning + High` → módulos nuevos, integraciones API, orquestador
-- `Planning + Low` → lógica Python, bugs complejos, modelos medianos
-- `Fast + Flash` → XML, labels, fix una línea, verificaciones, limpieza
+### Gemini Flash
+- Imágenes, íconos, diseño visual
 
-### Tabla de herramientas por versión:
-| Versión | Herramienta | Modo |
+### Tabla de modelos por versión:
+| Versión | Modelo Claude Code | Tipo de tarea |
 |---|---|---|
-| 2.1.5 | Claude Code CLI + Orquestador | Planning + High |
-| 2.1.6 | Antigravity | Planning + Low |
-| 2.2 | Claude Code CLI + Orquestador | Planning + High |
-| 2.3 | Claude Code CLI + Orquestador | Planning + High |
-| 2.4 | Antigravity | Planning + Low |
-| 2.4b | Antigravity | Planning + Low |
-| 2.4c | Claude Code CLI + Orquestador | Planning + High |
-| 2.4d | Antigravity | Planning + Low |
-| 2.5 | Antigravity | Planning + Low |
-| 2.6 | Antigravity | Planning + Low |
-| 2.7 | Antigravity | Fast + Flash |
-| 2.8 | Claude Code CLI + Orquestador | Planning + High |
+| 2.4 (tms_fuel/) | `claude-opus-4-7` | Módulo nuevo |
+| 2.4b (evidencias) | `claude-sonnet-4-6` | Modelo + vista media |
+| 2.4c (firma digital) | `claude-opus-4-7` | Módulo nuevo + crypto |
+| 2.4d (liquidación) | `claude-sonnet-4-6` | Modelo + cálculos |
+| 2.5 (limpieza) | `claude-sonnet-4-6` | Fixes y semillas |
+| 2.6 (KPIs/portal) | `claude-opus-4-7` | Dashboard + portal |
+| 2.7 (limpieza final) | `claude-sonnet-4-6` | Limpieza y QA |
+| 2.8 (SaaS) | `claude-opus-4-7` | Multi-tenant + cobro |
 
 ---
 
 ## 15. Formato SDD Obligatorio
 
-Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar:
+> ⚠️ Todo SDD generado para este proyecto debe incluir las siguientes secciones
+> en este orden exacto. Sin excepciones. Aplica para Claude, Gemini CLI, Antigravity y Claude Code.
+
+Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar.
+
+### Encabezado
 
 ```markdown
 # SDD — Etapa X.X.X: Nombre
-Módulo, Fecha, Prioridad, Branch GIT
-
-## GIT (solo primer prompt de etapa)
-## PROBLEMA
-## SOLUCIÓN
-## CAMBIOS (tablas de campos, modelos)
-## ACCEPTANCE CRITERIA (AC-01, AC-02...)
-## UPGRADE COMMAND
-## Context Blueprint
-  - Modelos _name
-  - File Manifest (ruta + Crear/Modificar)
-  - Decoradores + campos nuevos
-  - Seguridad (access.csv + groups)
+Módulo:   tms
+Fecha:    YYYY-MM-DD
+Branch:   feat/etapa-X.X.X-nombre
+Estado:   Draft | En progreso | Completado
 ```
+
+### Sección 1 — GIT (solo primer prompt de etapa)
+```bash
+git checkout main && git pull origin main
+git checkout -b feat/etapa-X.X.X-nombre
+```
+
+### Sección 2 — Problema
+Descripción funcional del problema o necesidad en lenguaje de negocio.
+
+### Sección 3 — Solución
+Descripción de la solución técnica propuesta.
+
+### Sección 4 — Modelos afectados
+| Modelo | Acción | Archivo |
+|--------|--------|---------|
+| tms.waybill | _inherit | models/tms_waybill.py |
+| tms.nuevo.modelo | Create | models/tms_nuevo_modelo.py |
+
+### Sección 5 — File Manifest
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| models/tms_waybill.py | Modify | Agregar campo X |
+| views/tms_waybill_views.xml | Modify | Agregar campo en form |
+| security/ir.model.access.csv | Modify | Nuevos grupos si aplica |
+
+### Sección 6 — Campos nuevos
+| Nombre | Tipo | Descripción | Requerido |
+|--------|------|-------------|-----------|
+| campo_nuevo | Char | Descripción clara | Sí/No |
+
+### Sección 7 — Flujo funcional
+Pasos numerados desde el punto de vista del usuario final.
+
+### Sección 8 — Criterios de aceptación
+- [ ] AC-01: criterio verificable
+- [ ] AC-02: criterio verificable
+(mínimo 5 ACs)
+
+### Sección 9 — Tests requeridos ← NIVEL 4
+Mínimo 5 tests. Formato: `test_nombre → qué valida`
+- [ ] test_waybill_state_flow → estados cotizado→aprobado→waybill funcionan
+- [ ] test_proposal_calculation → las 3 propuestas calculan valores positivos
+- [ ] test_retention_only_company → retención 4% solo si is_company=True
+- [ ] test_sat_catalog_global → catálogos SAT no tienen company_id
+- [ ] test_tollguru_cache → segunda llamada usa tms.destination en caché
+
+### Sección 10 — Definition of Done ← NIVEL 4
+- [ ] Todos los tests pasan sin error
+- [ ] Sin errores ni warnings en log de Odoo al instalar
+- [ ] Vista XML carga correctamente (list, form, search según aplique)
+- [ ] access.csv actualizado con todos los grupos necesarios
+- [ ] Estados del waybill NO alterados (solo los 7 válidos existen)
+- [ ] No hay campos/métodos duplicados (verificar con grep)
+- [ ] CLAUDE.md actualizado: fecha, versión, tabla de etapas
+
+### Sección 11 — Restricciones ← NIVEL 4
+- NO modificar modelos nativos de Odoo — siempre `_inherit`
+- Compatible exclusivamente con Odoo 19 Community Edition
+- Vistas: `<list>` NO `<tree>`, `invisible=` NO `attrs=`
+- Catálogos SAT NUNCA llevan `company_id`
+- Modelos operativos SIEMPRE llevan `company_id` + `check_company=True`
+- NUNCA `required=True` en campos de modelos heredados
+- Estados válidos del waybill: SOLO los 7 documentados en sección 4
+- [restricciones específicas del stage]
+
+### Sección 12 — Para Claude Code Terminal ← NIVEL 4
+```
+MODELO RECOMENDADO:
+  - Etapa completa / módulo nuevo / API / orquestador → claude-opus-4-7
+  - Fix puntual / un archivo / vista / campo           → claude-sonnet-4-6
+
+COMANDO DE ARRANQUE:
+  claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta este SDD: etapa X.X.X"
+
+INPUT:  Este SDD + archivos actuales en /tms
+OUTPUT:
+  - [lista exacta de archivos a CREAR]
+  - [lista exacta de archivos a MODIFICAR]
+VALIDACIÓN:
+  - Correr: python3 odoo-bin -c odoo.conf -u tms --test-enable --stop-after-init -d tms_v2
+  - Confirmar que TODOS los tests pasan antes de reportar listo
+  - grep -n "WARNING\|ERROR" odoo.log | tail -20 → debe estar limpio
+  - Verificar que estados del waybill no fueron alterados
+```
+
+### Sección 13 — Upgrade command
+```bash
+python3 odoo-bin -c odoo.conf -u tms -d tms_v2 --stop-after-init
+```
+
+### Sección 14 — 🛠 Context Blueprint para Gemini
+```
+_name: [nombre exacto del modelo principal]
+
+File Manifest:
+| Archivo | Create/Modify |
+|---------|---------------|
+| path/archivo.py | Create/Modify |
+
+Decorators + fields explícitos:
+  _name = 'tms.xxx'
+  _description = '...'
+  _order = '...'
+  campo1 = fields.Tipo(string='...', required=True/False, company_dependent=True/False)
+  campo2 = fields.Tipo(string='...')
+
+Security:
+  access.csv: model_tms_xxx,tms.xxx,tms.group_tms_user,1,1,1,0
+  groups: tms.group_tms_user / tms.group_tms_manager
+
+Manifest Update:
+  'depends': [agregar si requiere módulo externo]
+  'data': [agregar rutas de nuevos XML/CSV]
+```
+
+### Reglas adicionales de SDDs
+- Tasks, walkthrough, thoughts e implementation plan → siempre en **español**
+- Comentarios en código generado → siempre en **español**
+- Cada función/método → docstring en español explicando qué hace
+- Si el stage toca el wizard de cotización → documentar impacto en los 2 pasos
+- Si el stage toca XML/timbrado → documentar impacto en xml_builder y pac_manager
+- Al finalizar cada etapa → explicar brevemente los conceptos clave del código generado
 
 ---
 
@@ -565,15 +728,14 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 
 ---
 
+## Próxima etapa
+**V2.3.3 — Notas de Crédito/Cargo y Ajustes de Facturación**
+Pendiente definir SDD. Opciones:
+- CFDI Egreso tipo E (nota de crédito sin Carta Porte) — ajustes al Ingreso
+- Cobro desde portal: botón de pago para receptor (MercadoPago / SPEI)
+
+---
+
 _Este archivo es el contexto técnico del proyecto._
 _Para el contexto estratégico completo (roadmap, fases, ingresos): ver `contexto_maestro_tms_final.md`_
 _Actualizar después de cada etapa completada._
-
-## Próxima etapa
-**V2.3 — Facturación Real**
-- Auditoría previa antes de construir (metodología confirmada)
-- CFDI de ingreso vinculado al waybill via account.move
-- Retención IVA 4% (solo PM, no RESICO, nunca en Traslado)
-- IVA 0% para receptores en zonas ZEDE (validar receptor.zip)
-- Mover validaciones de estado al nuevo flujo
-

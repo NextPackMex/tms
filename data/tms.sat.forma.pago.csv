@@ -1,0 +1,23 @@
+id,code,name
+tms_sat_forma_pago_01,01,Efectivo
+tms_sat_forma_pago_02,02,Cheque nominativo
+tms_sat_forma_pago_03,03,Transferencia electrónica de fondos
+tms_sat_forma_pago_04,04,Tarjeta de crédito
+tms_sat_forma_pago_05,05,Monedero electrónico
+tms_sat_forma_pago_06,06,Dinero electrónico
+tms_sat_forma_pago_08,08,Vales de despensa
+tms_sat_forma_pago_12,12,Dación en pago
+tms_sat_forma_pago_13,13,Pago por subrogación
+tms_sat_forma_pago_14,14,Pago por consignación
+tms_sat_forma_pago_15,15,Condonación
+tms_sat_forma_pago_17,17,Compensación
+tms_sat_forma_pago_23,23,Novación
+tms_sat_forma_pago_24,24,Confusión
+tms_sat_forma_pago_25,25,Remisión de deuda
+tms_sat_forma_pago_26,26,Prescripción o caducidad
+tms_sat_forma_pago_27,27,A satisfacción del acreedor
+tms_sat_forma_pago_28,28,Tarjeta de débito
+tms_sat_forma_pago_29,29,Tarjeta de servicios
+tms_sat_forma_pago_30,30,Aplicación de anticipos
+tms_sat_forma_pago_31,31,Intermediario pagos
+tms_sat_forma_pago_99,99,Por definir

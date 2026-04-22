@@ -52,3 +52,12 @@ class ResConfigSettings(models.TransientModel):
     # ============================================================
     pac_primario  = fields.Selection(related='company_id.pac_primario', readonly=False, string='PAC Primario')
     pac_failover  = fields.Boolean(related='company_id.pac_failover',   readonly=False, string='Failover automático')
+
+    # ============================================================
+    # FACTURACIÓN TMS (V2.3)
+    # ============================================================
+    tms_sales_journal_id = fields.Many2one(
+        related='company_id.tms_sales_journal_id',
+        readonly=False,
+        string='Diario de Ventas TMS',
+    )

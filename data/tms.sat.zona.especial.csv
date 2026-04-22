@@ -1,0 +1,9 @@
+id,name,cp_from,cp_to,tasa_iva,active
+zona_especial_istmo_oax_1,"Istmo de Tehuantepec - Oaxaca (Salina Cruz)",70600,70699,0.0,1
+zona_especial_istmo_oax_2,"Istmo de Tehuantepec - Oaxaca (Tehuantepec)",70760,70799,0.0,1
+zona_especial_istmo_oax_3,"Istmo de Tehuantepec - Oaxaca (Juchitán)",70000,70099,0.0,1
+zona_especial_istmo_oax_4,"Istmo de Tehuantepec - Oaxaca (Matías Romero)",70370,70399,0.0,1
+zona_especial_istmo_ver_1,"Istmo de Tehuantepec - Veracruz (Coatzacoalcos)",96400,96499,0.0,1
+zona_especial_istmo_ver_2,"Istmo de Tehuantepec - Veracruz (Minatitlán)",96700,96799,0.0,1
+zona_especial_istmo_ver_3,"Istmo de Tehuantepec - Veracruz (Cosoleacaque)",96830,96869,0.0,1
+zona_especial_istmo_ver_4,"Istmo de Tehuantepec - Veracruz (Las Choapas)",96980,96999,0.0,1

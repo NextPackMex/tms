@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         WIZARD CANCELACIÓN CFDI INGRESO TMS
+         ================================================================ -->
+
+    <record id="view_tms_cancel_invoice_wizard_form" model="ir.ui.view">
+        <field name="name">tms.cancel.invoice.wizard.form</field>
+        <field name="model">tms.cancel.invoice.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancelar CFDI Ingreso">
+
+                <!-- Información de la factura a cancelar -->
+                <group string="Factura a cancelar">
+                    <field name="move_id" readonly="1"/>
+                    <field name="move_name" readonly="1" string="Folio"/>
+                    <field name="move_uuid" readonly="1" string="UUID a cancelar"/>
+                    <field name="waybill_names" readonly="1" string="Viajes incluidos"/>
+                </group>
+
+                <!-- Selección de motivo -->
+                <group string="Motivo de cancelación">
+                    <field name="motivo" required="1" widget="radio"/>
+
+                    <!-- UUID sustituta: solo requerido para motivo 01 -->
+                    <field name="uuid_sustituta"
+                           required="motivo == '01'"
+                           invisible="motivo != '01'"
+                           placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"/>
+                </group>
+
+                <!-- Advertencias por motivo -->
+                <div class="alert alert-warning" role="alert" invisible="motivo != '01'">
+                    <strong><i class="fa fa-exclamation-triangle" title="Advertencia"/> Motivo 01 — Errores con relación:</strong><br/>
+                    Debe timbrar primero la factura corregida (sustituta) y luego ingresar su UUID aquí.
+                    Los viajes incluidos <strong>NO se liberarán</strong> — la factura sustituta cubre el cobro.
+                </div>
+                <div class="alert alert-info" role="status" invisible="motivo not in ('02', '03')">
+                    <strong><i class="fa fa-info-circle"/> Motivo 02/03:</strong><br/>
+                    Los viajes incluidos regresarán a estado <strong>"En Destino"</strong>
+                    y estarán disponibles para refacturar.
+                </div>
+
+                <footer>
+                    <button name="action_confirm_cancel"
+                            string="Confirmar Cancelación"
+                            type="object"
+                            class="btn-danger oe_highlight"
+                            confirm="¿Confirmar la cancelación del CFDI ante el SAT? Esta acción iniciará el proceso de cancelación."/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

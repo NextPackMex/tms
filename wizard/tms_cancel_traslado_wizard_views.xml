@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ================================================================
+         WIZARD CANCELACIÓN CFDI TRASLADO TMS
+         ================================================================ -->
+
+    <record id="view_tms_cancel_traslado_wizard_form" model="ir.ui.view">
+        <field name="name">tms.cancel.traslado.wizard.form</field>
+        <field name="model">tms.cancel.traslado.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancelar CFDI Traslado">
+
+                <!-- Información del viaje a cancelar -->
+                <group string="Viaje a cancelar">
+                    <field name="waybill_id" readonly="1"/>
+                    <field name="waybill_name" readonly="1" string="Folio"/>
+                    <field name="cfdi_uuid" readonly="1" string="UUID a cancelar"/>
+                </group>
+
+                <!-- Selección de motivo -->
+                <group string="Motivo de cancelación">
+                    <field name="motivo" required="1" widget="radio"/>
+
+                    <!-- UUID sustituto: solo requerido para motivo 01 -->
+                    <field name="uuid_sustituta"
+                           required="motivo == '01'"
+                           invisible="motivo != '01'"
+                           placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"/>
+                </group>
+
+                <!-- Advertencias por motivo -->
+                <div class="alert alert-warning" role="alert" invisible="motivo != '01'">
+                    <strong><i class="fa fa-exclamation-triangle" title="Advertencia"/> Motivo 01 — Errores con relación:</strong><br/>
+                    Debe timbrar primero el CFDI Traslado corregido (sustituto) y luego ingresar su UUID aquí.
+                    El viaje <strong>NO cambiará de estado</strong> — el Traslado sustituto cubre la operación.
+                </div>
+                <div class="alert alert-info" role="status" invisible="motivo not in ('02', '03')">
+                    <strong><i class="fa fa-info-circle"/> Motivo 02/03:</strong><br/>
+                    El viaje regresará a estado <strong>"Aprobado"</strong> o <strong>"Carta Porte"</strong>
+                    según su estado actual, y estará disponible para corregir y re-timbrar.
+                </div>
+
+                <footer>
+                    <button name="action_confirm_cancel"
+                            string="Confirmar Cancelación"
+                            type="object"
+                            class="btn-danger oe_highlight"
+                            confirm="¿Confirmar la cancelación del CFDI Traslado ante el SAT? Esta acción iniciará el proceso de cancelación."/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

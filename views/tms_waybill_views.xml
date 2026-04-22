@@ -172,66 +172,103 @@
         <field name="arch" type="xml">
             <form string="Viaje" create="false">
                 <header>
-                    <button name="action_approve_quotation" string="Aprobar Cotización" type="object" class="btn-primary" invisible="state != 'cotizado'"/>
-                    <button name="action_preview_waybill" string="Vista Previa" type="object" class="btn-secondary" icon="fa-globe"/>
-                    <button name="action_send_email" string="Enviar Cotización" type="object" class="btn-primary" icon="fa-envelope" invisible="state not in ('cotizado', 'aprobado')"/>
-                    <!-- Botón Iniciar Ruta: solo visible cuando estado es 'waybill' (Carta Porte Lista) -->
-                    <button name="action_start_route_manual" string="Iniciar Ruta" type="object" class="oe_highlight" invisible="state != 'waybill'"/>
-                    <!-- Botón Registrar Llegada: solo visible cuando estado es 'in_transit' (En Trayecto) -->
-                    <button name="action_arrived_dest_manual" string="Registrar Llegada" type="object" class="oe_highlight" invisible="state != 'in_transit'"/>
-                    <!-- Botón Facturar: solo visible cuando estado es 'arrived' (En Destino) -->
-                    <button name="action_create_invoice" string="Facturar" type="object" class="oe_highlight" invisible="state != 'arrived'"/>
-                    <!-- Botón Cancelar: disponible en etapas tempranas antes de que salga a ruta -->
-                    <button name="action_cancel" string="Cancelar" type="object" class="btn-danger" invisible="state not in ['cotizado','aprobado']" confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
+                    <!-- ── GRUPO 1: Acciones comerciales ── -->
+                    <button name="action_preview_waybill"
+                            string="Vista Previa"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-globe"/>
+                    <button name="action_send_email"
+                            string="Enviar Cotización"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-envelope"
+                            invisible="state not in ('cotizado','aprobado')"/>
+                    <button name="action_approve_quotation"
+                            string="Aprobar Cotización"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'cotizado'"/>
 
-                    <!-- ═══════════════════════════════════════════════════
-                         BOTONES CFDI — Timbrado, cancelación y estatus SAT
-                         ═══════════════════════════════════════════════════ -->
-                    <!-- Timbrar: visible cuando la CP está lista y aún no está timbrada -->
+                    <!-- ── GRUPO 2: Traslado (Carta Porte) ── -->
                     <button name="action_stamp_cfdi"
                             string="Timbrar Carta Porte"
                             type="object"
                             class="oe_highlight"
                             icon="fa-stamp"
-                            invisible="state not in ('aprobado', 'waybill') or cfdi_status == 'timbrado'"
+                            invisible="cfdi_status == 'timbrado' or (state not in ('aprobado','waybill') and cfdi_status != 'cancelado')"
                             help="Genera y sella el CFDI 4.0 con Complemento Carta Porte 3.1"/>
-                    <!-- Cancelar CFDI: solo cuando ya está timbrado -->
-                    <button name="action_cancel_cfdi"
-                            string="Cancelar CFDI"
-                            type="object"
-                            class="btn-danger"
-                            icon="fa-times-circle"
-                            invisible="cfdi_status != 'timbrado'"
-                            confirm="¿Cancelar el CFDI ante el SAT? Esta acción no se puede deshacer."/>
-                    <!-- Estatus SAT: disponible cuando hay CFDI (timbrado o cancelado) -->
-                    <button name="action_check_cfdi_status"
-                            string="Estatus SAT"
+                    <button name="action_print_carta_porte"
+                            string="Traslado PDF"
                             type="object"
                             class="btn-secondary"
-                            icon="fa-refresh"
-                            invisible="cfdi_status == 'none'"
-                            help="Consulta el estatus del CFDI en el SAT"/>
-                    <!-- Descargar XML: solo cuando está timbrado -->
+                            icon="fa-file-pdf-o"
+                            invisible="cfdi_status != 'timbrado'"
+                            help="PDF de la Carta Porte timbrada con QR SAT"/>
                     <button name="action_download_cfdi_xml"
-                            string="Descargar XML"
+                            string="XML Traslado"
                             type="object"
                             class="btn-secondary"
                             icon="fa-download"
                             invisible="cfdi_status != 'timbrado'"
-                            help="Descarga el XML del CFDI timbrado"/>
-                    <!-- PDF Carta Porte timbrada: solo cuando está timbrado -->
-                    <button name="action_print_carta_porte"
-                            string="Carta Porte PDF"
+                            help="Descarga el XML del CFDI Traslado timbrado"/>
+                    <button name="action_cancel_cfdi"
+                            string="Cancelar Traslado"
                             type="object"
-                            class="btn-primary"
+                            class="btn-danger"
+                            icon="fa-times-circle"
+                            invisible="cfdi_status != 'timbrado'"/>
+
+                    <!-- ── GRUPO 3: Ingreso (Factura) ── -->
+                    <button name="action_create_invoice"
+                            string="Facturar"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state not in ('aprobado','waybill','in_transit','arrived')"/>
+                    <button name="action_print_invoice_pdf"
+                            string="Factura PDF"
+                            type="object"
+                            class="btn-secondary"
                             icon="fa-file-pdf-o"
-                            invisible="cfdi_status != 'timbrado'"
-                            help="Genera el PDF de la Carta Porte timbrada con QR de verificación SAT"/>
+                            invisible="invoice_status != 'invoiced'"
+                            help="PDF de la Factura CFDI Ingreso timbrada"/>
+                    <button name="action_download_invoice_xml"
+                            string="XML Factura"
+                            type="object"
+                            class="btn-secondary"
+                            icon="fa-download"
+                            invisible="invoice_status != 'invoiced'"
+                            help="Descarga el XML del CFDI Ingreso timbrado"/>
+                    <button name="action_cancel_invoice_from_waybill"
+                            string="Cancelar Factura"
+                            type="object"
+                            class="btn-danger"
+                            icon="fa-times-circle"
+                            invisible="invoice_status != 'invoiced'"
+                            confirm="¿Cancelar la Factura CFDI Ingreso ante el SAT?"/>
 
-                    <!-- Campo invisible para usar en condiciones de visibilidad -->
-                    <field name="cfdi_status" invisible="1"/>
+                    <!-- ── GRUPO 4: Operación ── -->
+                    <button name="action_start_route_manual"
+                            string="Iniciar Ruta"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'waybill'"/>
+                    <button name="action_arrived_dest_manual"
+                            string="Registrar Llegada"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'in_transit'"/>
+                    <button name="action_cancel"
+                            string="Cancelar Viaje"
+                            type="object"
+                            class="btn-danger"
+                            invisible="state not in ('cotizado','aprobado')"
+                            confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
-                    <field name="state" widget="statusbar" statusbar_visible="cotizado,aprobado,waybill,in_transit,arrived,closed" statusbar_colors="cotizado:secondary;aprobado:info;waybill:success;in_transit:primary;arrived:warning;closed:dark"/>
+                    <!-- Barra de estados del flujo del viaje -->
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="cotizado,aprobado,waybill,in_transit,arrived,closed"
+                           statusbar_colors="cotizado:secondary;aprobado:info;waybill:success;in_transit:primary;arrived:warning;closed:dark"/>
                 </header>
 
                 <!-- Banner: datos faltantes para timbrar (solo en estado aprobado) -->
@@ -268,6 +305,19 @@
                                 <span class="o_stat_text">Vehículo</span>
                             </div>
                         </button>
+
+                        <!-- Smart Button: Ver Factura(s) — visible cuando hay facturas vinculadas -->
+                        <button type="object"
+                                name="action_view_invoices"
+                                class="oe_stat_button"
+                                icon="fa-file-text-o"
+                                invisible="not invoice_ids">
+                            <field name="invoice_ids" widget="statinfo"
+                                   string="Factura(s)" nolabel="1"/>
+                        </button>
+
+                        <!-- Campo invisible para condiciones -->
+                        <field name="invoice_status" invisible="1"/>
 
                     </div>
 
@@ -622,6 +672,32 @@
 
                         <!-- ======================= -->
                         <!-- BITÁCORA GPS           -->
+                        <!-- ======================= -->
+                        <!-- Facturación CFDI Ingreso: visible desde estado aprobado en adelante -->
+                        <page string="Facturación" invisible="state == 'cotizado'"
+                              name="facturacion_page">
+                            <group string="Estado de Facturación">
+                                <field name="invoice_status" readonly="1"/>
+                                <field name="invoice_ids" readonly="1" nolabel="1"
+                                       invisible="not invoice_ids">
+                                    <list>
+                                        <field name="name"/>
+                                        <field name="tms_cfdi_status"/>
+                                        <field name="tms_cfdi_uuid"/>
+                                        <field name="amount_untaxed"/>
+                                        <field name="amount_total"/>
+                                        <field name="currency_id" column_invisible="1"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <div class="alert alert-info" role="status"
+                                 invisible="invoice_status == 'invoiced' or state == 'cotizado'">
+                                <i class="fa fa-info-circle"/>
+                                Para generar la factura CFDI Ingreso, usa el botón
+                                <strong>"Facturar"</strong> en la barra de herramientas superior.
+                            </div>
+                        </page>
+
                         <!-- ======================= -->
                         <!-- Bitácora GPS: solo relevante cuando el viaje ya salió (desde estado waybill) -->
                         <page string="Bitácora GPS" invisible="state in ['cotizado','aprobado']">
