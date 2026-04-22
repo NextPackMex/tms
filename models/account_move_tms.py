@@ -157,6 +157,27 @@ class AccountMoveTms(models.Model):
     )
 
     # ============================================================
+    # CAMPOS TMS — DATOS FISCALES CFDI 4.0
+    # Capturados en el wizard de facturación, usados por xml_builder.py
+    # ============================================================
+
+    tms_uso_cfdi_id = fields.Many2one(
+        'tms.sat.uso.cfdi',
+        string='Uso CFDI',
+        help='Uso CFDI del receptor (c_UsoCFDI). Default: G03 = Gastos en general.'
+    )
+    tms_forma_pago_id = fields.Many2one(
+        'tms.sat.forma.pago',
+        string='Forma de Pago',
+        help='Forma de pago CFDI (c_FormaPago). Default: 99 = Por definir.'
+    )
+    tms_metodo_pago_id = fields.Many2one(
+        'tms.sat.metodo.pago',
+        string='Método de Pago',
+        help='Método de pago CFDI (c_MetodoPago). Default: PUE = una sola exhibición.'
+    )
+
+    # ============================================================
     # CÓMPUTOS
     # ============================================================
 
@@ -186,10 +207,11 @@ class AccountMoveTms(models.Model):
           2. Validar RFC del receptor vs is_company
           3. Generar IdCCP Ingreso único
           4. Construir XML tipo 'I' con xml_builder
-          5. Firmar con CfdiSigner
-          6. Enviar al PAC vía pac_manager
-          7. Persistir UUID, XML, fecha, estado → 'timbrada'
-          8. Pasar waybills vinculados a estado 'closed'
+          5. Leer y decodificar CSD (tms_csd_cer / tms_csd_key / tms_csd_password)
+          6. Firmar con CfdiSigner (bytes DER + contraseña)
+          7. Enviar al PAC vía pac_manager
+          8. Persistir UUID, XML, fecha, estado → 'timbrada'
+          9. Pasar waybills vinculados a estado 'closed'
         """
         self.ensure_one()
 
@@ -214,15 +236,30 @@ class AccountMoveTms(models.Model):
             builder = _get_xml_builder()()
             xml_bytes = builder.build(self, tipo='I')
 
-            # 3. Firmar
-            signer = _get_xml_signer()()
-            xml_sellado = signer.sign(xml_bytes, self.company_id)
+            # 3. Leer y decodificar CSD de la empresa (fields.Binary devuelve base64)
+            company = self.company_id
+            if not company.tms_csd_cer or not company.tms_csd_key or not company.tms_csd_password:
+                raise UserError(_(
+                    'Falta el Certificado de Sello Digital (CSD) en la configuración de la empresa.\n'
+                    'Ve a: Ajustes → TMS → CSD Certificado / Llave / Contraseña.'
+                ))
+            csd_cer_bytes = base64.b64decode(company.tms_csd_cer)
+            csd_key_bytes = base64.b64decode(company.tms_csd_key)
 
-            # 4. Timbrar
+            # 4. Firmar con CSD (bytes DER ya decodificados)
+            signer = _get_xml_signer()()
+            xml_sellado = signer.sign(
+                xml_bytes,
+                csd_cer_bytes,
+                csd_key_bytes,
+                company.tms_csd_password,
+            )
+
+            # 5. Timbrar vía PAC
             manager = _get_pac_manager()(self.env)
             resultado = manager.timbrar(xml_sellado, self.company_id)
 
-            # 5. Persistir resultado
+            # 6. Persistir resultado
             uuid         = resultado.get('uuid', '')
             xml_timbrado = resultado.get('xml_timbrado', b'')
             pac_usado    = resultado.get('pac_usado', '')
@@ -238,7 +275,12 @@ class AccountMoveTms(models.Model):
                 except Exception:
                     fecha_dt = None
 
-            fname = 'CFDI_I_%s_%s.xml' % (self.name.replace('/', '_'), uuid[:8])
+            # 6. Confirmar factura en Odoo PRIMERO — asigna número de secuencia (self.name)
+            #    Si esto va después del write, self.name es False en borrador y explota en .replace()
+            if self.state == 'draft':
+                self.action_post()
+
+            fname = 'CFDI_I_%s_%s.xml' % ((self.name or str(self.id)).replace('/', '_'), uuid[:8])
             self.write({
                 'tms_cfdi_uuid':       uuid,
                 'tms_cfdi_xml':        base64.b64encode(xml_timbrado) if xml_timbrado else False,
@@ -249,10 +291,6 @@ class AccountMoveTms(models.Model):
                 'tms_cfdi_status':     'timbrada',
                 'tms_cfdi_error_msg':  False,
             })
-
-            # 6. Confirmar factura en Odoo (pasar de draft a posted)
-            if self.state == 'draft':
-                self.action_post()
 
             # 7. Cerrar waybills vinculados
             self.tms_waybill_ids.write({'state': 'closed'})

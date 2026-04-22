@@ -158,4 +158,45 @@
               action="action_sat_figura_transporte"
               sequence="110"/>
 
+    <!-- Separador visual -->
+    <menuitem id="menu_sat_sep_4"
+              parent="menu_sat_catalogs"
+              sequence="113"/>
+
+    <!--
+        ================================================================
+        SECCIÓN 4: CATÁLOGOS CFDI 4.0
+        ================================================================
+    -->
+
+    <menuitem id="menu_sat_uso_cfdi"
+              name="Uso CFDI"
+              parent="menu_sat_catalogs"
+              action="action_sat_uso_cfdi"
+              sequence="115"/>
+
+    <menuitem id="menu_sat_forma_pago"
+              name="Formas de Pago"
+              parent="menu_sat_catalogs"
+              action="action_sat_forma_pago"
+              sequence="120"/>
+
+    <menuitem id="menu_sat_metodo_pago"
+              name="Métodos de Pago"
+              parent="menu_sat_catalogs"
+              action="action_sat_metodo_pago"
+              sequence="125"/>
+
+    <menuitem id="menu_sat_tipo_relacion"
+              name="Tipos de Relación CFDI"
+              parent="menu_sat_catalogs"
+              action="action_sat_tipo_relacion"
+              sequence="130"/>
+
+    <menuitem id="menu_sat_periodicidad_pago"
+              name="Periodicidades de Pago"
+              parent="menu_sat_catalogs"
+              action="action_sat_periodicidad_pago"
+              sequence="135"/>
+
 </odoo>

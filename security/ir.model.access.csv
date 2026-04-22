@@ -49,3 +49,13 @@ access_tms_invoice_wizard_user,tms.invoice.wizard.user,model_tms_invoice_wizard,
 access_tms_invoice_wizard_manager,tms.invoice.wizard.manager,model_tms_invoice_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_cancel_invoice_wizard_user,tms.cancel.invoice.wizard.user,model_tms_cancel_invoice_wizard,tms.group_tms_user,1,1,1,1
 access_tms_cancel_invoice_wizard_manager,tms.cancel.invoice.wizard.manager,model_tms_cancel_invoice_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_sat_uso_cfdi_user,tms.sat.uso.cfdi.user,model_tms_sat_uso_cfdi,base.group_user,1,0,0,0
+access_tms_sat_uso_cfdi_manager,tms.sat.uso.cfdi.manager,model_tms_sat_uso_cfdi,tms.group_tms_manager,1,1,1,1
+access_tms_sat_forma_pago_user,tms.sat.forma.pago.user,model_tms_sat_forma_pago,base.group_user,1,0,0,0
+access_tms_sat_forma_pago_manager,tms.sat.forma.pago.manager,model_tms_sat_forma_pago,tms.group_tms_manager,1,1,1,1
+access_tms_sat_metodo_pago_user,tms.sat.metodo.pago.user,model_tms_sat_metodo_pago,base.group_user,1,0,0,0
+access_tms_sat_metodo_pago_manager,tms.sat.metodo.pago.manager,model_tms_sat_metodo_pago,tms.group_tms_manager,1,1,1,1
+access_tms_sat_tipo_relacion_user,tms.sat.tipo.relacion.user,model_tms_sat_tipo_relacion,base.group_user,1,0,0,0
+access_tms_sat_tipo_relacion_manager,tms.sat.tipo.relacion.manager,model_tms_sat_tipo_relacion,tms.group_tms_manager,1,1,1,1
+access_tms_sat_periodicidad_pago_user,tms.sat.periodicidad.pago.user,model_tms_sat_periodicidad_pago,base.group_user,1,0,0,0
+access_tms_sat_periodicidad_pago_manager,tms.sat.periodicidad.pago.manager,model_tms_sat_periodicidad_pago,tms.group_tms_manager,1,1,1,1

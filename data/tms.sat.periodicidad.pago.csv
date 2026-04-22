@@ -1,0 +1,6 @@
+id,code,name
+tms_sat_periodicidad_pago_01,01,Diario
+tms_sat_periodicidad_pago_02,02,Semanal
+tms_sat_periodicidad_pago_03,03,Quincenal
+tms_sat_periodicidad_pago_04,04,Mensual
+tms_sat_periodicidad_pago_05,05,Bimestral

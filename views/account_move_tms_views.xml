@@ -17,6 +17,11 @@
                 <field name="tms_cfdi_status" invisible="1"/>
             </xpath>
 
+            <!-- Ocultar "Restablecer a borrador" nativo cuando el CFDI ya está timbrado -->
+            <xpath expr="//button[@name='button_draft']" position="attributes">
+                <attribute name="invisible">tms_cfdi_status == 'timbrada'</attribute>
+            </xpath>
+
             <!-- Botones de acción TMS en el header de la factura -->
             <xpath expr="//header/button[last()]" position="after">
                 <!-- Botón Imprimir PDF: visible solo cuando está timbrada -->
@@ -33,13 +38,6 @@
                         class="btn-primary oe_highlight"
                         invisible="not tms_is_invoice or tms_cfdi_status == 'timbrada'"
                         confirm="¿Timbrar el CFDI Ingreso? Esta acción es irreversible sin cancelación."/>
-
-                <!-- Botón Corregir Factura: motivo 01 — requiere sustituta -->
-                <button name="action_tms_open_cancel_wizard"
-                        string="Corregir Factura (Motivo 01)"
-                        type="object"
-                        class="btn-warning"
-                        invisible="not tms_is_invoice or tms_cfdi_status != 'timbrada'"/>
 
                 <!-- Botón Cancelar CFDI: motivos 02/03 sin sustituta -->
                 <button name="action_tms_open_cancel_wizard"

@@ -80,6 +80,11 @@
         'data/tms_data.xml',
         'data/sat_regimen_fiscal.xml',
         'data/tms.sat.zona.especial.csv',
+        'data/tms.sat.uso.cfdi.csv',
+        'data/tms.sat.forma.pago.csv',
+        'data/tms.sat.metodo.pago.csv',
+        'data/tms.sat.tipo.relacion.csv',
+        'data/tms.sat.periodicidad.pago.csv',
 
 
         # 3. Wizard de importación
@@ -99,7 +104,10 @@
         'views/sat_municipio_views.xml',
         'views/sat_tipo_permiso_views.xml',
 
-        # 3.1 Extensiones de modelos base SAT
+        # 3.1 Catálogos CFDI 4.0 (Sección 4: UsoCFDI, FormaPago, MetodoPago, TipoRelacion, Periodicidad)
+        'views/tms_sat_catalogos_views.xml',
+
+        # 3.2 Extensiones de modelos base SAT
         'views/res_company_views.xml',
         'views/res_partner_tms_view.xml',
         'views/res_partner_tms_modals_view.xml',

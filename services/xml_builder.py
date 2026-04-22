@@ -307,8 +307,12 @@ class CartaPorteXmlBuilder:
         comp.set('Total',             '{:.2f}'.format(total))
         comp.set('Moneda',            'MXN')
         comp.set('TipoDeComprobante', 'I')         # I = Ingreso
-        comp.set('MetodoPago',        'PPD')       # PPD = Pago en Parcialidades o Diferido
-        comp.set('FormaPago',         '99')        # 99 = Por definir
+        # MetodoPago y FormaPago: leer del account.move si tiene los campos TMS,
+        # de lo contrario usar defaults SAT para flete (PPD y 99)
+        metodo_pago = (move.tms_metodo_pago_id.code if move.tms_metodo_pago_id else 'PPD')
+        forma_pago  = (move.tms_forma_pago_id.code  if move.tms_forma_pago_id  else '99')
+        comp.set('MetodoPago', metodo_pago)
+        comp.set('FormaPago',  forma_pago)
         comp.set('Exportacion',       '01')        # 01 = No aplica
         comp.set('LugarExpedicion',   datos['lugar_expedicion'])
 
@@ -338,19 +342,52 @@ class CartaPorteXmlBuilder:
         ClaveProdServ: 78101800 (Servicios de transporte de carga por carretera)
         ClaveUnidad: E48 (Unidad de servicio)
         ObjetoImp: '02' (Sí objeto de impuesto) — a diferencia del Traslado que usa '01'
+
+        SAT CFDI40171: cuando ObjetoImp='02', cada Concepto DEBE incluir el nodo
+        hijo cfdi:Impuestos con los traslados de IVA (y retenciones si is_company).
         """
-        conceptos = etree.Element(etree.QName(NS_CFDI, 'Conceptos'))
+        tasa_iva   = self._get_tasa_iva(move)
+        es_empresa = move.partner_id and move.partner_id.is_company
+        conceptos  = etree.Element(etree.QName(NS_CFDI, 'Conceptos'))
 
         for waybill in move.tms_waybill_ids:
+            base = waybill.amount_untaxed
+
             concepto = etree.SubElement(conceptos, etree.QName(NS_CFDI, 'Concepto'))
             concepto.set('ClaveProdServ', '78101800')
             concepto.set('Cantidad',      '1')
             concepto.set('ClaveUnidad',   'E48')
             concepto.set('Descripcion',
                          ('SERVICIO DE FLETE — %s' % (waybill.name or waybill.route_name or 'VIAJE'))[:100])
-            concepto.set('ValorUnitario', '{:.2f}'.format(waybill.amount_untaxed))
-            concepto.set('Importe',       '{:.2f}'.format(waybill.amount_untaxed))
+            concepto.set('ValorUnitario', '{:.2f}'.format(base))
+            concepto.set('Importe',       '{:.2f}'.format(base))
             concepto.set('ObjetoImp',     '02')  # 02 = Sí objeto de impuesto
+
+            # cfdi:Impuestos a nivel Concepto — requerido por CFDI40171 cuando ObjetoImp='02'
+            # XSD CFDI 4.0 exige orden: Traslados primero, Retenciones segundo
+            imp_concepto = etree.SubElement(concepto, etree.QName(NS_CFDI, 'Impuestos'))
+
+            # Traslados: IVA 16% estándar (o 0% para zona ZEDE)
+            iva_importe = round(base * tasa_iva, 2)
+            traslados = etree.SubElement(imp_concepto, etree.QName(NS_CFDI, 'Traslados'))
+            traslado  = etree.SubElement(traslados, etree.QName(NS_CFDI, 'Traslado'))
+            traslado.set('Base',       '{:.2f}'.format(base))
+            traslado.set('Impuesto',   '002')        # 002 = IVA
+            traslado.set('TipoFactor', 'Tasa')
+            traslado.set('TasaOCuota', '{:.6f}'.format(tasa_iva))
+            traslado.set('Importe',    '{:.2f}'.format(iva_importe))
+
+            # Retenciones: solo personas morales (Art. 1-A LIVA + Art. 3 RLIVA)
+            if es_empresa:
+                ret_importe = round(base * 0.04, 2)
+                retenciones = etree.SubElement(imp_concepto, etree.QName(NS_CFDI, 'Retenciones'))
+                ret = etree.SubElement(retenciones, etree.QName(NS_CFDI, 'Retencion'))
+                # Base y TasaOCuota requeridos en Retencion a nivel Concepto (no a nivel Comprobante)
+                ret.set('Base',       '{:.2f}'.format(base))
+                ret.set('Impuesto',   '002')         # 002 = IVA
+                ret.set('TipoFactor', 'Tasa')
+                ret.set('TasaOCuota', '0.040000')
+                ret.set('Importe',    '{:.2f}'.format(ret_importe))
 
         return conceptos
 
@@ -580,20 +617,21 @@ class CartaPorteXmlBuilder:
         es_pruebas = (company.fd_ambiente == 'pruebas')
 
         if es_pruebas:
-            rfc_pruebas    = self._get_rfc_from_cer(company) or company.vat or 'EKU9003173C9'
-            nombre_pruebas = (company.name or '').upper()[:254]
-            cp_pruebas     = company.zip or '44970'
+            # Emisor: RFC del .cer cargado (debe coincidir con quien firma el XML)
+            # Si no hay .cer, fallback a EKU9003173C9
+            rfc_emisor = self._get_rfc_from_cer(company) or company.vat or 'EKU9003173C9'
+            cp_pruebas = company.zip or '44970'
             return {
-                'rfc_emisor':               rfc_pruebas,
-                'nombre_emisor':            nombre_pruebas,
+                'rfc_emisor':               rfc_emisor,
+                'nombre_emisor':            (company.name or '').upper()[:254],
                 'regimen_fiscal':           '616',
-                # En pruebas el receptor también usa RFC de pruebas
-                'rfc_receptor':             'EKU9003173C9',
-                'nombre_receptor':          nombre_pruebas,
+                # Receptor en pruebas: RFC/nombre del certificado de pruebas dev33
+                'rfc_receptor':             'MISC491214B86',
+                'nombre_receptor':          'CECILIA MIRANDA SANCHEZ',
                 'regimen_receptor':         '616',
-                'uso_cfdi':                 'G03',
+                'uso_cfdi':                 (move.tms_uso_cfdi_id.code if move.tms_uso_cfdi_id else 'G03'),
                 'lugar_expedicion':         cp_pruebas,
-                'domicilio_fiscal_receptor': cp_pruebas,
+                'domicilio_fiscal_receptor': '44970',
                 'rfc_chofer':               'CACX7605101P8',
                 'es_pruebas':               True,
             }
@@ -614,7 +652,7 @@ class CartaPorteXmlBuilder:
                 'rfc_receptor':             rfc_receptor,
                 'nombre_receptor':          nombre_receptor,
                 'regimen_receptor':         regimen_receptor,
-                'uso_cfdi':                 'G03',  # G03 = Gastos en General (default flete)
+                'uso_cfdi':                 (move.tms_uso_cfdi_id.code if move.tms_uso_cfdi_id else 'G03'),
                 'lugar_expedicion':         company.zip or '00000',
                 'domicilio_fiscal_receptor': cp_receptor,
                 'rfc_chofer':               '',

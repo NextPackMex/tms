@@ -119,10 +119,23 @@ class TmsInvoiceWizard(models.TransientModel):
     # PASO 3 — DATOS FISCALES
     # ============================================================
 
-    uso_cfdi = fields.Char(
+    uso_cfdi_id = fields.Many2one(
+        'tms.sat.uso.cfdi',
         string='Uso CFDI',
-        default='G03',
-        help='G03 = Gastos en General (default para flete). Editable según acuerdo con el cliente.'
+        default=lambda self: self.env['tms.sat.uso.cfdi'].search([('code', '=', 'G03')], limit=1),
+        help='Uso CFDI del receptor (c_UsoCFDI). G03 = Gastos en General es el default para flete.'
+    )
+    forma_pago_id = fields.Many2one(
+        'tms.sat.forma.pago',
+        string='Forma de Pago',
+        default=lambda self: self.env['tms.sat.forma.pago'].search([('code', '=', '99')], limit=1),
+        help='Forma de pago CFDI (c_FormaPago). 99 = Por definir es el default para flete.'
+    )
+    metodo_pago_id = fields.Many2one(
+        'tms.sat.metodo.pago',
+        string='Método de Pago',
+        default=lambda self: self.env['tms.sat.metodo.pago'].search([('code', '=', 'PUE')], limit=1),
+        help='Método de pago CFDI (c_MetodoPago). PUE = Pago en una sola exhibición.'
     )
 
     journal_id = fields.Many2one(
@@ -261,16 +274,75 @@ class TmsInvoiceWizard(models.TransientModel):
             self.step -= 1
         return self._reopen()
 
+    def _get_tax_ids_for_partner(self, partner):
+        """
+        Devuelve la lista de IDs de impuestos SAT a aplicar según el tipo de receptor.
+
+        Regla fiscal (Art. 1-A LIVA + Art. 3 RLIVA):
+          - Persona Física  (RFC 13 chars, is_company=False) → solo IVA 16%
+          - Persona Moral   (RFC 12 chars, is_company=True)  → IVA 16% + Retención 4%
+
+        Busca los impuestos por amount en la compañía activa. Si no encuentra la
+        retención 4% en el catálogo contable, la omite con un warning en el log
+        (no bloquea la facturación — el impuesto puede añadirse después).
+        """
+        company = self.company_id
+        Tax = self.env['account.tax']
+
+        # IVA 16% — impuesto de traslado estándar para flete
+        tax_iva = Tax.search([
+            ('amount',        '=', 16.0),
+            ('amount_type',   '=', 'percent'),
+            ('type_tax_use',  '=', 'sale'),
+            ('active',        '=', True),
+            ('company_id',    '=', company.id),
+        ], limit=1)
+
+        if not tax_iva:
+            raise UserError(_(
+                'No se encontró el impuesto IVA 16%% en el catálogo contable. '
+                'Verifique que exista un impuesto de venta con monto 16%% activo.'
+            ))
+
+        tax_ids = [tax_iva.id]
+
+        # Retención 4% — solo personas morales (is_company=True)
+        if partner.is_company:
+            tax_ret = Tax.search([
+                ('type_tax_use', '=', 'sale'),
+                ('active',       '=', True),
+                ('company_id',   '=', company.id),
+                '|',
+                ('name',   'ilike', 'retenci'),
+                ('amount', '=',     -4.0),
+            ], limit=1)
+
+            if tax_ret:
+                tax_ids.append(tax_ret.id)
+            else:
+                _logger.warning(
+                    'Retención 4%% no encontrada en catálogo contable para empresa %s. '
+                    'El CFDI se generará sin retención. Agregue el impuesto en Contabilidad → Impuestos.',
+                    company.name,
+                )
+
+        return tax_ids
+
     def action_create_and_stamp(self):
         """
         Paso final: crea el account.move, vincula los viajes y timbra el CFDI Ingreso.
 
         Flujo:
           1. Validar datos completos
-          2. Crear account.move en borrador con líneas de factura
-          3. Vincular tms_waybill_ids al move
-          4. Llamar a action_tms_stamp_ingreso() en el move
-          5. Mostrar paso 4 con UUID o error
+          2. Resolver impuestos IVA/Retención según tipo de receptor
+          3. Crear account.move en borrador con líneas de factura + tax_ids
+          4. Vincular tms_waybill_ids al move
+          5. Llamar a action_tms_stamp_ingreso() en el move
+          6. Mostrar paso 4 con UUID o error
+
+        Regla de impuestos:
+          - Persona Física  → IVA 16%
+          - Persona Moral   → IVA 16% + Retención 4% (si existe en catálogo)
         """
         self.ensure_one()
         self._validate_step3()
@@ -284,22 +356,29 @@ class TmsInvoiceWizard(models.TransientModel):
             ))
 
         try:
-            # Crear líneas del account.move — una por waybill
+            # Resolver impuestos según tipo de receptor (PF o PM)
+            tax_ids = self._get_tax_ids_for_partner(self.partner_id)
+
+            # Crear líneas del account.move — una por waybill, con tax_ids
             invoice_lines = []
             for waybill in self.waybill_ids:
                 invoice_lines.append((0, 0, {
-                    'name':         'Flete — %s' % (waybill.name or waybill.route_name or ''),
-                    'quantity':     1.0,
-                    'price_unit':   waybill.amount_untaxed,
+                    'name':       'Flete — %s' % (waybill.name or waybill.route_name or ''),
+                    'quantity':   1.0,
+                    'price_unit': waybill.amount_untaxed,
+                    'tax_ids':    [(6, 0, tax_ids)],
                 }))
 
-            # Crear account.move en borrador
+            # Crear account.move en borrador con datos fiscales del wizard
             move = self.env['account.move'].create({
-                'move_type':        'out_invoice',
-                'journal_id':       journal.id,
-                'partner_id':       self.partner_id.id,
-                'invoice_line_ids': invoice_lines,
-                'tms_waybill_ids':  [(6, 0, self.waybill_ids.ids)],
+                'move_type':           'out_invoice',
+                'journal_id':          journal.id,
+                'partner_id':          self.partner_id.id,
+                'invoice_line_ids':    invoice_lines,
+                'tms_waybill_ids':     [(6, 0, self.waybill_ids.ids)],
+                'tms_uso_cfdi_id':     self.uso_cfdi_id.id or False,
+                'tms_forma_pago_id':   self.forma_pago_id.id or False,
+                'tms_metodo_pago_id':  self.metodo_pago_id.id or False,
             })
 
             # Timbrar
@@ -373,8 +452,12 @@ class TmsInvoiceWizard(models.TransientModel):
 
     def _validate_step3(self):
         """Valida datos fiscales antes de crear la factura."""
-        if not self.uso_cfdi:
+        if not self.uso_cfdi_id:
             raise UserError(_('Seleccione el Uso CFDI.'))
+        if not self.forma_pago_id:
+            raise UserError(_('Seleccione la Forma de Pago.'))
+        if not self.metodo_pago_id:
+            raise UserError(_('Seleccione el Método de Pago.'))
 
     # ============================================================
     # HELPER INTERNO

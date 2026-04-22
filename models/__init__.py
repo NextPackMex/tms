@@ -19,6 +19,13 @@ from . import sat_figura_transporte   # c_FiguraTransporte
 from . import sat_regimen_fiscal      # c_RegimenFiscal
 from . import tms_sat_zona_especial   # Zonas ZEDE (IVA 0%) — global sin company_id
 
+# Catálogos CFDI 4.0
+from . import sat_uso_cfdi            # c_UsoCFDI
+from . import sat_forma_pago          # c_FormaPago
+from . import sat_metodo_pago         # c_MetodoPago
+from . import sat_tipo_relacion       # c_TipoRelacion
+from . import sat_periodicidad_pago   # c_Periodicidad
+
 # ============================================================
 # MODELOS OPERATIVOS - PRIVADOS (CON company_id OBLIGATORIO)
 # ============================================================

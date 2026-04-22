@@ -2451,6 +2451,45 @@ class TmsWaybill(models.Model):
             'target':    'current',
         }
 
+    def action_print_invoice_pdf(self):
+        """
+        Proxy: imprime el PDF del CFDI Ingreso timbrado vinculado a este viaje.
+        Delega en account.move.action_print_tms_invoice() de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay factura CFDI Ingreso timbrada para este viaje.'))
+        return invoice.action_print_tms_invoice()
+
+    def action_download_invoice_xml(self):
+        """
+        Proxy: descarga el XML del CFDI Ingreso timbrado vinculado a este viaje.
+        Usa el campo tms_cfdi_xml (Binary attachment) de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay XML de CFDI Ingreso timbrado para este viaje.'))
+        return {
+            'type':   'ir.actions.act_url',
+            'url':    '/web/content/account.move/%s/tms_cfdi_xml/%s?download=true' % (
+                invoice.id, invoice.tms_cfdi_xml_fname or 'cfdi_ingreso.xml'
+            ),
+            'target': 'self',
+        }
+
+    def action_cancel_invoice_from_waybill(self):
+        """
+        Proxy: abre el wizard de cancelación del CFDI Ingreso vinculado a este viaje.
+        Delega en account.move.action_tms_open_cancel_wizard() de la factura timbrada.
+        """
+        self.ensure_one()
+        invoice = self.invoice_ids.filtered(lambda m: m.tms_cfdi_status == 'timbrada')[:1]
+        if not invoice:
+            raise UserError(_('No hay factura CFDI Ingreso timbrada para cancelar.'))
+        return invoice.action_tms_open_cancel_wizard()
+
     def _action_sign(self, signature, signed_by):
         """
         Acción de Firma Digital desde el Portal Web.

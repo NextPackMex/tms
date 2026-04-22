@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ================================================================
+        VISTAS — CATÁLOGOS SAT CFDI 4.0
+        Sección 4: Uso CFDI, Forma de Pago, Método de Pago,
+                   Tipo de Relación, Periodicidad de Pago
+        ================================================================
+    -->
+
+    <!-- ══════════════════════════════════════
+         USO CFDI (c_UsoCFDI)
+         ══════════════════════════════════════ -->
+
+    <record id="view_sat_uso_cfdi_list" model="ir.ui.view">
+        <field name="name">tms.sat.uso.cfdi.list</field>
+        <field name="model">tms.sat.uso.cfdi</field>
+        <field name="arch" type="xml">
+            <list string="Uso CFDI">
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sat_uso_cfdi_search" model="ir.ui.view">
+        <field name="name">tms.sat.uso.cfdi.search</field>
+        <field name="model">tms.sat.uso.cfdi</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Uso CFDI">
+                <field name="code" string="Código"/>
+                <field name="name" string="Descripción"/>
+                <field name="full_name" string="Uso CFDI"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sat_uso_cfdi" model="ir.actions.act_window">
+        <field name="name">Uso CFDI</field>
+        <field name="res_model">tms.sat.uso.cfdi</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ══════════════════════════════════════
+         FORMA DE PAGO (c_FormaPago)
+         ══════════════════════════════════════ -->
+
+    <record id="view_sat_forma_pago_list" model="ir.ui.view">
+        <field name="name">tms.sat.forma.pago.list</field>
+        <field name="model">tms.sat.forma.pago</field>
+        <field name="arch" type="xml">
+            <list string="Formas de Pago">
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sat_forma_pago_search" model="ir.ui.view">
+        <field name="name">tms.sat.forma.pago.search</field>
+        <field name="model">tms.sat.forma.pago</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Forma de Pago">
+                <field name="code" string="Código"/>
+                <field name="name" string="Descripción"/>
+                <field name="full_name" string="Forma de Pago"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sat_forma_pago" model="ir.actions.act_window">
+        <field name="name">Formas de Pago</field>
+        <field name="res_model">tms.sat.forma.pago</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ══════════════════════════════════════
+         MÉTODO DE PAGO (c_MetodoPago)
+         ══════════════════════════════════════ -->
+
+    <record id="view_sat_metodo_pago_list" model="ir.ui.view">
+        <field name="name">tms.sat.metodo.pago.list</field>
+        <field name="model">tms.sat.metodo.pago</field>
+        <field name="arch" type="xml">
+            <list string="Métodos de Pago">
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sat_metodo_pago_search" model="ir.ui.view">
+        <field name="name">tms.sat.metodo.pago.search</field>
+        <field name="model">tms.sat.metodo.pago</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Método de Pago">
+                <field name="code" string="Código"/>
+                <field name="name" string="Descripción"/>
+                <field name="full_name" string="Método de Pago"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sat_metodo_pago" model="ir.actions.act_window">
+        <field name="name">Métodos de Pago</field>
+        <field name="res_model">tms.sat.metodo.pago</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ══════════════════════════════════════
+         TIPO DE RELACIÓN (c_TipoRelacion)
+         ══════════════════════════════════════ -->
+
+    <record id="view_sat_tipo_relacion_list" model="ir.ui.view">
+        <field name="name">tms.sat.tipo.relacion.list</field>
+        <field name="model">tms.sat.tipo.relacion</field>
+        <field name="arch" type="xml">
+            <list string="Tipos de Relación CFDI">
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sat_tipo_relacion_search" model="ir.ui.view">
+        <field name="name">tms.sat.tipo.relacion.search</field>
+        <field name="model">tms.sat.tipo.relacion</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Tipo de Relación">
+                <field name="code" string="Código"/>
+                <field name="name" string="Descripción"/>
+                <field name="full_name" string="Tipo de Relación"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sat_tipo_relacion" model="ir.actions.act_window">
+        <field name="name">Tipos de Relación CFDI</field>
+        <field name="res_model">tms.sat.tipo.relacion</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ══════════════════════════════════════
+         PERIODICIDAD DE PAGO (c_Periodicidad)
+         ══════════════════════════════════════ -->
+
+    <record id="view_sat_periodicidad_pago_list" model="ir.ui.view">
+        <field name="name">tms.sat.periodicidad.pago.list</field>
+        <field name="model">tms.sat.periodicidad.pago</field>
+        <field name="arch" type="xml">
+            <list string="Periodicidades de Pago">
+                <field name="code"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sat_periodicidad_pago_search" model="ir.ui.view">
+        <field name="name">tms.sat.periodicidad.pago.search</field>
+        <field name="model">tms.sat.periodicidad.pago</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Periodicidad de Pago">
+                <field name="code" string="Código"/>
+                <field name="name" string="Descripción"/>
+                <field name="full_name" string="Periodicidad de Pago"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sat_periodicidad_pago" model="ir.actions.act_window">
+        <field name="name">Periodicidades de Pago</field>
+        <field name="res_model">tms.sat.periodicidad.pago</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

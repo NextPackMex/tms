@@ -24,10 +24,10 @@ class TmsSatZonaEspecial(models.Model):
     Catálogo de rangos de CPs que pertenecen a Zonas Económicas Especiales.
     Cada registro define un rango de CPs con tasa de IVA especial (0% en ZEDE).
     """
-    _name        = 'tms.sat.zona.especial'
+    _name = 'tms.sat.zona.especial'
     _description = 'Zonas Económicas Especiales SAT (ZEDE)'
-    _order       = 'cp_from'
-    _rec_name    = 'name'
+    _order = 'cp_from'
+    _rec_name = 'name'
 
     name = fields.Char(
         string='Nombre Zona',

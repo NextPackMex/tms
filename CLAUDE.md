@@ -1,9 +1,41 @@
 # CLAUDE.md — TMS "Hombre Camión" & Carta Porte 3.1
 
 # ══════════════════════════════════════════════════════════════
-# CONTEXTO PARA CLAUDE CODE / ANTIGRAVITY / CLAUDE WEB
-# Última actualización: 2026-04-15 — V2.3 COMPLETADA (CFDI Ingreso / Facturación Real)
+# CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
+# Última actualización: 2026-04-21 — Fix IVA/Retención en wizard facturación + header reorganizado
 # ══════════════════════════════════════════════════════════════
+
+## 0. 🤖 Modelos de IA — Cuándo usar cuál
+
+> Leer esto PRIMERO. El ejecutor es **Claude Code terminal** (ya NO Antigravity).
+
+> 📌 **REGLA OBLIGATORIA — Modelo en respuesta:** Indicar el modelo en uso al inicio de CADA respuesta.
+> Formato: `**Modelo:** claude-sonnet-4-6` (o el que corresponda).
+> Aplica a todas las respuestas sin excepción.
+
+> 📌 **REGLA OBLIGATORIA — Selección de modelo:** Claude Code debe inferir el modelo correcto
+> según el esfuerzo de la tarea usando la tabla siguiente, SIN esperar instrucción explícita del usuario.
+> Si la tarea es ambigua, elegir el modelo más capaz (Opus 4.7).
+
+| Situación | Modelo |
+|-----------|--------|
+| Módulo nuevo, etapa completa, orquestador multi-agente | `claude-opus-4-7` |
+| Integraciones API (TollGuru, PAC, CFDI, xml_builder) | `claude-opus-4-7` |
+| Bug difícil, refactor tms_waybill.py, deuda técnica | `claude-opus-4-7` |
+| Fix puntual, un solo archivo, campo simple | `claude-sonnet-4-6` |
+| Ajuste de vista XML, label, color, fix una línea | `claude-sonnet-4-6` |
+| Verificaciones, limpieza, comentarios | `claude-sonnet-4-6` |
+
+```bash
+# Tarea grande (etapa completa, orquestador, API)
+claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta etapa X.X.X..."
+
+# Fix rápido (un archivo, vista, campo)
+claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
+```
+
+> ⚠️ Ya NO se usa Antigravity. Ejecutor: **Claude Code terminal**.
+> Para imágenes / diseño visual → **Gemini Flash**.
 
 > 📋 **Contexto estratégico completo** (roadmap, fases, módulos, semillas, ingresos):
 > Lee `contexto_maestro_tms_final.md` — es la fuente de verdad del proyecto.
@@ -490,36 +522,30 @@ chore: descripción           ← mantenimiento
 
 ## 14. Reglas de Trabajo por Herramienta
 
-### Claude Code (consola IDE)
+### Claude Code Terminal (ejecutor principal)
 - Lee `CLAUDE.md` automáticamente al iniciar
-- Modo **Ask** para cambios quirúrgicos y QA
-- Modo **Edit** para refactors grandes
+- Usar `--model claude-opus-4-7` para etapas completas y tareas complejas
+- Usar `--model claude-sonnet-4-6` para fixes rápidos y cambios de un archivo
 - NO hacer commit hasta que Mois lo apruebe explícitamente
 
-### Antigravity
-- Primer prompt de cada etapa: incluir SDD completo como contexto
-- Prompts siguientes dentro de la misma etapa: NO repetir contexto
+### Claude Web (claude.ai)
+- Generación de SDDs, planificación, revisión de roadmap
+- Consultas de arquitectura y decisiones técnicas
 
-### Prioridad de pensamiento Antigravity:
-- `Planning + High` → módulos nuevos, integraciones API, orquestador
-- `Planning + Low` → lógica Python, bugs complejos, modelos medianos
-- `Fast + Flash` → XML, labels, fix una línea, verificaciones, limpieza
+### Gemini Flash
+- Imágenes, íconos, diseño visual
 
-### Tabla de herramientas por versión:
-| Versión | Herramienta | Modo |
+### Tabla de modelos por versión:
+| Versión | Modelo Claude Code | Tipo de tarea |
 |---|---|---|
-| 2.1.5 | Claude Code CLI + Orquestador | Planning + High |
-| 2.1.6 | Antigravity | Planning + Low |
-| 2.2 | Claude Code CLI + Orquestador | Planning + High |
-| 2.3 | Claude Code CLI + Orquestador | Planning + High |
-| 2.4 | Antigravity | Planning + Low |
-| 2.4b | Antigravity | Planning + Low |
-| 2.4c | Claude Code CLI + Orquestador | Planning + High |
-| 2.4d | Antigravity | Planning + Low |
-| 2.5 | Antigravity | Planning + Low |
-| 2.6 | Antigravity | Planning + Low |
-| 2.7 | Antigravity | Fast + Flash |
-| 2.8 | Claude Code CLI + Orquestador | Planning + High |
+| 2.4 (tms_fuel/) | `claude-opus-4-7` | Módulo nuevo |
+| 2.4b (evidencias) | `claude-sonnet-4-6` | Modelo + vista media |
+| 2.4c (firma digital) | `claude-opus-4-7` | Módulo nuevo + crypto |
+| 2.4d (liquidación) | `claude-sonnet-4-6` | Modelo + cálculos |
+| 2.5 (limpieza) | `claude-sonnet-4-6` | Fixes y semillas |
+| 2.6 (KPIs/portal) | `claude-opus-4-7` | Dashboard + portal |
+| 2.7 (limpieza final) | `claude-sonnet-4-6` | Limpieza y QA |
+| 2.8 (SaaS) | `claude-opus-4-7` | Multi-tenant + cobro |
 
 ---
 
@@ -605,8 +631,15 @@ Mínimo 5 tests. Formato: `test_nombre → qué valida`
 - Estados válidos del waybill: SOLO los 7 documentados en sección 4
 - [restricciones específicas del stage]
 
-### Sección 12 — Para Claude Code ← NIVEL 4
+### Sección 12 — Para Claude Code Terminal ← NIVEL 4
 ```
+MODELO RECOMENDADO:
+  - Etapa completa / módulo nuevo / API / orquestador → claude-opus-4-7
+  - Fix puntual / un archivo / vista / campo           → claude-sonnet-4-6
+
+COMANDO DE ARRANQUE:
+  claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta este SDD: etapa X.X.X"
+
 INPUT:  Este SDD + archivos actuales en /tms
 OUTPUT:
   - [lista exacta de archivos a CREAR]
