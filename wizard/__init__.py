@@ -9,3 +9,4 @@ from . import tms_onboarding_wizard
 from . import tms_stamp_validation_wizard
 from . import tms_invoice_wizard
 from . import tms_cancel_invoice_wizard
+from . import tms_cancel_traslado_wizard

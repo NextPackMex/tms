@@ -1989,33 +1989,24 @@ class TmsWaybill(models.Model):
 
     def action_cancel_cfdi(self):
         """
-        Cancela el CFDI timbrado.
+        Abre el wizard de cancelación del CFDI Traslado para seleccionar motivo SAT.
         Solo ejecutable cuando cfdi_status='timbrado'.
-        V2.3: agregar wizard para seleccionar motivo.
+        La lógica de cancelación vive en tms.cancel.traslado.wizard.
         """
         self.ensure_one()
         if self.cfdi_status != 'timbrado':
             raise UserError(_('Solo se puede cancelar un CFDI en estado "Timbrado".'))
 
-        try:
-            from odoo.addons.tms.services.pac_manager import PacManager
-            manager = PacManager(self.env)
-            # Motivo 03 = no se llevó a cabo la operación (default)
-            manager.cancelar(self.cfdi_uuid, '03', self.company_id)
-
-            self.write({'cfdi_status': 'cancelado'})
-
-            if hasattr(self, 'message_post'):
-                self.message_post(
-                    body=_('CFDI cancelado. UUID: %s') % self.cfdi_uuid,
-                    subject=_('CFDI Cancelado'),
-                )
-
-        except UserError:
-            raise
-        except Exception as e:
-            _logger.error('TMS CANCELACION ERROR waybill %s: %s', self.id, str(e))
-            raise UserError(_('Error al cancelar CFDI: %s') % str(e))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Cancelar CFDI Traslado'),
+            'res_model': 'tms.cancel.traslado.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_waybill_id': self.id,
+            },
+        }
 
     def action_check_cfdi_status(self):
         """

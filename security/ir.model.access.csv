@@ -49,6 +49,8 @@ access_tms_invoice_wizard_user,tms.invoice.wizard.user,model_tms_invoice_wizard,
 access_tms_invoice_wizard_manager,tms.invoice.wizard.manager,model_tms_invoice_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_cancel_invoice_wizard_user,tms.cancel.invoice.wizard.user,model_tms_cancel_invoice_wizard,tms.group_tms_user,1,1,1,1
 access_tms_cancel_invoice_wizard_manager,tms.cancel.invoice.wizard.manager,model_tms_cancel_invoice_wizard,tms.group_tms_manager,1,1,1,1
+access_tms_cancel_traslado_wizard_user,tms.cancel.traslado.wizard.user,model_tms_cancel_traslado_wizard,tms.group_tms_user,1,1,1,1
+access_tms_cancel_traslado_wizard_manager,tms.cancel.traslado.wizard.manager,model_tms_cancel_traslado_wizard,tms.group_tms_manager,1,1,1,1
 access_tms_sat_uso_cfdi_user,tms.sat.uso.cfdi.user,model_tms_sat_uso_cfdi,base.group_user,1,0,0,0
 access_tms_sat_uso_cfdi_manager,tms.sat.uso.cfdi.manager,model_tms_sat_uso_cfdi,tms.group_tms_manager,1,1,1,1
 access_tms_sat_forma_pago_user,tms.sat.forma.pago.user,model_tms_sat_forma_pago,base.group_user,1,0,0,0

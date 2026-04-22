@@ -126,6 +126,7 @@
         'wizard/tms_stamp_validation_wizard_views.xml',
         'wizard/tms_invoice_wizard_views.xml',
         'wizard/tms_cancel_invoice_wizard_views.xml',
+        'wizard/tms_cancel_traslado_wizard_views.xml',
 
         # 7. Vistas de Viajes (Dashboard Kanban - MODELO MAESTRO)
         'views/tms_waybill_views.xml',

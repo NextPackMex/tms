@@ -196,7 +196,7 @@
                             type="object"
                             class="oe_highlight"
                             icon="fa-stamp"
-                            invisible="state not in ('aprobado','waybill') or cfdi_status == 'timbrado'"
+                            invisible="cfdi_status == 'timbrado' or (state not in ('aprobado','waybill') and cfdi_status != 'cancelado')"
                             help="Genera y sella el CFDI 4.0 con Complemento Carta Porte 3.1"/>
                     <button name="action_print_carta_porte"
                             string="Traslado PDF"
@@ -217,8 +217,7 @@
                             type="object"
                             class="btn-danger"
                             icon="fa-times-circle"
-                            invisible="cfdi_status != 'timbrado'"
-                            confirm="¿Cancelar el CFDI Traslado ante el SAT? Esta acción no se puede deshacer."/>
+                            invisible="cfdi_status != 'timbrado'"/>
 
                     <!-- ── GRUPO 3: Ingreso (Factura) ── -->
                     <button name="action_create_invoice"
