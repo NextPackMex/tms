@@ -1900,7 +1900,7 @@ class TmsWaybill(models.Model):
         7. Cambiar cfdi_status a 'timbrado'
         """
         self.ensure_one()
-        if self.state not in ('aprobado', 'waybill'):
+        if self.state not in ('aprobado', 'waybill') and self.cfdi_status != 'cancelado':
             raise UserError(_('Solo se puede timbrar una Carta Porte en estado "Aprobado" o "Carta Porte".'))
         if self.cfdi_status == 'timbrado':
             raise UserError(_('Este CFDI ya fue timbrado. UUID: %s') % self.cfdi_uuid)
