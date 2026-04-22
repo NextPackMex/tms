@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-04-22 — V2.3.2 Wizard cancelación Traslado + re-timbrado post-cancelación
+# Última actualización: 2026-04-22 — V2.4.1 Rentabilidad por ruta (tms.route.stats) completada
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -50,7 +50,7 @@ claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.3.2
+**Versión módulo:** 19.0.2.4.1
 **Progreso actual:** ~75% — V2.3 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
@@ -326,10 +326,11 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - ✅ ⚠️ SEMILLA PENDIENTE: activar hook `waybill.closed → _update_from_waybill()`
 - ✅ V2.3.2: Wizard cancelación CFDI Traslado con motivos SAT 01/02/03, re-timbrado post-cancelación (2026-04-22)
 
-### 📋 V2.4 🆕 — Combustible y Rendimiento (`tms_fuel/`)
-- `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
-- `tms.vehicle.performance`: KPIs acumulados, costo/km real que alimenta wizard cotización
-- Alerta automática si rendimiento baja más del 15%
+### ✅ V2.4 🆕 — Combustible, Rendimiento y Analytics
+- ✅ V2.4.1: Rentabilidad por ruta (`tms.route.stats`) con nombres de ciudad, ingresos y costos acumulados (2026-04-22)
+- 📋 `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
+- 📋 `tms.vehicle.performance`: KPIs acumulados, costo/km real que alimenta wizard cotización
+- 📋 Alerta automática si rendimiento baja más del 15%
 
 ### 📋 V2.4b 🆕 — Evidencia Fotográfica
 - `tms.evidence.photo`: 14 tipos de foto con GPS + timestamp inmutable
