@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-04-22 — V2.4.1 Rentabilidad por ruta (tms.route.stats) completada
+# Última actualización: 2026-04-23 — V2.4.2 Dashboard operativo completado
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -50,8 +50,8 @@ claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.4.1
-**Progreso actual:** ~75% — V2.3 completado
+**Versión módulo:** 19.0.2.4.2
+**Progreso actual:** ~78% — V2.4.1 completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -173,7 +173,7 @@ Fundamento: Art. 1-A LIVA + Art. 3 RLIVA
 def write(self, vals):
     res = super().write(vals)
     if vals.get('state') == 'closed':
-        self.env['tms.route.analytics']._update_from_waybill(self)
+        self.env['tms.route.stats']._update_from_waybill(self)
     return res
 ```
 
@@ -323,11 +323,13 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - ✅ Botón Facturar desde estado `aprobado` en adelante
 - ✅ Estado `closed` solo cuando `tms_cfdi_status='timbrada'` (compute, no write directo)
 - ✅ Botón "Volver a facturar" en facturas canceladas (motivo 02/03)
-- ✅ ⚠️ SEMILLA PENDIENTE: activar hook `waybill.closed → _update_from_waybill()`
+- ✅ Hook `waybill.closed → _update_from_waybill()` activo
 - ✅ V2.3.2: Wizard cancelación CFDI Traslado con motivos SAT 01/02/03, re-timbrado post-cancelación (2026-04-22)
 
 ### ✅ V2.4 🆕 — Combustible, Rendimiento y Analytics
 - ✅ V2.4.1: Rentabilidad por ruta (`tms.route.stats`) con nombres de ciudad, ingresos y costos acumulados (2026-04-22)
+- ✅ V2.4.2: Dashboard operativo con KPIs reales, comparativo mes anterior, pendientes de acción y alertas de licencia (2026-04-23)
+- 📋 V2.4.3: Rendimiento por vehículo + Cobrado vs por cobrar
 - 📋 `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
 - 📋 `tms.vehicle.performance`: KPIs acumulados, costo/km real que alimenta wizard cotización
 - 📋 Alerta automática si rendimiento baja más del 15%
@@ -461,6 +463,7 @@ Implementar antes de V2.7 / Fase 2.
 8. **widget monetary sin currency_field** — OWL error en Odoo 19
 9. **column_invisible con campo inexistente** — EvalError en OWL
 10. **on_create en kanban agrupado** — No funciona en Odoo 19 con group_by activo
+11. **Métodos RPC desde OWL no pueden empezar con `_`** — Odoo 19 bloquea métodos privados en `odoo/service/model.py` antes de ejecutarlos. El error se captura silenciosamente en el catch del componente OWL y devuelve vacío/ceros sin traceback visible. Solución: siempre usar nombre público. `get_dashboard_data()` NO `_get_dashboard_data()`
 
 ---
 
@@ -720,7 +723,7 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 
 | Cuándo | Qué | Para qué |
 |---|---|---|
-| V2.2 | Modelo `tms.route.analytics` vacío | Datos de ruta desde el primer viaje |
+| V2.2 | Modelo `tms.route.stats` vacío | Datos de ruta desde el primer viaje |
 | V2.3 | Hook `waybill.closed → _update_from_waybill()` | Alimenta matching engine |
 | V2.5 | `fleet.vehicle.current_zip` | Matching engine: proximidad |
 | V2.5 | `res.partner.is_tms_carrier` | Marketplace: filtrar transportistas |
@@ -730,10 +733,8 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 ---
 
 ## Próxima etapa
-**V2.3.3 — Notas de Crédito/Cargo y Ajustes de Facturación**
-Pendiente definir SDD. Opciones:
-- CFDI Egreso tipo E (nota de crédito sin Carta Porte) — ajustes al Ingreso
-- Cobro desde portal: botón de pago para receptor (MercadoPago / SPEI)
+**V2.4.3 — Rendimiento por Vehículo + Cobrado vs Por Cobrar**
+Pendiente definir SDD.
 
 ---
 

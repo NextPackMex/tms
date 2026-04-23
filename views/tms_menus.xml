@@ -25,8 +25,8 @@
     <!-- 2. MENÚS DE NIVEL 1 (HIJOS DIRECTOS DE RAÍZ) -->
     <!-- ==================================================== -->
 
-    <!-- Dashboard -->
-    <menuitem id="menu_tms_dashboard" name="Dashboard" parent="menu_tms_root" action="action_tms_home" sequence="1"/>
+    <!-- Dashboard KPI (abre componente OWL con métricas en tiempo real) -->
+    <menuitem id="menu_tms_dashboard" name="Dashboard" parent="menu_tms_root" action="action_tms_dashboard_kpi" sequence="1"/>
 
     <!-- Operaciones -->
     <menuitem id="menu_tms_operations" name="Operaciones" parent="menu_tms_root" sequence="10"/>

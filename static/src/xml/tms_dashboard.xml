@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!--
+        Plantilla OWL del Dashboard Operativo TMS.
+        Renderizada por TmsDashboard en tms_dashboard.js.
+        Requiere Bootstrap (incluido por Odoo).
+        V2.4.2b: comparativo mes anterior + tarjeta Pendientes de Acción.
+    -->
+    <t t-name="tms.Dashboard">
+        <div class="o_action o_tms_dashboard h-100 overflow-auto bg-100">
+
+            <!-- ── Cabecera ── -->
+            <div class="d-flex align-items-center px-4 py-3 bg-white border-bottom shadow-sm">
+                <h5 class="mb-0 me-auto fw-bold">
+                    <i class="fa fa-truck me-2 text-primary"/>
+                    Dashboard TMS
+                    <t t-if="state.data and state.data.mes_label">
+                        <small class="text-muted ms-2 fw-normal fs-6">
+                            — <t t-esc="state.data.mes_label"/>
+                        </small>
+                    </t>
+                </h5>
+                <button class="btn btn-primary btn-sm" t-on-click="openNuevaCotizacion">
+                    <i class="fa fa-plus me-1"/>
+                    Nueva Cotización
+                </button>
+            </div>
+
+            <!-- ── Loading ── -->
+            <t t-if="state.loading">
+                <div class="d-flex justify-content-center align-items-center" style="height:360px">
+                    <div class="spinner-border text-primary" role="status"/>
+                </div>
+            </t>
+
+            <t t-elif="state.data">
+                <div class="container-fluid p-4">
+
+                    <!-- ── Fila 1: 5 KPI cards ── -->
+                    <!-- col-sm-6 col-xl: 2 por fila en SM/MD/LG, 5 iguales en XL -->
+                    <div class="row g-3 mb-4">
+
+                        <!-- Viajes activos -->
+                        <div class="col-sm-6 col-xl">
+                            <div class="card border-0 shadow-sm h-100 o_tms_kpi_card"
+                                 style="border-left:4px solid #0d6efd!important; cursor:pointer"
+                                 t-on-click="() => this.openViajes('in_transit')">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Viajes Activos
+                                        </div>
+                                        <div class="fs-1 fw-bold text-primary lh-1"
+                                             t-esc="state.data.viajes_activos"/>
+                                        <div class="text-muted small mt-1">en tránsito + en destino</div>
+                                    </div>
+                                    <i class="fa fa-truck fa-2x text-primary opacity-25 ms-3"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Facturado este mes + comparativo -->
+                        <div class="col-sm-6 col-xl">
+                            <div class="card border-0 shadow-sm h-100 o_tms_kpi_card"
+                                 style="border-left:4px solid #198754!important; cursor:pointer"
+                                 t-on-click="() => this.openViajes('closed')">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Facturado (mes)
+                                        </div>
+                                        <div class="fs-5 fw-bold text-success lh-1"
+                                             t-esc="formatMoney(state.data.facturado_mes)"/>
+                                        <!-- Comparativo mes anterior -->
+                                        <t t-if="state.data.variacion_positiva === true">
+                                            <div class="small mt-1 fw-semibold text-success">
+                                                ↑ <t t-esc="state.data.variacion_porcentaje"/>% vs mes anterior
+                                            </div>
+                                        </t>
+                                        <t t-elif="state.data.variacion_positiva === false">
+                                            <div class="small mt-1 fw-semibold text-danger">
+                                                ↓ <t t-esc="absValue(state.data.variacion_porcentaje)"/>% vs mes anterior
+                                            </div>
+                                        </t>
+                                        <t t-else="">
+                                            <div class="text-muted small mt-1">= vs mes anterior</div>
+                                        </t>
+                                    </div>
+                                    <i class="fa fa-check-circle fa-2x text-success opacity-25 ms-3"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Por facturar -->
+                        <div class="col-sm-6 col-xl">
+                            <div class="card border-0 shadow-sm h-100 o_tms_kpi_card"
+                                 style="border-left:4px solid #fd7e14!important; cursor:pointer"
+                                 t-on-click="() => this.openViajes(false)">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Por Facturar
+                                        </div>
+                                        <div class="fs-1 fw-bold lh-1" style="color:#fd7e14"
+                                             t-esc="state.data.por_facturar"/>
+                                        <div class="text-muted small mt-1">sin CFDI Ingreso timbrado</div>
+                                    </div>
+                                    <i class="fa fa-clock-o fa-2x opacity-25 ms-3" style="color:#fd7e14"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cancelados este mes -->
+                        <div class="col-sm-6 col-xl">
+                            <div class="card border-0 shadow-sm h-100 o_tms_kpi_card"
+                                 style="border-left:4px solid #dc3545!important; cursor:pointer"
+                                 t-on-click="() => this.openViajes('cancel')">
+                                <div class="card-body d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Cancelados (mes)
+                                        </div>
+                                        <div class="fs-1 fw-bold text-danger lh-1"
+                                             t-esc="state.data.cancelados_mes"/>
+                                        <div class="text-muted small mt-1">viajes cancelados</div>
+                                    </div>
+                                    <i class="fa fa-times-circle fa-2x text-danger opacity-25 ms-3"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pendientes de Acción -->
+                        <div class="col-sm-6 col-xl">
+                            <div class="card border-0 shadow-sm h-100 o_tms_kpi_card"
+                                 t-attf-style="border-left:4px solid #{state.data.pendientes_count > 0 ? '#6f42c1' : '#6c757d'}!important">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-grow-1">
+                                            <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                                Pendientes de Acción
+                                            </div>
+                                            <div class="fs-1 fw-bold lh-1"
+                                                 t-attf-style="color:#{state.data.pendientes_count > 0 ? '#6f42c1' : '#6c757d'}"
+                                                 t-esc="state.data.pendientes_count"/>
+                                            <div class="text-muted small mt-1">sin movimiento +3 días</div>
+                                        </div>
+                                        <i class="fa fa-hourglass-half fa-2x opacity-25 ms-3"
+                                           t-attf-style="color:#{state.data.pendientes_count > 0 ? '#6f42c1' : '#6c757d'}"/>
+                                    </div>
+                                    <!-- Lista de los primeros 5 -->
+                                    <t t-if="state.data.pendientes_accion and state.data.pendientes_accion.length">
+                                        <div class="border-top pt-2 mt-1">
+                                            <t t-foreach="state.data.pendientes_accion"
+                                               t-as="p"
+                                               t-key="p.nombre">
+                                                <div class="d-flex justify-content-between align-items-center py-1"
+                                                     style="cursor:pointer; font-size:0.78rem"
+                                                     t-on-click="() => this.openViajes(p.clave_estado)">
+                                                    <span class="fw-semibold text-truncate me-2" style="max-width:100px"
+                                                          t-esc="p.nombre"/>
+                                                    <span class="badge rounded-pill text-white"
+                                                          t-attf-style="background-color:#{getEstadoColor(p.clave_estado)}; font-size:0.7rem">
+                                                        <t t-esc="p.estado"/>
+                                                    </span>
+                                                    <span class="text-muted ms-1" style="font-size:0.72rem; white-space:nowrap">
+                                                        <t t-esc="p.dias"/>d
+                                                    </span>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </t>
+                                    <t t-elif="state.data.pendientes_count === 0">
+                                        <div class="border-top pt-2 mt-1 text-success small">
+                                            <i class="fa fa-check me-1"/>Todo al día
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /fila KPIs -->
+
+                    <!-- ── Fila 2: por estado | alertas licencia ── -->
+                    <div class="row g-3 mb-4">
+
+                        <!-- Tabla viajes por estado -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-2 border-bottom">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fa fa-bar-chart me-2 text-primary"/>
+                                        Viajes por Estado
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <t t-if="state.data.por_estado and state.data.por_estado.length">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <tbody>
+                                                <t t-foreach="state.data.por_estado"
+                                                   t-as="item"
+                                                   t-key="item.clave">
+                                                    <tr style="cursor:pointer"
+                                                        t-on-click="() => this.openViajes(item.clave)">
+                                                        <td class="ps-3 py-2">
+                                                            <span class="badge rounded-pill text-white px-3"
+                                                                  t-attf-style="background-color:#{getEstadoColor(item.clave)}">
+                                                                <t t-esc="item.label"/>
+                                                            </span>
+                                                        </td>
+                                                        <td class="pe-3 py-2 text-end fw-bold"
+                                                            t-esc="item.count"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fa fa-inbox fa-2x mb-2 d-block"/>
+                                            Sin viajes registrados
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alertas de licencia -->
+                        <div class="col-md-6">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-2 border-bottom">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fa fa-exclamation-triangle me-2 text-warning"/>
+                                        Alertas de Licencia
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <t t-if="state.data.alertas_licencia and state.data.alertas_licencia.length">
+                                        <table class="table table-sm mb-0">
+                                            <tbody>
+                                                <t t-foreach="state.data.alertas_licencia"
+                                                   t-as="alerta"
+                                                   t-key="alerta.nombre">
+                                                    <tr>
+                                                        <td class="ps-3 py-2">
+                                                            <i class="fa fa-user me-1 text-muted"/>
+                                                            <t t-esc="alerta.nombre"/>
+                                                        </td>
+                                                        <td class="pe-3 py-2 text-end">
+                                                            <span t-attf-class="badge #{alerta.vencido ? 'bg-danger text-white' : 'bg-warning text-dark'}">
+                                                                <t t-esc="alerta.vencimiento"/>
+                                                                <t t-if="alerta.vencido"> — VENCIDA</t>
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fa fa-check-circle fa-2x text-success mb-2 d-block"/>
+                                            Sin alertas de licencia
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /fila 2 -->
+
+                    <!-- ── Fila 3: top 5 rutas (solo si hay datos) ── -->
+                    <t t-if="state.data.top_rutas and state.data.top_rutas.length">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white py-2 border-bottom">
+                                        <h6 class="mb-0 fw-semibold">
+                                            <i class="fa fa-map-marker me-2 text-success"/>
+                                            Top 5 Rutas por Ingreso
+                                        </h6>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="ps-3">#</th>
+                                                    <th>Ruta</th>
+                                                    <th class="text-center">Viajes</th>
+                                                    <th class="text-end">Ingreso Total</th>
+                                                    <th class="text-end pe-3">Promedio/Viaje</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.data.top_rutas"
+                                                   t-as="ruta"
+                                                   t-key="ruta_index">
+                                                    <tr>
+                                                        <td class="ps-3 text-muted"
+                                                            t-esc="ruta_index + 1"/>
+                                                        <td class="fw-semibold" t-esc="ruta.ruta"/>
+                                                        <td class="text-center" t-esc="ruta.viajes"/>
+                                                        <td class="text-end text-success"
+                                                            t-esc="formatMoney(ruta.ingreso_total)"/>
+                                                        <td class="text-end pe-3 text-muted"
+                                                            t-esc="formatMoney(ruta.ingreso_promedio)"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t><!-- /top rutas -->
+
+                </div><!-- /container -->
+            </t>
+
+        </div>
+    </t>
+
+</templates>

@@ -2657,6 +2657,188 @@ class TmsWaybill(models.Model):
             'context': ctx,
         }
 
+    @api.model
+    def get_dashboard_data(self):
+        """
+        Agrega KPIs operativos del mes en curso para el dashboard principal.
+        Filtra siempre por empresa activa. Nunca lanza error — retorna ceros
+        y listas vacías si la BD no tiene datos aún.
+        Nombre sin guión bajo: Odoo 19 bloquea métodos privados (_) vía RPC.
+        """
+        company_id = self.env.company.id
+        hoy = fields.Date.today()
+        primer_dia_mes = hoy.replace(day=1)
+
+        # — KPI 1: viajes activos (en tránsito o en destino) —
+        viajes_activos = self.search_count([
+            ('company_id', '=', company_id),
+            ('state', 'in', ['in_transit', 'arrived']),
+        ])
+
+        # — KPI 2: facturado este mes (suma de amount_total en state=closed) —
+        cerrados_mes = self.search([
+            ('company_id', '=', company_id),
+            ('state', '=', 'closed'),
+            ('date_created', '>=', primer_dia_mes),
+        ])
+        facturado_mes = sum(cerrados_mes.mapped('amount_total'))
+
+        # — Comparativo mes anterior (para badge de variación) —
+        # Primer día del mes anterior (maneja enero → diciembre del año previo)
+        if hoy.month == 1:
+            primer_dia_mes_anterior = hoy.replace(year=hoy.year - 1, month=12, day=1)
+        else:
+            primer_dia_mes_anterior = hoy.replace(month=hoy.month - 1, day=1)
+        ultimo_dia_mes_anterior = primer_dia_mes - timedelta(days=1)
+
+        cerrados_mes_anterior = self.search([
+            ('company_id', '=', company_id),
+            ('state', '=', 'closed'),
+            ('date_created', '>=', primer_dia_mes_anterior),
+            ('date_created', '<=', ultimo_dia_mes_anterior),
+        ])
+        facturado_mes_anterior = sum(cerrados_mes_anterior.mapped('amount_total'))
+
+        if facturado_mes_anterior:
+            variacion_porcentaje = round(
+                (facturado_mes - facturado_mes_anterior) / facturado_mes_anterior * 100, 1
+            )
+        else:
+            # Mes anterior sin datos → no mostrar variación (SDD: retornar 0)
+            variacion_porcentaje = 0.0
+
+        if variacion_porcentaje > 0:
+            variacion_positiva = True
+        elif variacion_porcentaje < 0:
+            variacion_positiva = False
+        else:
+            variacion_positiva = None  # JSON null → gris en la vista
+
+        # — KPI 3: por facturar (aprobados/en operación sin CFDI Ingreso timbrado) —
+        por_facturar = self.search_count([
+            ('company_id', '=', company_id),
+            ('state', 'in', ['aprobado', 'waybill', 'in_transit', 'arrived']),
+        ])
+
+        # — KPI 4: cancelados este mes —
+        cancelados_mes = self.search_count([
+            ('company_id', '=', company_id),
+            ('state', '=', 'cancel'),
+            ('date_created', '>=', primer_dia_mes),
+        ])
+
+        # — Conteo por estado (solo estados con registros) —
+        etiquetas = {
+            'cotizado':   'Cotizado',
+            'aprobado':   'Aprobado',
+            'waybill':    'Carta Porte',
+            'in_transit': 'En Tránsito',
+            'arrived':    'En Destino',
+            'closed':     'Facturado',
+            'cancel':     'Cancelado',
+            'rejected':   'Rechazado',
+        }
+        por_estado = []
+        for clave, etiqueta in etiquetas.items():
+            cnt = self.search_count([
+                ('company_id', '=', company_id),
+                ('state', '=', clave),
+            ])
+            if cnt:
+                por_estado.append({'clave': clave, 'label': etiqueta, 'count': cnt})
+
+        # — Top 5 rutas desde tms.route.stats —
+        top_rutas = []
+        try:
+            stats = self.env['tms.route.stats'].search([
+                ('company_id', '=', company_id),
+            ], order='ingreso_total desc', limit=5)
+            for s in stats:
+                top_rutas.append({
+                    'ruta': s.route_display or f"{s.origin_zip or '?'} → {s.dest_zip or '?'}",
+                    'viajes': s.total_viajes,
+                    'ingreso_total': s.ingreso_total,
+                    'ingreso_promedio': s.ingreso_promedio,
+                })
+        except Exception as e:
+            _logger.warning('TMS Dashboard: error cargando top rutas: %s', e)
+
+        # — Pendientes de acción (en operación sin movimiento > 3 días) —
+        pendientes_accion = []
+        pendientes_count = 0
+        try:
+            limite_inactivo = fields.Datetime.now() - timedelta(days=3)
+            etiquetas_estado = {
+                'aprobado':   'Aprobado',
+                'waybill':    'Carta Porte',
+                'in_transit': 'En Tránsito',
+                'arrived':    'En Destino',
+            }
+            pendientes_count = self.search_count([
+                ('company_id', '=', company_id),
+                ('state', 'in', list(etiquetas_estado.keys())),
+                ('write_date', '<', limite_inactivo),
+            ])
+            top5 = self.search([
+                ('company_id', '=', company_id),
+                ('state', 'in', list(etiquetas_estado.keys())),
+                ('write_date', '<', limite_inactivo),
+            ], order='write_date asc', limit=5)
+            for w in top5:
+                dias = (hoy - w.write_date.date()).days if w.write_date else 0
+                pendientes_accion.append({
+                    'nombre':       w.name,
+                    'estado':       etiquetas_estado.get(w.state, w.state),
+                    'clave_estado': w.state,
+                    'dias':         dias,
+                })
+        except Exception as e:
+            _logger.warning('TMS Dashboard: error cargando pendientes de acción: %s', e)
+
+        # — Alertas de licencia (vencidas o por vencer en 30 días) —
+        alertas_licencia = []
+        try:
+            limite = hoy + timedelta(days=30)
+            choferes = self.env['hr.employee'].search([
+                ('tms_driver_license_expiration', '!=', False),
+                ('tms_driver_license_expiration', '<=', str(limite)),
+                ('company_id', '=', company_id),
+            ])
+            for ch in choferes:
+                exp = ch.tms_driver_license_expiration
+                alertas_licencia.append({
+                    'nombre': ch.name,
+                    'vencimiento': exp.strftime('%d/%m/%Y') if exp else '',
+                    'vencido': bool(exp and exp < hoy),
+                })
+        except Exception as e:
+            _logger.warning('TMS Dashboard: error cargando alertas licencia: %s', e)
+
+        # Nombre del mes en español para el encabezado
+        meses = {
+            1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril',
+            5: 'Mayo', 6: 'Junio', 7: 'Julio', 8: 'Agosto',
+            9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre',
+        }
+        mes_label = f"{meses.get(hoy.month, '')} {hoy.year}"
+
+        return {
+            'viajes_activos':          viajes_activos,
+            'facturado_mes':           facturado_mes,
+            'facturado_mes_anterior':  facturado_mes_anterior,
+            'variacion_porcentaje':    variacion_porcentaje,
+            'variacion_positiva':      variacion_positiva,
+            'por_facturar':            por_facturar,
+            'cancelados_mes':          cancelados_mes,
+            'pendientes_count':        pendientes_count,
+            'pendientes_accion':       pendientes_accion,
+            'por_estado':              por_estado,
+            'top_rutas':               top_rutas,
+            'alertas_licencia':        alertas_licencia,
+            'mes_label':               mes_label,
+            'currency_symbol':         self.env.company.currency_id.symbol or '$',
+        }
+
     def write(self, vals):
         """
         Dos responsabilidades:
