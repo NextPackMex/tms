@@ -60,7 +60,7 @@
     'category': 'Logistics',
 
     # Versión
-    'version': '19.0.1.0.0',
+    'version': '19.0.2.4.1',
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)
@@ -165,6 +165,8 @@
             'tms/static/src/js/tms_tour.js',
             'tms/static/src/js/tms_command.js',
             'tms/static/src/js/tms_dimensions_widget.js',
+            'tms/static/src/js/tms_dashboard.js',
+            'tms/static/src/xml/tms_dashboard.xml',
         ],
         # Assets para portal: JS y CSS para vista moderna estilo Sales
         'web.assets_frontend': [

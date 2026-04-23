@@ -3,91 +3,36 @@
 
     <!--
         ================================================================
-        DASHBOARD TMS - Pantalla Principal
+        DASHBOARD TMS — KPIs Operativos en Tiempo Real
         ================================================================
 
-        CONCEPTO: Dashboard tipo "Home" con botones grandes para acceso rápido
-        Similar a los dashboards de Odoo (Ventas, Inventario, etc.)
+        Implementación: ir.actions.client con componente OWL TmsDashboard.
+        El componente llama a tms.waybill.get_dashboard_data() via RPC
+        y renderiza 4 KPI cards + tabla por estado + alertas + top rutas.
 
-        IMPLEMENTACIÓN:
-        Usamos una vista Kanban sin agrupación para mostrar "tarjetas" grandes
-        Cada tarjeta es un botón que abre una acción
+        Menú "Dashboard" apunta a esta acción.
+        El menú raíz TMS sigue abriendo la vista Kanban de waybills.
     -->
 
-    <!-- Vista Kanban para Dashboard -->
-    <record id="view_tms_dashboard_kanban" model="ir.ui.view">
-        <field name="name">tms.dashboard.kanban</field>
-        <field name="model">res.company</field>
-        <!--
-            Usamos res.company como modelo base
-            Solo para tener algo que mostrar en el dashboard
-            En realidad las tarjetas son botones estáticos
-        -->
-        <field name="arch" type="xml">
-            <kanban class="o_kanban_dashboard o_tms_dashboard" create="false">
-                <!--
-                    class="o_kanban_dashboard": estilo predefinido de Odoo para dashboards
-                    create="false": no permite crear nuevos registros (no tiene sentido aquí)
-                -->
-
-                <templates>
-                    <!--
-                        Template principal de cada tarjeta
-                        ODOO 18: Usa 'card' en lugar de 'kanban-box' (deprecated)
-                    -->
-                    <t t-name="card">
-                        <!--
-                            Contenedor de la tarjeta
-                            Cada una es un enlace clickeable
-                        -->
-                        <div class="oe_kanban_global_click o_kanban_record_has_image_fill">
-                            <!-- Contenido de la tarjeta -->
-                            <div class="o_kanban_card_content">
-                                <div class="o_kanban_primary_left">
-                                    <!--
-                                        Aquí iría contenido dinámico
-                                        Por ahora usamos tarjetas estáticas en el action
-                                    -->
-                                </div>
-                            </div>
-                        </div>
-                    </t>
-                </templates>
-            </kanban>
-        </field>
+    <!-- Acción cliente del dashboard KPI -->
+    <record id="action_tms_dashboard_kpi" model="ir.actions.client">
+        <field name="name">Dashboard TMS</field>
+        <field name="tag">tms_dashboard</field>
     </record>
 
     <!--
         ================================================================
-        ACTION: Dashboard TMS (Pantalla de Inicio)
+        ACTION: Vista principal de waybills (Kanban operativo)
         ================================================================
-
-        DASHBOARD PRINCIPAL: Vista Kanban de Viajes
-
-        Esta es la pantalla que se abre al hacer clic en el menú TMS
-        Muestra el tablero operativo con las 7 etapas del workflow:
-        1. Solicitud (request)
-        2. Por Asignar (confirmed)
-        3. Carta Porte Lista (carta_porte)
-        4. En Trayecto (transit)
-        5. En Destino (destination)
-        6. Facturado (invoiced)
-        7. Cancelado (cancel)
-
-        MODELO MAESTRO: tms.waybill fusiona Cotización + Viaje
-        SOPORTE HÍBRIDO: App Móvil (GPS) + Operación Manual (Botones)
+        Referenciada por:
+        - menu_tms_root (icono TMS en barra superior)
+        - botón "Ver Viajes" en el componente dashboard
     -->
     <record id="action_tms_home" model="ir.actions.act_window">
-        <field name="name">TMS - Dashboard Operativo</field>
+        <field name="name">TMS - Viajes</field>
         <field name="res_model">tms.waybill</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="view_tms_waybill_kanban"/>
-        <!--
-            view_mode="kanban,list,form":
-            - Kanban primero (dashboard operativo tipo Trello)
-            - Lista como alternativa (decorada con colores)
-            - Form para crear/editar viajes (con botones manuales)
-        -->
         <field name="context">{}</field>
         <field name="domain">[]</field>
         <field name="help" type="html">
@@ -95,85 +40,10 @@
                 Crear un nuevo viaje / cotización
             </p>
             <p>
-                <strong>Single Document Flow:</strong> Cotización + Operación + Carta Porte fusionados.<br/>
-                <strong>Soporte Híbrido:</strong> App Móvil (GPS) + Operación Manual (Botones).
+                <strong>Single Document Flow:</strong>
+                Cotización + Operación + Carta Porte fusionados.
             </p>
         </field>
     </record>
 
-    <!--
-        ================================================================
-        ALTERNATIVA: Dashboard con HTML Estático
-        ================================================================
-        Si prefieres un dashboard más visual con botones grandes
-    -->
-    <template id="tms_dashboard_main" name="TMS Dashboard">
-        <t t-call="web.layout">
-            <div class="container-fluid o_tms_dashboard_main">
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <h2>Dashboard TMS - Hombre Camión</h2>
-                    </div>
-                </div>
-
-                <div class="row mt-4">
-                    <!-- Tarjeta: Vehículos -->
-                    <div class="col-md-4">
-                        <div class="card bg-primary text-white mb-4">
-                            <div class="card-body text-center" style="min-height: 150px;">
-                                <i class="fa fa-truck fa-3x mb-3"></i>
-                                <h4>Vehículos</h4>
-                                <p>Gestión de tractocamiones</p>
-                                <a href="/web#action=tms.action_tms_vehicles"
-                                   class="btn btn-light btn-sm">Ver Vehículos</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta: Remolques -->
-                    <div class="col-md-4">
-                        <div class="card bg-success text-white mb-4">
-                            <div class="card-body text-center" style="min-height: 150px;">
-                                <i class="fa fa-trailer fa-3x mb-3"></i>
-                                <h4>Remolques</h4>
-                                <p>Gestión de remolques</p>
-                                <a href="/web#action=tms.action_tms_trailers"
-                                   class="btn btn-light btn-sm">Ver Remolques</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta: Destinos -->
-                    <div class="col-md-4">
-                        <div class="card bg-info text-white mb-4">
-                            <div class="card-body text-center" style="min-height: 150px;">
-                                <i class="fa fa-map-marker fa-3x mb-3"></i>
-                                <h4>Destinos</h4>
-                                <p>Rutas comerciales</p>
-                                <a href="/web#action=tms.action_tms_destination"
-                                   class="btn btn-light btn-sm">Ver Destinos</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <!-- Tarjeta: Catálogos SAT -->
-                    <div class="col-md-4">
-                        <div class="card bg-warning text-white mb-4">
-                            <div class="card-body text-center" style="min-height: 150px;">
-                                <i class="fa fa-database fa-3x mb-3"></i>
-                                <h4>Catálogos SAT</h4>
-                                <p>Importar y gestionar</p>
-                                <a href="/web#menu_id=tms.menu_sat_catalogs"
-                                   class="btn btn-light btn-sm">Ir a Catálogos</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </t>
-    </template>
-
 </odoo>
-
