@@ -40,5 +40,9 @@ from . import tms_tracking_event      # Bitácora GPS
 
 from . import tms_fuel_history
 from . import tms_route_stats         # Estadísticas de rentabilidad por ruta (V2.4)
+from . import tms_vehicle_performance  # Rendimiento acumulado por vehículo (V2.4.3)
+from . import tms_expense             # Gasto Real del Viaje (V2.3.3)
+from . import tms_driver_advance      # Anticipo al Chofer (V2.3.3)
+from . import tms_liquidacion         # Liquidación de Viaje (V2.3.3)
 from . import account_move_tms        # Extensión de account.move (CFDI Ingreso TMS)
 from . import res_config_settings     # Configuración

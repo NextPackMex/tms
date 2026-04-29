@@ -2822,6 +2822,28 @@ class TmsWaybill(models.Model):
         }
         mes_label = f"{meses.get(hoy.month, '')} {hoy.year}"
 
+        # — Rendimiento por vehículo + Cobrado vs Por Cobrar (V2.4.3) —
+        vehicle_performance = []
+        total_cobrado = 0.0
+        total_por_cobrar = 0.0
+        try:
+            perf_records = self.env['tms.vehicle.performance'].search([
+                ('company_id', '=', company_id),
+                ('total_trips', '>', 0),
+            ], order='total_revenue desc')
+            for p in perf_records:
+                vehicle_performance.append({
+                    'vehicle': p.vehicle_id.name or '',
+                    'trips': p.total_trips,
+                    'km': p.total_km,
+                    'revenue': p.total_revenue,
+                    'avg_per_trip': p.avg_revenue_per_trip,
+                })
+                total_cobrado += p.total_revenue
+                total_por_cobrar += p.total_revenue_pending
+        except Exception as e:
+            _logger.warning('TMS Dashboard: error cargando rendimiento vehículos: %s', e)
+
         return {
             'viajes_activos':          viajes_activos,
             'facturado_mes':           facturado_mes,
@@ -2837,6 +2859,9 @@ class TmsWaybill(models.Model):
             'alertas_licencia':        alertas_licencia,
             'mes_label':               mes_label,
             'currency_symbol':         self.env.company.currency_id.symbol or '$',
+            'vehicle_performance':     vehicle_performance,
+            'total_cobrado':           total_cobrado,
+            'total_por_cobrar':        total_por_cobrar,
         }
 
     def write(self, vals):
@@ -2869,6 +2894,13 @@ class TmsWaybill(models.Model):
         res = super(TmsWaybill, self).write(vals)
         if vals.get('state') == 'closed':
             self.env['tms.route.stats']._update_from_waybill(self)
+
+        # Actualizar rendimiento por vehículo cuando cambia el estado
+        if 'state' in vals:
+            vehicle_ids = self.mapped('vehicle_id').ids
+            if vehicle_ids:
+                self.env['tms.vehicle.performance']._refresh_vehicle_stats(vehicle_ids)
+
         return res
 
     @api.model_create_multi
