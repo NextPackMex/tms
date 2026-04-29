@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- FORM VIEW tms.expense -->
+    <record id="view_tms_expense_form" model="ir.ui.view">
+        <field name="name">tms.expense.form</field>
+        <field name="model">tms.expense</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="Aprobar" class="oe_highlight" invisible="state != 'draft'" groups="tms.group_tms_manager"/>
+                    <button name="action_pay" type="object" string="Marcar Pagado" invisible="state != 'approved'"/>
+                    <button name="action_reset" type="object" string="Volver a Borrador" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,paid"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Datos del Gasto">
+                            <field name="waybill_id"/>
+                            <field name="date" required="True"/>
+                            <field name="expense_type_id" required="True"/>
+                            <field name="driver_id"/>
+                            <field name="description"/>
+                        </group>
+                        <group string="Monto">
+                            <field name="currency_id" readonly="True"/>
+                            <field name="amount" widget="monetary" required="True"/>
+                        </group>
+                    </group>
+                    <field name="attachment_ids" widget="many2many_binary" string="Comprobantes"/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_ids"/>
+                    <field name="activity_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- LIST VIEW tms.expense -->
+    <record id="view_tms_expense_list" model="ir.ui.view">
+        <field name="name">tms.expense.list</field>
+        <field name="model">tms.expense</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="expense_type_id"/>
+                <field name="driver_id"/>
+                <field name="description"/>
+                <field name="amount" widget="monetary"/>
+                <field name="currency_id" invisible="True"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='approved'" decoration-warning="state=='paid'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- FORM VIEW tms.driver.advance (V2.3.3) -->
+    <record id="view_tms_driver_advance_form" model="ir.ui.view">
+        <field name="name">tms.driver.advance.form</field>
+        <field name="model">tms.driver.advance</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm_delivery" type="object" string="Confirmar Entrega" class="oe_highlight" invisible="state != 'pendiente'" groups="tms.group_tms_manager"/>
+                    <button name="action_liquidate" type="object" string="Liquidar" invisible="state != 'entregado'"/>
+                    <button name="action_reset" type="object" string="Volver a Pendiente" invisible="state == 'pendiente'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pendiente,entregado,liquidado"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Datos del Anticipo">
+                            <field name="waybill_id" readonly="True"/>
+                            <field name="driver_id" required="True"/>
+                            <field name="date" required="True"/>
+                            <field name="notes"/>
+                        </group>
+                        <group string="Monto">
+                            <field name="currency_id" readonly="True"/>
+                            <field name="amount" widget="monetary" required="True"/>
+                        </group>
+                    </group>
+                    <field name="attachment_ids" widget="many2many_binary" string="Vale de Anticipo"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- LIST VIEW tms.driver.advance (V2.3.3) -->
+    <record id="view_tms_driver_advance_list" model="ir.ui.view">
+        <field name="name">tms.driver.advance.list</field>
+        <field name="model">tms.driver.advance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date"/>
+                <field name="driver_id"/>
+                <field name="amount" widget="monetary"/>
+                <field name="currency_id" invisible="True"/>
+                <field name="notes"/>
+                <field name="state" widget="badge" decoration-warning="state=='pendiente'" decoration-info="state=='entregado'" decoration-success="state=='liquidado'"/>
+            </list>
+        </field>
+    </record>
+
+</odoo>

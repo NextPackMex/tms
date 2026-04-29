@@ -111,6 +111,11 @@
               parent="menu_tms_operations"
               action="action_tms_route_stats"
               sequence="35"
-              groups="tms.group_tms_manager"/>
+              groups="tms.group_tms_user"/>
+
+    <!-- Force update: asegurar que SOLO tiene group_tms_user -->
+    <record id="menu_tms_route_stats" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('tms.group_tms_user')])]"/>
+    </record>
 
 </odoo>

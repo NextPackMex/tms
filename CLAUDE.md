@@ -346,10 +346,16 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - `tms.driver.settlement`: flete × % chofer + reembolsos − anticipos − deducciones
 - Comprobante PDF firmado digitalmente, saldo arrastrado entre viajes
 
-### 🚧 V2.5 — Limpieza y Data Integrity (EN CURSO — Semillas Pendientes)
+### ✅ V2.5 — Limpieza y Data Integrity (COMPLETADO — 2026-04-28)
 - ✅ Estados simplificados a 6 (ciclo vital Hombre Camión)
 - ✅ Normalización t-esc → t-out (tracking events)
 - ✅ Badges Kanban dinámicos por estado y urgencia
+- ✅ **Ocultar menús irrelevantes para group_tms_user** (2026-04-28)
+  - Menús ocultos (14): Fleet, Sales, Project, Website, Mass Mailing, Survey, UTM, Apps, Setup, Administración, HR, Dashboards, Project To-do, Discuss
+  - Implementación: `data/tms_menu_cleanup.xml` (patrón `<function>` para actualizar menús existentes)
+  - Fix Fleet: `models/res_users_tms.py` + `__init_hooks__.py` quita `fleet_group_user` automáticamente (post_init_hook)
+  - Solo visibles para `group_tms_manager` + `base.group_system`
+  - Limpieza manual: SQL ejecutado para eliminar `fleet_group_user` de usuarios TMS existentes
 - ❌ PENDIENTE: current_zip (fleet.vehicle) — Matching geográfico Fase 2
 - ❌ PENDIENTE: vehicle_status (fleet.vehicle) — Bloquear vehículo en falla ⚠️ RIESGO: Referenciado en comentario action_confirm_order (tms_waybill.py) — si se convierte en código real sin implementar el campo → crash inmediato.
 - ❌ PENDIENTE: is_tms_carrier (res.partner) — Filtrar transportistas marketplace

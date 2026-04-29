@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Ocultar menús Odoo irrelevantes para group_tms_user (V2.5) -->
+        <!-- Solo visibles para: group_tms_manager + base.group_system -->
+        <!-- Patrón: usar <function> para escribir (actualizar) menús existentes, no <record> (crear) -->
+
+        <!-- Fleet (Flota) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('fleet.menu_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Sales (Ventas) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('sale.sale_menu_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Spreadsheet Dashboard -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('spreadsheet_dashboard.spreadsheet_dashboard_menu_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Project (Proyecto) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('project.menu_main_pm')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Website (Sitio Web) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('website.menu_website_configuration')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Mass Mailing (Marketing por Correo) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('mass_mailing.mass_mailing_menu_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Survey (Encuestas) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('survey.menu_surveys')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- UTM Link Tracker -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('utm.menu_link_tracker_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Project To-do -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('project_todo.menu_todo_todos')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Discuss (Correo/Chat) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('mail.main_menu_discuss')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Apps (Aplicaciones) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('base.menu_apps')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Configuración General (Setup) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('base_setup.menu_config')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- Administración -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('base.menu_administration')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+        <!-- HR (Empleados) -->
+        <function model="ir.ui.menu" name="write">
+            <value eval="[ref('hr.menu_hr_root')]"/>
+            <value eval="{'group_ids': [(6, 0, [ref('tms.group_tms_manager'), ref('base.group_system')])]}" />
+        </function>
+
+    </data>
+</odoo>

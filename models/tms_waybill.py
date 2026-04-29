@@ -43,6 +43,8 @@ TIMBRADO_WRITABLE_FIELDS = {
     'activity_summary', 'activity_exception_decoration',
     # Bitácora GPS — siempre editable aunque el CFDI esté timbrado
     'tracking_event_ids',
+    # Gastos reales y anticipos al chofer — editable para liquidación post-cierre
+    'expense_ids', 'advance_ids', 'settlement_balance',
 }
 
 
@@ -1275,6 +1277,96 @@ class TmsWaybill(models.Model):
         help='Suma de todos los costos estimados (Diesel + Casetas + Chofer + Maniobras + Otros + Comisión)'
     )
 
+    # ════════════════════════════════════════════════════════════════
+    # GASTOS REALES Y UTILIDAD NETA (V2.3.3)
+    # ════════════════════════════════════════════════════════════════
+
+    # One2many a gastos reales
+    expense_ids = fields.One2many(
+        'tms.expense',
+        'waybill_id',
+        string='Gastos Reales',
+        help='Registro de gastos reales posteriores a la cotización'
+    )
+
+    expense_count = fields.Integer(
+        compute='_compute_expense_count',
+        string='Nro. Gastos'
+    )
+
+    # Costos reales calculados (solo gastos aprobados + pagados)
+    cost_real_total = fields.Monetary(
+        compute='_compute_cost_real_total',
+        store=True,
+        string='Costo Real Total',
+        currency_field='currency_id',
+        help='Suma de gastos aprobados y pagados'
+    )
+
+    # Utilidad neta
+    net_profit = fields.Monetary(
+        compute='_compute_net_profit',
+        store=True,
+        string='Utilidad Neta',
+        currency_field='currency_id',
+        help='Precio venta menos costo real (amount_untaxed - cost_real_total)'
+    )
+
+    profit_margin = fields.Float(
+        compute='_compute_net_profit',
+        store=True,
+        string='Margen %',
+        digits=(5, 2),
+        help='Porcentaje de utilidad sobre precio venta'
+    )
+
+    # ════════════════════════════════════════════════════════════════
+    # ANTICIPOS AL CHOFER (V2.3.3)
+    # ════════════════════════════════════════════════════════════════
+
+    advance_ids = fields.One2many(
+        'tms.driver.advance',
+        'waybill_id',
+        string='Anticipos',
+        help='Anticipos en efectivo otorgados al chofer durante el viaje'
+    )
+
+    advance_total = fields.Monetary(
+        compute='_compute_advance_total',
+        store=True,
+        string='Total Anticipos',
+        currency_field='currency_id',
+        help='Suma de anticipos entregados y liquidados'
+    )
+
+    settlement_balance = fields.Monetary(
+        compute='_compute_settlement_balance',
+        store=True,
+        string='Saldo Liquidación',
+        currency_field='currency_id',
+        help='Anticipos menos gastos reales (positivo=chofer devuelve, negativo=empresa paga)'
+    )
+
+    liquidacion_id = fields.Many2one(
+        'tms.liquidacion',
+        string='Liquidación',
+        readonly=True,
+        copy=False,
+        help='Liquidación asociada a este viaje'
+    )
+
+    liquidacion_status = fields.Selection(
+        [
+            ('sin_movimientos', 'Sin Movimientos'),
+            ('en_proceso', 'En Proceso'),
+            ('liquidado', 'Liquidado'),
+        ],
+        compute='_compute_liquidacion_status',
+        store=True,
+        string='Estado Liquidación',
+        help='Estado actual de la liquidación: sin movimientos, en proceso o completada'
+    )
+
     # --- PROPUESTA 1: POR KILÓMETRO ---
     price_per_km = fields.Float(string='Precio por Km', digits=(10,2))
     # IMPORTANTE: Este campo NO tiene store=True, usa método separado
@@ -1418,6 +1510,108 @@ class TmsWaybill(models.Model):
                 record.cost_other +
                 record.cost_commission
             )
+
+    def _compute_expense_count(self):
+        """Cuenta el número de gastos reales asociados al viaje."""
+        for record in self:
+            record.expense_count = len(record.expense_ids)
+
+    @api.depends('expense_ids.amount', 'expense_ids.state')
+    def _compute_cost_real_total(self):
+        """
+        Suma los gastos en cualquier estado (draft, approved, paid).
+        Incluye borradores, aprobados y pagados en el cálculo.
+        """
+        for record in self:
+            total = sum(
+                expense.amount
+                for expense in record.expense_ids
+                if expense.state in ['draft', 'approved', 'paid']
+            )
+            record.cost_real_total = total
+
+    @api.depends('amount_untaxed', 'cost_real_total')
+    def _compute_net_profit(self):
+        """
+        Calcula utilidad neta y margen de ganancia.
+
+        net_profit = amount_untaxed - cost_real_total
+        profit_margin = (net_profit / amount_untaxed) * 100
+        """
+        for record in self:
+            record.net_profit = record.amount_untaxed - record.cost_real_total
+            if record.amount_untaxed > 0:
+                record.profit_margin = (record.net_profit / record.amount_untaxed) * 100
+            else:
+                record.profit_margin = 0.0
+
+    @api.depends('advance_ids.amount', 'advance_ids.state')
+    def _compute_advance_total(self):
+        """
+        Suma los anticipos entregados y liquidados.
+        Los anticipos pendientes NO se incluyen en el total.
+        """
+        for record in self:
+            total = sum(
+                advance.amount
+                for advance in record.advance_ids
+                if advance.state in ['entregado', 'liquidado']
+            )
+            record.advance_total = total
+
+    @api.depends('advance_total', 'cost_real_total')
+    def _compute_settlement_balance(self):
+        """
+        Calcula el saldo de liquidación del chofer.
+
+        settlement_balance = advance_total - cost_real_total
+        - Positivo: el chofer debe devolver dinero a la empresa
+        - Negativo: la empresa debe pagar al chofer
+        """
+        for record in self:
+            record.settlement_balance = record.advance_total - record.cost_real_total
+
+    @api.depends('advance_ids.state', 'expense_ids.state')
+    def _compute_liquidacion_status(self):
+        """
+        Determina el estado de liquidación del viaje.
+
+        - sin_movimientos: no hay anticipos ni gastos registrados
+        - en_proceso: hay anticipos y/o gastos que aún no están completamente liquidados
+        - liquidado: todos los anticipos están liquidados Y todos los gastos están pagados
+        """
+        for rec in self:
+            advances = rec.advance_ids
+            expenses = rec.expense_ids
+
+            # Sin movimientos: ni anticipos ni gastos
+            if not advances and not expenses:
+                rec.liquidacion_status = 'sin_movimientos'
+                continue
+
+            # Verificar si todos los anticipos están liquidados
+            advances_ok = all(a.state == 'liquidado' for a in advances) if advances else True
+            # Verificar si todos los gastos están pagados
+            expenses_ok = all(e.state == 'paid' for e in expenses) if expenses else True
+
+            # Liquidado = todos anticipos liquidados Y todos gastos pagados
+            if advances_ok and expenses_ok:
+                rec.liquidacion_status = 'liquidado'
+            else:
+                rec.liquidacion_status = 'en_proceso'
+
+    def action_view_expenses(self):
+        """Abre la vista de gastos del viaje (One2many)."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Gastos del Viaje',
+            'res_model': 'tms.expense',
+            'view_mode': 'list,form',
+            'domain': [('waybill_id', '=', self.id)],
+            'context': {'default_waybill_id': self.id},
+            'target': 'current',
+        }
 
     @api.depends('distance_km', 'extra_distance_km', 'price_per_km', 'cost_diesel_total',
                  'cost_tolls', 'cost_driver', 'cost_maneuver', 'cost_other', 'cost_commission',
@@ -2892,6 +3086,12 @@ class TmsWaybill(models.Model):
             })
 
         res = super(TmsWaybill, self).write(vals)
+
+        # Crear liquidación cuando el viaje entra en tránsito
+        if vals.get('state') == 'in_transit':
+            self.action_create_liquidacion()
+
+        # Actualizar estadísticas de ruta cuando se cierra el viaje
         if vals.get('state') == 'closed':
             self.env['tms.route.stats']._update_from_waybill(self)
 
@@ -2902,6 +3102,35 @@ class TmsWaybill(models.Model):
                 self.env['tms.vehicle.performance']._refresh_vehicle_stats(vehicle_ids)
 
         return res
+
+    def action_create_liquidacion(self):
+        """
+        Crea la liquidación del viaje.
+
+        Se llama automáticamente desde write() cuando state cambia a 'in_transit'.
+        También puede invocarse manualmente desde el botón "Crear Liquidación".
+        Solo crea si no existe liquidación previa.
+        """
+        for rec in self:
+            if not rec.liquidacion_id:
+                liq = self.env['tms.liquidacion'].create({
+                    'waybill_id': rec.id,
+                })
+                rec.liquidacion_id = liq.id
+                _logger.info(f"Viaje {rec.name}: Liquidación {liq.name} creada")
+
+    def action_view_liquidacion(self):
+        """Abre la liquidación asociada al viaje."""
+        self.ensure_one()
+        if not self.liquidacion_id:
+            raise UserError(_('No hay liquidación asociada a este viaje'))
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'tms.liquidacion',
+            'res_id': self.liquidacion_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 
     @api.model_create_multi
     def create(self, vals_list):

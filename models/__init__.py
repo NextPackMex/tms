@@ -27,6 +27,11 @@ from . import sat_tipo_relacion       # c_TipoRelacion
 from . import sat_periodicidad_pago   # c_Periodicidad
 
 # ============================================================
+# CATÁLOGOS TMS (GLOBALES — SIN company_id)
+# ============================================================
+from . import tms_expense_type        # Tipos de Gasto (Diesel, Casetas, etc.)
+
+# ============================================================
 # MODELOS OPERATIVOS - PRIVADOS (CON company_id OBLIGATORIO)
 # ============================================================
 from . import res_company           # Extensión de res.company (Defaults)
@@ -46,3 +51,4 @@ from . import tms_driver_advance      # Anticipo al Chofer (V2.3.3)
 from . import tms_liquidacion         # Liquidación de Viaje (V2.3.3)
 from . import account_move_tms        # Extensión de account.move (CFDI Ingreso TMS)
 from . import res_config_settings     # Configuración
+from . import res_users_tms           # Extensión de res.users (manejo de grupos TMS)
