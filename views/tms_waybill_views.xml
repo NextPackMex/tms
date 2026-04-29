@@ -265,6 +265,14 @@
                             invisible="state not in ('cotizado','aprobado')"
                             confirm="¿Cancelar este viaje? Esta acción no se puede deshacer."/>
 
+                    <!-- ── GRUPO 5: Liquidación ── -->
+                    <button name="action_create_liquidacion"
+                            string="Crear Liquidación"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="liquidacion_id"
+                            groups="tms.group_tms_manager"/>
+
                     <!-- Barra de estados del flujo del viaje -->
                     <field name="state" widget="statusbar"
                            statusbar_visible="cotizado,aprobado,waybill,in_transit,arrived,closed"
@@ -314,6 +322,11 @@
                                 invisible="not invoice_ids">
                             <field name="invoice_ids" widget="statinfo"
                                    string="Factura(s)" nolabel="1"/>
+                        </button>
+
+                        <!-- Smart Button: Liquidación — visible cuando existe -->
+                        <button name="action_view_liquidacion" type="object" class="oe_stat_button" icon="fa-balance-scale" invisible="not liquidacion_id">
+                            <span>Liquidación</span>
                         </button>
 
                         <!-- Campo invisible para condiciones -->
@@ -756,6 +769,7 @@
                                 </group>
                             </group>
                         </page>
+
                     </notebook>
                 </sheet>
                 <chatter>

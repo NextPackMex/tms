@@ -60,7 +60,7 @@
     'category': 'Logistics',
 
     # Versión
-    'version': '19.0.2.4.1',
+    'version': '19.0.2.5.0',
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)
@@ -79,6 +79,8 @@
         'data/tms_sequence_data.xml',
         'data/tms_data.xml',
         'data/sat_regimen_fiscal.xml',
+        'data/tms_menu_cleanup.xml',     # Ocultar menús Odoo irrelevantes (V2.5)
+        'data/tms_expense_type.xml',     # Catálogo: Tipos de Gasto (V2.3.3)
         'data/tms.sat.zona.especial.csv',
         'data/tms.sat.uso.cfdi.csv',
         'data/tms.sat.forma.pago.csv',
@@ -132,6 +134,9 @@
         'views/tms_waybill_views.xml',
         'views/tms_fuel_history_views.xml',
         'views/account_move_tms_views.xml',
+        'views/tms_expense_type_views.xml',  # Catálogo: Tipos de Gasto (V2.3.3)
+        'views/tms_expense_views.xml',      # Gasto Real del Viaje (V2.3.3)
+        'views/tms_liquidacion_views.xml',  # Liquidación de Viaje (V2.3.3)
 
         # 8. Dashboard y Analytics
         'views/tms_route_stats_views.xml',
@@ -193,4 +198,7 @@
 
     # Licencia
     'license': 'LGPL-3',
+
+    # Hooks post-instalación
+    'post_init_hook': 'post_init_hook',
 }

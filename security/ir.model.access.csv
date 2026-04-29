@@ -63,3 +63,14 @@ access_tms_sat_tipo_relacion_user,tms.sat.tipo.relacion.user,model_tms_sat_tipo_
 access_tms_sat_tipo_relacion_manager,tms.sat.tipo.relacion.manager,model_tms_sat_tipo_relacion,tms.group_tms_manager,1,1,1,1
 access_tms_sat_periodicidad_pago_user,tms.sat.periodicidad.pago.user,model_tms_sat_periodicidad_pago,base.group_user,1,0,0,0
 access_tms_sat_periodicidad_pago_manager,tms.sat.periodicidad.pago.manager,model_tms_sat_periodicidad_pago,tms.group_tms_manager,1,1,1,1
+access_res_company_tms_user,res.company.tms.user,base.model_res_company,tms.group_tms_user,1,1,0,0
+access_tms_expense_user,tms.expense.user,model_tms_expense,tms.group_tms_user,1,1,1,0
+access_tms_expense_manager,tms.expense.manager,model_tms_expense,tms.group_tms_manager,1,1,1,1
+access_tms_expense_driver,tms.expense.driver,model_tms_expense,tms.group_tms_driver,1,1,0,0
+access_tms_expense_type_user,tms.expense.type.user,model_tms_expense_type,tms.group_tms_user,1,0,0,0
+access_tms_expense_type_manager,tms.expense.type.manager,model_tms_expense_type,tms.group_tms_manager,1,1,1,1
+access_tms_driver_advance_user,tms.driver.advance.user,model_tms_driver_advance,tms.group_tms_user,1,1,1,0
+access_tms_driver_advance_manager,tms.driver.advance.manager,model_tms_driver_advance,tms.group_tms_manager,1,1,1,1
+access_tms_driver_advance_driver,tms.driver.advance.driver,model_tms_driver_advance,tms.group_tms_driver,1,0,0,0
+access_tms_liquidacion_user,tms.liquidacion.user,model_tms_liquidacion,tms.group_tms_user,1,1,0,0
+access_tms_liquidacion_manager,tms.liquidacion.manager,model_tms_liquidacion,tms.group_tms_manager,1,1,1,1

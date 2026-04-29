@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ====================================================================== -->
+    <!-- VISTAS DE LIQUIDACIÓN (V2.3.3) -->
+    <!-- ====================================================================== -->
+
+    <!-- ======================= -->
+    <!-- FORM VIEW              -->
+    <!-- ======================= -->
+    <record id="view_tms_liquidacion_form" model="ir.ui.view">
+        <field name="name">tms.liquidacion.form</field>
+        <field name="model">tms.liquidacion</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_iniciar" type="object" string="Iniciar Liquidación" class="oe_highlight" invisible="state != 'borrador'"/>
+                    <button name="action_liquidar" type="object" string="Liquidar" class="oe_highlight" invisible="state != 'en_proceso'"/>
+                    <button name="action_reabrir" type="object" string="Reabrir" invisible="state == 'borrador'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="borrador,en_proceso,liquidado"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="True"/>
+                        </h1>
+                    </div>
+
+                    <!-- INFORMACIÓN DEL VIAJE (READONLY) -->
+                    <group string="Información del Viaje" colspan="4">
+                        <group>
+                            <field name="waybill_id" readonly="True"/>
+                            <field name="partner_id" readonly="True"/>
+                            <field name="driver_id" readonly="True"/>
+                        </group>
+                        <group>
+                            <field name="waybill_state" readonly="True"/>
+                            <field name="ingreso" widget="monetary" readonly="True"/>
+                            <field name="currency_id" invisible="True"/>
+                            <field name="date_created" readonly="True"/>
+                            <field name="date_liquidacion" readonly="True"/>
+                        </group>
+                    </group>
+
+                    <!-- SECCIÓN 1: ANTICIPOS AL CHOFER -->
+                    <separator string="1. Anticipos al Chofer"/>
+                    <field name="advance_ids" nolabel="1" readonly="state == 'liquidado'" context="{'default_waybill_id': waybill_id, 'default_driver_id': driver_id}">
+                        <list editable="bottom">
+                            <field name="date" required="1"/>
+                            <field name="driver_id" required="1"/>
+                            <field name="amount" widget="monetary" required="1"/>
+                            <field name="notes" placeholder="Nota del anticipo..."/>
+                            <field name="state" widget="badge" decoration-warning="state=='pendiente'" decoration-info="state=='entregado'" decoration-success="state=='liquidado'"/>
+                            <button name="action_confirm_delivery" type="object" string="✓" class="btn-sm btn-success" invisible="state != 'pendiente'" groups="tms.group_tms_manager"/>
+                            <button name="action_liquidate" type="object" string="💰" class="btn-sm btn-info" invisible="state != 'entregado'"/>
+                            <button name="action_reset" type="object" string="↺" class="btn-sm btn-warning" invisible="state == 'pendiente'"/>
+                        </list>
+                    </field>
+                    <group>
+                        <field name="advance_total" widget="monetary" readonly="True" string="Total Anticipos"/>
+                    </group>
+
+                    <!-- SECCIÓN 2: GASTOS REALES -->
+                    <separator string="2. Gastos Reales del Viaje"/>
+                    <field name="expense_ids" nolabel="1" readonly="state == 'liquidado'" context="{'default_waybill_id': waybill_id, 'default_driver_id': driver_id}">
+                        <list editable="bottom">
+                            <field name="date" required="1"/>
+                            <field name="expense_type_id" required="1"/>
+                            <field name="driver_id"/>
+                            <field name="description"/>
+                            <field name="amount" widget="monetary" required="1"/>
+                            <field name="state" widget="badge" decoration-warning="state=='draft'" decoration-success="state=='approved'" decoration-info="state=='paid'"/>
+                            <button name="action_approve" type="object" string="✓" class="btn-sm btn-success" invisible="state != 'draft'" groups="tms.group_tms_manager"/>
+                            <button name="action_pay" type="object" string="💰" class="btn-sm btn-info" invisible="state != 'approved'"/>
+                            <button name="action_reset" type="object" string="↺" class="btn-sm btn-warning" invisible="state == 'draft'"/>
+                        </list>
+                    </field>
+                    <group>
+                        <field name="expense_total" widget="monetary" readonly="True" string="Total Gastos"/>
+                    </group>
+
+                    <!-- SECCIÓN 3: RESUMEN DE LIQUIDACIÓN -->
+                    <separator string="3. Resumen de Liquidación"/>
+                    <group colspan="4" col="4">
+                        <group string="Liquidación Chofer">
+                            <field name="advance_total" widget="monetary" readonly="True" string="Anticipo Entregado"/>
+                            <field name="expense_total" widget="monetary" readonly="True" string="Gastos Reales"/>
+                            <field name="settlement_balance" widget="monetary" readonly="True" string="Saldo (Chofer)"/>
+                        </group>
+                        <group string="Rentabilidad del Viaje">
+                            <field name="ingreso" widget="monetary" readonly="True" string="Ingreso"/>
+                            <field name="expense_total" widget="monetary" readonly="True" string="Costos Reales"/>
+                            <field name="net_profit" widget="monetary" readonly="True" string="Utilidad Neta"/>
+                            <field name="profit_margin" readonly="True" string="Margen %"/>
+                        </group>
+                    </group>
+
+                    <!-- NOTAS -->
+                    <field name="notes" placeholder="Notas de la liquidación..."/>
+
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- ======================= -->
+    <!-- LIST VIEW              -->
+    <!-- ======================= -->
+    <record id="view_tms_liquidacion_list" model="ir.ui.view">
+        <field name="name">tms.liquidacion.list</field>
+        <field name="model">tms.liquidacion</field>
+        <field name="arch" type="xml">
+            <list string="Liquidaciones" create="false">
+                <field name="name"/>
+                <field name="waybill_id"/>
+                <field name="partner_id"/>
+                <field name="driver_id"/>
+                <field name="waybill_state" widget="badge"/>
+                <field name="ingreso" widget="monetary"/>
+                <field name="advance_total" widget="monetary"/>
+                <field name="expense_total" widget="monetary"/>
+                <field name="net_profit" widget="monetary"/>
+                <field name="profit_margin"/>
+                <field name="settlement_balance" widget="monetary"/>
+                <field name="state" widget="badge" decoration-warning="state=='borrador'" decoration-info="state=='en_proceso'" decoration-success="state=='liquidado'"/>
+                <field name="currency_id" invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ======================= -->
+    <!-- SEARCH VIEW            -->
+    <!-- ======================= -->
+    <record id="view_tms_liquidacion_search" model="ir.ui.view">
+        <field name="name">tms.liquidacion.search</field>
+        <field name="model">tms.liquidacion</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Liquidaciones">
+                <field name="name" string="Liquidación"/>
+                <field name="waybill_id" string="Viaje"/>
+                <field name="partner_id" string="Cliente"/>
+                <field name="driver_id" string="Chofer"/>
+                <separator/>
+                <filter name="filter_borrador" string="Borrador" domain="[('state', '=', 'borrador')]"/>
+                <filter name="filter_en_proceso" string="En Proceso" domain="[('state', '=', 'en_proceso')]"/>
+                <filter name="filter_liquidado" string="Liquidado" domain="[('state', '=', 'liquidado')]"/>
+                <separator/>
+                <filter name="filter_pending" string="Pendientes" domain="[('state', '!=', 'liquidado')]"/>
+                <separator/>
+                <filter name="group_by_state" string="Agrupar por Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_by_partner" string="Agrupar por Cliente" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_by_driver" string="Agrupar por Chofer" context="{'group_by': 'driver_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ======================= -->
+    <!-- ACTION WINDOW          -->
+    <!-- ======================= -->
+    <record id="action_tms_liquidaciones" model="ir.actions.act_window">
+        <field name="name">Liquidaciones</field>
+        <field name="res_model">tms.liquidacion</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_tms_liquidacion_search"/>
+        <field name="context">{'default_state': 'borrador'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay liquidaciones pendientes.
+            </p>
+            <p>
+                Las liquidaciones se crean automáticamente cuando un viaje
+                entra en tránsito. Aquí se consolidan anticipos y gastos
+                reales para determinar el saldo del chofer.
+            </p>
+        </field>
+    </record>
+
+</odoo>
