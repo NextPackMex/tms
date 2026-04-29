@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-04-28 — V2.5 Limpieza menús completado
+# Última actualización: 2026-04-29 — V2.4.3 Rendimiento por vehículo completado
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -50,8 +50,8 @@ claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.5.0
-**Progreso actual:** ~80% — V2.5 completado (limpieza de menús)
+**Versión módulo:** 19.0.2.4.3
+**Progreso actual:** ~80% — V2.4.3 completado (rendimiento por vehículo)
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -329,9 +329,8 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 ### ✅ V2.4 🆕 — Combustible, Rendimiento y Analytics
 - ✅ V2.4.1: Rentabilidad por ruta (`tms.route.stats`) con nombres de ciudad, ingresos y costos acumulados (2026-04-22)
 - ✅ V2.4.2: Dashboard operativo con KPIs reales, comparativo mes anterior, pendientes de acción y alertas de licencia (2026-04-23)
-- 📋 V2.4.3: Rendimiento por vehículo + Cobrado vs por cobrar
+- ✅ V2.4.3: Rendimiento por vehículo — modelo `tms.vehicle.performance` con KPIs acumulados, cobrado vs por cobrar (2026-04-29)
 - 📋 `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
-- 📋 `tms.vehicle.performance`: KPIs acumulados, costo/km real que alimenta wizard cotización
 - 📋 Alerta automática si rendimiento baja más del 15%
 
 ### 📋 V2.4b 🆕 — Evidencia Fotográfica

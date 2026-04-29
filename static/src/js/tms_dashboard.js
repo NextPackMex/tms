@@ -53,6 +53,9 @@ export class TmsDashboard extends Component {
                 alertas_licencia:       [],
                 mes_label:              "",
                 currency_symbol:        "$",
+                vehicle_performance:    [],
+                total_cobrado:          0,
+                total_por_cobrar:       0,
             };
         } finally {
             this.state.loading = false;

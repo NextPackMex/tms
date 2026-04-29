@@ -314,6 +314,88 @@
                         </div>
                     </t><!-- /top rutas -->
 
+                    <!-- ── Fila 4: rendimiento por vehículo + cobrado vs por cobrar ── -->
+                    <div class="row g-3 mt-1">
+
+                        <!-- Cobrado vs Por Cobrar (dos KPI cards) -->
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-2 border-bottom">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fa fa-money me-2 text-success"/>
+                                        Cobrado vs Por Cobrar
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Cobrado (CFDI timbrado)
+                                        </div>
+                                        <div class="fs-5 fw-bold text-success"
+                                             t-esc="formatMoney(state.data.total_cobrado || 0)"/>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small text-uppercase fw-semibold mb-1">
+                                            Por Cobrar (en operación)
+                                        </div>
+                                        <div class="fs-5 fw-bold text-warning"
+                                             t-esc="formatMoney(state.data.total_por_cobrar || 0)"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla rendimiento por vehículo -->
+                        <div class="col-md-8">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white py-2 border-bottom">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i class="fa fa-truck me-2 text-primary"/>
+                                        Rendimiento por Vehículo
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <t t-if="state.data.vehicle_performance and state.data.vehicle_performance.length">
+                                        <table class="table table-sm table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th class="ps-3">Vehículo</th>
+                                                    <th class="text-center">Viajes</th>
+                                                    <th class="text-end">Km</th>
+                                                    <th class="text-end">Ingreso Total</th>
+                                                    <th class="text-end pe-3">Prom/Viaje</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.data.vehicle_performance"
+                                                   t-as="veh"
+                                                   t-key="veh_index">
+                                                    <tr>
+                                                        <td class="ps-3 fw-semibold" t-esc="veh.vehicle"/>
+                                                        <td class="text-center" t-esc="veh.trips"/>
+                                                        <td class="text-end text-muted"
+                                                            t-esc="veh.km.toFixed ? veh.km.toFixed(0) : veh.km"/>
+                                                        <td class="text-end text-success"
+                                                            t-esc="formatMoney(veh.revenue)"/>
+                                                        <td class="text-end pe-3 text-muted"
+                                                            t-esc="formatMoney(veh.avg_per_trip)"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="text-center text-muted py-5">
+                                            <i class="fa fa-truck fa-2x mb-2 d-block opacity-50"/>
+                                            Sin datos de rendimiento aún
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /fila rendimiento vehículos -->
+
                 </div><!-- /container -->
             </t>
 

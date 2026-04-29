@@ -74,3 +74,5 @@ access_tms_driver_advance_manager,tms.driver.advance.manager,model_tms_driver_ad
 access_tms_driver_advance_driver,tms.driver.advance.driver,model_tms_driver_advance,tms.group_tms_driver,1,0,0,0
 access_tms_liquidacion_user,tms.liquidacion.user,model_tms_liquidacion,tms.group_tms_user,1,1,0,0
 access_tms_liquidacion_manager,tms.liquidacion.manager,model_tms_liquidacion,tms.group_tms_manager,1,1,1,1
+access_tms_vehicle_performance_user,tms.vehicle.performance.user,model_tms_vehicle_performance,tms.group_tms_user,1,0,0,0
+access_tms_vehicle_performance_manager,tms.vehicle.performance.manager,model_tms_vehicle_performance,tms.group_tms_manager,1,1,1,1
