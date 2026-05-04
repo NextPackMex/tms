@@ -83,7 +83,7 @@ registry.category("web_tour.tours").add("tms_micro_empresa", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t('Abriendo Hombre Camión...'),
             run: 'click',
             tooltipPosition: 'bottom',
@@ -117,7 +117,7 @@ registry.category("web_tour.tours").add("tms_micro_csd", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t('Abriendo Hombre Camión...'),
             run: 'click',
             tooltipPosition: 'bottom',
@@ -157,7 +157,7 @@ registry.category("web_tour.tours").add("tms_micro_vehiculos", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t('Abriendo Hombre Camión...'),
             run: 'click',
             tooltipPosition: 'bottom',
@@ -191,7 +191,7 @@ registry.category("web_tour.tours").add("tms_micro_choferes", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t('Abriendo Hombre Camión...'),
             run: 'click',
             tooltipPosition: 'bottom',
@@ -225,7 +225,7 @@ registry.category("web_tour.tours").add("tms_micro_cotizacion", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t("Estás en el Tablero de Viajes. Este es tu centro de operaciones."),
             tooltipPosition: 'bottom',
             run: "click",
@@ -258,7 +258,7 @@ registry.category("web_tour.tours").add("tms_micro_factura", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t("Estamos en el Tablero."),
             tooltipPosition: 'bottom',
             run: "click",
@@ -291,7 +291,7 @@ registry.category("web_tour.tours").add("tms_micro_dashboard", {
     url: "/odoo/tms",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
             content: _t("En la parte superior del Tablero ves los KPIs principales de tu operación."),
             tooltipPosition: 'bottom',
             run: "click",
