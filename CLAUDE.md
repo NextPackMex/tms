@@ -360,6 +360,17 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - ❌ PENDIENTE: vehicle_status (fleet.vehicle) — Bloquear vehículo en falla ⚠️ RIESGO: Referenciado en comentario action_confirm_order (tms_waybill.py) — si se convierte en código real sin implementar el campo → crash inmediato.
 - ❌ PENDIENTE: is_tms_carrier (res.partner) — Filtrar transportistas marketplace
 
+### ✅ V2.5.1 — Tours Interactivos (2026-05-04)
+- ✅ `tms_tour.js` reescrito: 4 tours separados (configuración, cotización, carta porte, dashboard)
+- ✅ Tour 1 `tms_tour_1_configuracion`: 9 pasos (app, configuración, operadores, vehículos)
+- ✅ Tour 2 `tms_tour_2_cotizacion`: 10 pasos (nueva cotización, CPs, propuestas, cliente, mercancías)
+- ✅ Tour 3 `tms_tour_3_carta_porte`: 10 pasos (aprobación, vehículo, chofer, mercancías, timbrado, UUID)
+- ✅ Tour 4 `tms_tour_4_dashboard`: 8 pasos (KPIs, viajes activos, facturación, rendimiento, alertas)
+- ✅ Botones activadores en `res_config_settings_views.xml` (bloque "Tours de Ayuda")
+- ✅ API `odoo.startTour(tourName, {mode: 'manual'})` verificada en Odoo 19
+- ✅ Sin referencias a acciones obsoletas (action_set_en_pedido, action_confirm_order)
+- ✅ Todos los textos en español con `_t()`
+
 ### 📋 V2.6 — KPIs, Reportes y Portal Web
 - Dashboard ingresos, rentabilidad por vehículo, rendimiento diesel
 - Portal cliente: ver estado de su envío + botón aprobación
