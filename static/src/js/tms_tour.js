@@ -83,13 +83,13 @@ registry.category("web_tour.tours").add("tms_micro_empresa", {
     url: "/odoo",
     steps: () => [
         {
-            trigger: 'button.dropdown-toggle[data-menu-xmlid="tms.menu_tms_config"]',
+            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre el menú de Configuración."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.dropdown-item[data-menu-xmlid="tms.menu_tms_my_company"]',
+            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_my_company"]',
             content: _t("Haz clic en 'Mi Empresa' para configurar tu RFC y datos fiscales."),
             tooltipPosition: 'right',
             run: "click",
@@ -111,19 +111,19 @@ registry.category("web_tour.tours").add("tms_micro_csd", {
     url: "/odoo",
     steps: () => [
         {
-            trigger: 'button.dropdown-toggle[data-menu-xmlid="tms.menu_tms_config"]',
+            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre Configuración."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.dropdown-item[data-menu-xmlid="tms.menu_tms_config_settings"]',
+            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_config_settings"]',
             content: _t("Haz clic en 'Ajustes TMS'."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: 'button.dropdown-toggle[data-menu-xmlid="tms.menu_tms_my_company"]',
+            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_my_company"]',
             content: _t("Aquí está 'Mi Empresa'. Abre el formulario para ver los campos de CSD."),
             tooltipPosition: 'right',
             run: "click",
@@ -145,13 +145,13 @@ registry.category("web_tour.tours").add("tms_micro_vehiculos", {
     url: "/odoo",
     steps: () => [
         {
-            trigger: 'button.dropdown-toggle[data-menu-xmlid="tms.menu_tms_operations"]',
+            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.dropdown-item[data-menu-xmlid="tms.menu_tms_vehicles"]',
+            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_vehicles"]',
             content: _t("Haz clic en 'Vehículos' para registrar tus unidades."),
             tooltipPosition: 'right',
             run: "click",
@@ -173,13 +173,13 @@ registry.category("web_tour.tours").add("tms_micro_choferes", {
     url: "/odoo",
     steps: () => [
         {
-            trigger: 'button.dropdown-toggle[data-menu-xmlid="tms.menu_tms_operations"]',
+            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.dropdown-item[data-menu-xmlid="tms.menu_tms_drivers"]',
+            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_drivers"]',
             content: _t("Haz clic en 'Operadores' para registrar tus choferes."),
             tooltipPosition: 'right',
             run: "click",
