@@ -21,7 +21,7 @@ registry.category("actions").add("tms_launch_tour", async (env, action) => {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_tour_carta_porte", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
             trigger: 'button[data-menu-xmlid="tms.menu_tms_nueva_cotizacion"]',
@@ -80,7 +80,7 @@ registry.category("web_tour.tours").add("tms_tour_carta_porte", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_empresa", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
@@ -108,7 +108,7 @@ registry.category("web_tour.tours").add("tms_micro_empresa", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_csd", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
@@ -142,7 +142,7 @@ registry.category("web_tour.tours").add("tms_micro_csd", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_vehiculos", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
@@ -170,7 +170,7 @@ registry.category("web_tour.tours").add("tms_micro_vehiculos", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_choferes", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
@@ -198,10 +198,10 @@ registry.category("web_tour.tours").add("tms_micro_choferes", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_cotizacion", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
             content: _t("Estás en el Tablero de Viajes. Este es tu centro de operaciones."),
             tooltipPosition: 'bottom',
             run: "click",
@@ -231,10 +231,10 @@ registry.category("web_tour.tours").add("tms_micro_cotizacion", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_factura", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
             content: _t("Estamos en el Tablero."),
             tooltipPosition: 'bottom',
             run: "click",
@@ -264,10 +264,10 @@ registry.category("web_tour.tours").add("tms_micro_factura", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_dashboard", {
-    url: "/web#action=tms.action_tms_home",
+    url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="menu_tms_root"]',
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
             content: _t("En la parte superior del Tablero ves los KPIs principales de tu operación."),
             tooltipPosition: 'bottom',
             run: "click",
