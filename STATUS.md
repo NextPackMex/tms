@@ -1,7 +1,7 @@
 # STATUS.md — TMS Hombre Camión
 
 > Actualizado por Claude Web con cada `/status`, `/archive` y `/ff`.
-> Última actualización: **2026-05-04**
+> Última actualización: **2026-05-04** — V2.5.1 completado
 
 ---
 
@@ -18,7 +18,8 @@
 
 ## 🎯 Feature activo
 
-**Ninguno** — estructura Spec-Driven inicializada 2026-05-04, lista para primer `/ff`.
+**V2.5.1** — Tour Guide Interactivo completado 2026-05-04 (rama feat/v2.5.1-tour-guide)
+Próximo: mergear → PR y ejecutar V2.4b (Evidencia fotográfica).
 
 ---
 
@@ -38,6 +39,7 @@
 | V2.4.2 | Dashboard operativo + KPIs tiempo real | ✅ 2026-04-23 |
 | V2.4.3 | Rendimiento por vehículo (`tms.vehicle.performance`) | ✅ 2026-04-29 |
 | V2.5 | Ocultar menús irrelevantes `group_tms_user` | ✅ 2026-04-28 |
+| V2.5.1 | Tour Guide Interactivo (8 tours + panel flotante) | ✅ 2026-05-04 |
 
 ---
 
@@ -45,13 +47,12 @@
 
 | Prioridad | Versión | Nombre | Modelo Claude |
 |-----------|---------|--------|---------------|
-| 🔜 1 | V2.5.1 | Tour guide interactivo (4 tours Odoo) | `claude-opus-4-7` |
-| 📌 2 | V2.4b | Evidencia fotográfica (`tms.evidence.photo`) | `claude-sonnet-4-6` |
-| 📌 3 | V2.4c | Firma digital simple (`tms_signature/`) | `claude-opus-4-7` |
-| 📌 4 | V2.4d | Liquidación de choferes (`tms_settlement/`) | `claude-sonnet-4-6` |
-| 📋 5 | V2.6 | KPIs/Reportes + Portal Web Cliente | `claude-opus-4-7` |
-| 📋 6 | V2.7 | Limpieza final + verificar semillas | `claude-sonnet-4-6` |
-| 🎯 7 | **V2.8** | **SaaS multi-tenant + cobro (PRIMER CLIENTE)** | `claude-opus-4-7` |
+| 🔜 1 | V2.4b | Evidencia fotográfica (`tms.evidence.photo`) | `claude-sonnet-4-6` |
+| 📌 2 | V2.4c | Firma digital simple (`tms_signature/`) | `claude-opus-4-7` |
+| 📌 3 | V2.4d | Liquidación de choferes (`tms_settlement/`) | `claude-sonnet-4-6` |
+| 📋 4 | V2.6 | KPIs/Reportes + Portal Web Cliente | `claude-opus-4-7` |
+| 📋 5 | V2.7 | Limpieza final + verificar semillas | `claude-sonnet-4-6` |
+| 🎯 6 | **V2.8** | **SaaS multi-tenant + cobro (PRIMER CLIENTE)** | `claude-opus-4-7` |
 | 🔮 — | Fase 2 | Marketplace de cargas | Sep-Dic 2026 |
 
 ---
@@ -74,5 +75,6 @@ _(ninguno aún — flujo iniciado 2026-05-04)_
 
 ## ⚙️ Próximos pasos
 
-1. Mergear `feat/v2.4.3-vehicle-performance` → PR a main (si QA ok)
-2. Ejecutar `/ff v2.5.1-tour-guide` para arrancar el tour guide interactivo
+1. ✅ V2.5.1 Tour Guide completado — rama `feat/v2.5.1-tour-guide` lista para PR
+2. Mergear `feat/v2.4.3-vehicle-performance` → PR a main (completado pero aún pendiente de merge)
+3. Iniciación de V2.4b (Evidencia fotográfica) cuando Mois indique
