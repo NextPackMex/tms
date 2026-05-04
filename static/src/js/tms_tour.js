@@ -80,8 +80,14 @@ registry.category("web_tour.tours").add("tms_tour_carta_porte", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_empresa", {
-    url: "/odoo",
+    url: "/odoo/tms",
     steps: () => [
+        {
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            content: _t('Abriendo Hombre Camión...'),
+            run: 'click',
+            tooltipPosition: 'bottom',
+        },
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre el menú de Configuración."),
@@ -108,8 +114,14 @@ registry.category("web_tour.tours").add("tms_micro_empresa", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_csd", {
-    url: "/odoo",
+    url: "/odoo/tms",
     steps: () => [
+        {
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            content: _t('Abriendo Hombre Camión...'),
+            run: 'click',
+            tooltipPosition: 'bottom',
+        },
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre Configuración."),
@@ -142,8 +154,14 @@ registry.category("web_tour.tours").add("tms_micro_csd", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_vehiculos", {
-    url: "/odoo",
+    url: "/odoo/tms",
     steps: () => [
+        {
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            content: _t('Abriendo Hombre Camión...'),
+            run: 'click',
+            tooltipPosition: 'bottom',
+        },
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
@@ -170,8 +188,14 @@ registry.category("web_tour.tours").add("tms_micro_vehiculos", {
 // ═════════════════════════════════════════════════════════════════════════════════════
 
 registry.category("web_tour.tours").add("tms_micro_choferes", {
-    url: "/odoo",
+    url: "/odoo/tms",
     steps: () => [
+        {
+            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
+            content: _t('Abriendo Hombre Camión...'),
+            run: 'click',
+            tooltipPosition: 'bottom',
+        },
         {
             trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
