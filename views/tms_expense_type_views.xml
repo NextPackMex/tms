@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- FORM VIEW tms.expense.type -->
+    <record id="view_tms_expense_type_form" model="ir.ui.view">
+        <field name="name">tms.expense.type.form</field>
+        <field name="model">tms.expense.type</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name" required="True"/>
+                        <field name="sequence"/>
+                        <field name="active"/>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- LIST VIEW tms.expense.type -->
+    <record id="view_tms_expense_type_list" model="ir.ui.view">
+        <field name="name">tms.expense.type.list</field>
+        <field name="model">tms.expense.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="active" widget="boolean_toggle"/>
+                <field name="notes"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ACTION WINDOW -->
+    <record id="action_tms_expense_type" model="ir.actions.act_window">
+        <field name="name">Tipos de Gasto</field>
+        <field name="res_model">tms.expense.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- MENU ITEM (bajo Configuración → TMS) -->
+    <menuitem id="menu_tms_expense_type" name="Tipos de Gasto" parent="menu_tms_config" action="action_tms_expense_type" sequence="20" groups="tms.group_tms_manager"/>
+
+</odoo>

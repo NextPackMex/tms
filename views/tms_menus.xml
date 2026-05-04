@@ -34,6 +34,14 @@
     <!-- Configuración -->
     <menuitem id="menu_tms_config" name="Configuración" parent="menu_tms_root" sequence="99"/>
 
+    <!-- Mi Empresa -->
+    <menuitem id="menu_tms_my_company"
+              name="Mi Empresa"
+              parent="menu_tms_config"
+              action="base.action_res_company_form"
+              groups="tms.group_tms_user"
+              sequence="1"/>
+
     <!-- ==================================================== -->
     <!-- 3. SUBMENÚS DE OPERACIONES -->
     <!-- ==================================================== -->
@@ -41,11 +49,14 @@
     <!-- Viajes / Tablero (Dashboard Principal) -->
     <menuitem id="menu_tms_waybill" name="Viajes / Tablero" parent="menu_tms_operations" action="action_tms_waybill" sequence="5"/>
 
+    <!-- Liquidaciones (V2.4.3) — Menú para gestionar anticipos y gastos -->
+    <menuitem id="menu_tms_liquidaciones" name="Liquidaciones" parent="menu_tms_operations" action="action_tms_liquidaciones" sequence="7" groups="tms.group_tms_manager"/>
+
     <!-- Vehículos (Tractores) -->
-    <menuitem id="menu_tms_vehicles" name="Vehículos" parent="menu_tms_operations" action="action_tms_vehicles" sequence="10"/>
+    <menuitem id="menu_tms_vehicles" name="Vehículos" parent="menu_tms_operations" action="action_tms_vehicles" sequence="10" groups="tms.group_tms_user"/>
 
     <!-- Remolques -->
-    <menuitem id="menu_tms_trailers" name="Remolques" parent="menu_tms_operations" action="action_tms_trailers" sequence="20"/>
+    <menuitem id="menu_tms_trailers" name="Remolques" parent="menu_tms_operations" action="action_tms_trailers" sequence="20" groups="tms.group_tms_user"/>
 
     <!-- Choferes (Operadores) -->
     <record id="action_tms_drivers" model="ir.actions.act_window">
@@ -67,7 +78,7 @@
         </field>
     </record>
 
-    <menuitem id="menu_tms_drivers" name="Operadores" parent="menu_tms_operations" action="action_tms_drivers" sequence="30"/>
+    <menuitem id="menu_tms_drivers" name="Operadores" parent="menu_tms_operations" action="action_tms_drivers" sequence="30" groups="tms.group_tms_user"/>
 
     <!-- Destinos/Rutas -->
     <menuitem id="tms_menu_destinations" name="Destinos" parent="menu_tms_operations" action="action_tms_destination" sequence="40"/>
@@ -82,7 +93,7 @@
     <menuitem id="menu_tms_config_fleet" name="Flota" parent="menu_tms_config" sequence="10"/>
 
     <!-- Tipos de Vehículo -->
-    <menuitem id="menu_tms_vehicle_type" name="Tipos de Vehículo" parent="menu_tms_config_fleet" action="action_tms_vehicle_type" sequence="10"/>
+    <menuitem id="menu_tms_vehicle_type" name="Tipos de Vehículo" parent="menu_tms_config_fleet" action="action_tms_vehicle_type" sequence="10" groups="tms.group_tms_user"/>
 
     <!--
         NOTA: El menú "Configuración" y sus submenús de Catálogos SAT
@@ -90,6 +101,21 @@
     -->
 
     <!-- Nueva Cotización (acción definida en tms_cotizacion_wizard_views.xml) -->
-    <menuitem id="menu_tms_nueva_cotizacion" name="Nueva Cotización" parent="menu_tms_operations" action="action_tms_cotizacion_wizard" sequence="1" groups="tms.group_tms_user,tms.group_tms_manager"/>
+    <menuitem id="menu_tms_nueva_cotizacion" name="Nueva Cotización" parent="menu_tms_operations" action="action_tms_cotizacion_wizard" sequence="1" groups="tms.group_tms_user"/>
+
+    <!-- Force update: asegurar que SOLO tiene group_tms_user -->
+    <record id="menu_tms_nueva_cotizacion" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('tms.group_tms_user')])]"/>
+    </record>
+
+    <!-- ==================================================== -->
+    <!-- 5. OCULTACIÓN DE MENÚS ODOO (V2.5) -->
+    <!-- ==================================================== -->
+    <!--
+        La ocultación de menús irrelevantes para group_tms_user se define
+        en data/tms_menu_cleanup.xml. Cada menú nativo (Ventas, Fleet,
+        Proyecto, Sitio web, etc.) está restringido a group_tms_manager
+        y base.group_system.
+    -->
 
 </odoo>

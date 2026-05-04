@@ -218,6 +218,6 @@
         parent="menu_tms_config"
         action="action_tms_onboarding_wizard"
         sequence="1"
-        groups="tms.group_tms_manager"/>
+        groups="tms.group_tms_user"/>
 
 </odoo>

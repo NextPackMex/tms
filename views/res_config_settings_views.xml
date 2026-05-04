@@ -168,5 +168,5 @@
         <field name="context">{'module' : 'tms'}</field>
     </record>
 
-    <menuitem id="menu_tms_config_settings" name="Ajustes" parent="menu_tms_config" sequence="0" action="action_tms_config_settings" groups="base.group_system"/>
+    <menuitem id="menu_tms_config_settings" name="Ajustes" parent="menu_tms_config" sequence="0" action="action_tms_config_settings" groups="tms.group_tms_manager"/>
 </odoo>
