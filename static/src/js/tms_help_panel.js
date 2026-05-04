@@ -74,7 +74,7 @@ class TmsHelpPanel extends Component {
     /**
      * Alterna la visibilidad del panel.
      */
-    togglePanel() {
+    togglePanel = () => {
         this.state.isOpen = !this.state.isOpen;
     }
 
@@ -83,7 +83,7 @@ class TmsHelpPanel extends Component {
      *
      * @param {string} tourName - Nombre del tour a lanzar
      */
-    launchTour(tourName) {
+    launchTour = (tourName) => {
         this.state.isOpen = false;
         // Esperar 200ms a que el panel se cierre antes de lanzar el tour
         setTimeout(() => {
