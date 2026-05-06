@@ -222,7 +222,7 @@ tms/
 | V2.4.2 | Dashboard operativo + KPIs | ✅ 2026-04-23 |
 | V2.4.3 | Rendimiento por vehículo | ✅ 2026-05-06 |
 | **V2.4b** | **Evidencia fotográfica (`tms.evidence.photo`)** | **✅ 2026-05-06** |
-| V2.4c | Firma digital simple (`tms_signature/`) | 📋 Pendiente |
+| V2.4c | Firma digital simple (`tms_signature/`) | ✅ Completado (ya existía 2026-05-06) |
 | V2.4d | Liquidación de choferes (`tms_settlement/`) | 📋 Pendiente |
 
 ### ✅ V2.5 — Limpieza (COMPLETADO — 2026-04-28)
