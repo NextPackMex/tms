@@ -137,6 +137,7 @@
         'views/tms_expense_type_views.xml',  # Catálogo: Tipos de Gasto (V2.3.3)
         'views/tms_expense_views.xml',      # Gasto Real del Viaje (V2.3.3)
         'views/tms_liquidacion_views.xml',  # Liquidación de Viaje (V2.3.3)
+        'views/tms_evidence_views.xml',     # Evidencia Fotográfica (V2.4b)
 
         # 8. Dashboard y Analytics
         'views/tms_route_stats_views.xml',

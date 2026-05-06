@@ -329,6 +329,11 @@
                             <span>Liquidación</span>
                         </button>
 
+                        <!-- Smart Button: Evidencias Fotográficas — visible cuando hay fotos -->
+                        <button name="action_view_evidences" type="object" class="oe_stat_button" icon="fa-camera" invisible="evidence_count == 0">
+                            <field name="evidence_count" widget="statinfo" string="Evidencias"/>
+                        </button>
+
                         <!-- Campo invisible para condiciones -->
                         <field name="invoice_status" invisible="1"/>
 
@@ -741,6 +746,35 @@
                                         <field name="notes" placeholder="Notas adicionales..."/>
                                     </sheet>
                                 </form>
+                            </field>
+                        </page>
+
+                        <!-- ======================= -->
+                        <!-- EVIDENCIAS FOTOGRÁFICAS (V2.4b) -->
+                        <!-- ======================= -->
+                        <page string="Evidencias 📷" name="evidencias">
+                            <field name="evidence_ids" mode="kanban">
+                                <kanban class="o_kanban_small_column">
+                                    <field name="id"/>
+                                    <field name="photo_type"/>
+                                    <field name="date"/>
+                                    <field name="user_id"/>
+                                    <field name="photo"/>
+                                    <templates>
+                                        <t t-name="card">
+                                            <div class="oe_kanban_card">
+                                                <div class="o_kanban_image">
+                                                    <field name="photo" widget="image" options="{'size': [100, 100]}"/>
+                                                </div>
+                                                <div class="oe_kanban_details">
+                                                    <strong><field name="photo_type" widget="badge"/></strong>
+                                                    <p><small><field name="date"/></small></p>
+                                                    <p><small><field name="user_id"/></small></p>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
                             </field>
                         </page>
 
