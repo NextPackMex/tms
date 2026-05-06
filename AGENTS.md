@@ -13,6 +13,7 @@
 | Bug difícil, refactor tms_waybill.py | claude-opus-4-7 |
 | Fix puntual, un solo archivo | claude-sonnet-4-6 |
 | Vista XML, label, color, fix línea | claude-sonnet-4-6 |
+| Commits, limpieza, documentación | claude-haiku-4-5 |
 
 # ══════════════════════════════════════════════════════════════
 
@@ -40,7 +41,7 @@ Sigues las convenciones de Odoo 19 CE estrictamente.
 3. NUNCA escribas en campos store=True desde un compute store=False.
    Si necesitas persistir, usa un botón con write() explícito o haz el campo compute+store.
 
-4. NUNCA crees modelo nuevo si puedes extender uno nativo con \_inherit.
+4. NUNCA crees modelo nuevo si puedes extender uno nativo con _inherit.
 
 5. NUNCA pongas company_id en catálogos SAT (son globales, compartidos entre empresas).
 
@@ -49,65 +50,153 @@ Sigues las convenciones de Odoo 19 CE estrictamente.
 7. SIEMPRE usa check_company=True en Many2one a modelos con company_id.
 
 8. SIEMPRE valida que el módulo actualice sin errores antes de dar por terminado:
-   python3 odoo-bin -c odoo.conf -u tms -d tms_dev --stop-after-init
+   python3 odoo-bin -c odoo.conf -u tms -d tms_v2 --stop-after-init
 
 9. Los estados del workflow son EXACTAMENTE estos (no inventar otros):
-   draft, en_pedido, assigned, waybill, in_transit, arrived, closed, cancel, rejected
+   cotizado, aprobado, waybill, in_transit, arrived, closed, cancel, rejected
+   ⚠️ NUNCA usar: draft, en_pedido, assigned, transit, destination, carta_porte
 
 10. SIEMPRE busca XML IDs existentes antes de crear vistas nuevas:
     grep -rn "record id=" views/
+
+# ══════════════════════════════════════════════════════════════
+# ⚠️ ERRORES COMUNES ODOO 19 — NUNCA REPETIR
+# ══════════════════════════════════════════════════════════════
+
+## Vistas Lista y view_mode
+
+❌ MAL en vistas: `<tree>`
+✅ BIEN en vistas: `<list>`
+
+❌ MAL en ir.actions.act_window — causa "View types not defined tree":
+```xml
+<field name="view_mode">kanban,tree,form</field>
+```
+✅ BIEN en ir.actions.act_window:
+```xml
+<field name="view_mode">kanban,list,form</field>
+```
+
+⚠️ REGLA: Cada vez que escribas un ir.actions.act_window, verifica que
+view_mode NO contenga "tree". Siempre usar "list".
+
+## Vistas Kanban — template obligatorio
+
+❌ MAL — Odoo 16 y anteriores:
+```xml
+<templates>
+    <t t-name="kanban-box">...</t>
+</templates>
+```
+✅ BIEN — Odoo 19 obligatorio:
+```xml
+<templates>
+    <t t-name="card">...</t>
+</templates>
+```
+
+## Imágenes en Kanban
+
+❌ MAL — kanban_image() no existe en Odoo 19:
+```xml
+<img t-att-src="kanban_image('model', 'field', record.id.value)"/>
+```
+✅ BIEN — usar widget="image":
+```xml
+<field name="photo" widget="image" options="{'size': [100, 100]}"/>
+```
+
+## Atributos condicionales en vistas
+
+❌ MAL: `attrs="{'invisible': [('state', '=', 'cancel')]}"`
+✅ BIEN: `invisible="state == 'cancel'"`
+
+## name_get()
+
+❌ MAL: `def name_get(self): ...`
+✅ BIEN: `full_name = fields.Char(compute='_compute_full_name', store=True)` + `_rec_name = 'full_name'`
+
+## Métodos RPC desde OWL
+
+❌ MAL: `def _get_dashboard_data(self):` (métodos privados bloqueados)
+✅ BIEN: `def get_dashboard_data(self):` (nombre público)
+
+## Selection → Char mismo nombre
+
+❌ MAL: Renombrar fields.Selection a fields.Char con mismo field name
+✅ BIEN: Usar Many2one + actualizar referencias.
+
+## t-esc en QWeb
+
+❌ MAL: `<span t-esc="value"/>`
+✅ BIEN: `<span t-out="value"/>`
+
+## _sql_constraints
+
+❌ MAL: `_sql_constraints = [('name_uniq', 'unique(name)', 'Ya existe')]`
+✅ BIEN: `models.Constraint('unique(name)', 'Ya existe')`
+
+## name_search
+
+❌ MAL: `def name_search(self, name='', ...)`
+✅ BIEN: `_rec_names_search = ['code', 'name', 'full_name']`
+
+# ══════════════════════════════════════════════════════════════
 
 # ARQUITECTURA CLAVE
 
 ## Modelo Maestro: tms.waybill
 
 Single Document Flow: Cotización + Operación + Carta Porte en UN solo registro.
-Archivo: models/tms_waybill.py (contiene TmsWaybill, TmsWaybillLine, TmsWaybillCustomsRegime)
+Archivo: models/tms_waybill.py
 
 ## Workflow:
 
-draft → en_pedido → assigned → waybill → in_transit → arrived → closed
-│ │
-└→ rejected cancel ←──────┘
+cotizado → aprobado → waybill → in_transit → arrived → closed
+                                                           ↓
+                                                         cancel
+rejected (portal)
 
 ## Modelos SIN company_id (globales):
 
 tms.sat.clave.prod, tms.sat.clave.unidad, tms.sat.codigo.postal,
 tms.sat.colonia, tms.sat.localidad, tms.sat.municipio,
 tms.sat.config.autotransporte, tms.sat.tipo.permiso, tms.sat.embalaje,
-tms.sat.material.peligroso, tms.sat.figura.transporte
+tms.sat.material.peligroso, tms.sat.figura.transporte, tms.sat.regimen.fiscal
 
 ## Modelos CON company_id (privados):
 
 tms.waybill, tms.waybill.line, tms.destination, fleet.vehicle,
-tms.fuel.history, tms.tracking.event
+tms.fuel.history, tms.tracking.event, tms.evidence.photo,
+tms.route.stats, tms.vehicle.performance
 
-## Modelos heredados (\_inherit):
+## Modelos heredados (_inherit):
 
 fleet.vehicle → tms_fleet_vehicle.py
 hr.employee → hr_employee.py
-res.partner → res_partner.py
+res.partner → res_partner_tms.py
 res.company → res_company.py
 res.config.settings → res_config_settings.py
+account.move → account_move_tms.py
 
 # ESTRUCTURA DE ARCHIVOS
 
 tms/
-├── models/ # Lógica Python (17+ archivos)
-├── views/ # Vistas XML (19+ archivos)
-├── wizard/ # Wizards (import SAT, assign company, demo)
-├── controllers/ # Portal web (firma, rechazo, PDF)
-├── security/ # Grupos, Record Rules, ACLs
-├── data/ # Secuencias, templates email
-├── reports/ # PDF QWeb
-├── demo/ # Datos demo
-└── static/ # JS, CSS, iconos
+├── models/          # Lógica Python
+├── views/           # Vistas XML
+├── wizard/          # Wizards
+├── controllers/     # Portal web
+├── security/        # Grupos, Record Rules, ACLs
+├── data/            # Secuencias, templates email, catálogos CSV
+├── reports/         # PDF QWeb
+├── demo/            # Datos demo
+└── static/          # JS, CSS, XML OWL
 
-# SEGURIDAD (3 grupos)
+# SEGURIDAD (3 grupos principales)
 
-group_tms_user → Operador (CRUD sin delete waybill)
+group_tms_user   → Operador (CRUD sin delete waybill)
 group_tms_manager → Admin (CRUD completo)
-group_tms_driver → Chofer (lectura + tracking)
+group_tms_driver  → Chofer (lectura + tracking)
 
 # DEPENDENCIAS
 
@@ -120,44 +209,26 @@ A) Por KM: (distancia + km_extras) × precio_km
 B) Por Viaje: costo_total / (1 - margen%)
 C) Directo: monto manual
 selected_proposal determina cuál se aplica.
-Impuestos: IVA 16%, Retención 4%.
-
-# MENÚS
-
-TMS (raíz)
-├── Dashboard
-├── Operaciones: Viajes, Vehículos, Remolques, Operadores, Destinos, Historial Diesel
-└── Configuración: Tipos Vehículo, Ajustes, Catálogos SAT (11 + wizard importar)
-
-# BUGS CONOCIDOS (NO REPETIR)
-
-- Hay métodos/campos duplicados en tms_waybill.py — SIEMPRE verificar antes de agregar
-- Estados en Selection vs métodos de acción NO coinciden — consultar lista de estados arriba
-- vehicle_id domain dice is_trailer=True pero debería ser tms_is_trailer=False
-- amount_untaxed es store=True pero se escribe desde compute store=False — no funciona
-- \_onchange_route_id tiene versión que referencia campos inexistentes (state_origin_id, toll_cost)
-- res.partner tiene company_id required=True — rompe partners del sistema
+Impuestos: IVA 16%, Retención 4% solo si receptor is_company=True.
 
 # CÓMO VALIDAR TU TRABAJO
 
 1. Sintaxis Python: python3 -m py_compile models/archivo.py
-2. Actualizar módulo: python3 odoo-bin -c odoo.conf -u tms -d tms_dev --stop-after-init
-3. Revisar logs: buscar WARNING y ERROR
-4. Test funcional: crear waybill, recorrer workflow, verificar cálculos
+2. Actualizar módulo:
+   cd /Users/macbookpro/odoo/odoo19ce
+   odoo-19.0/.venv/bin/python odoo-19.0/odoo-bin -c proyectos/tms/odoo.conf -u tms -d tms_v2 --stop-after-init
+3. Revisar logs: grep -n "WARNING\|ERROR" proyectos/tms/odoo.log | tail -20
+4. Cambios solo JS/XML: usar --dev reload,qweb,xml,assets
 
 # CONVENCIONES DE CÓDIGO
 
 - Docstrings y comentarios en ESPAÑOL
-- \_name, \_description, \_order en cada modelo nuevo
+- _name, _description, _order en cada modelo nuevo
 - index=True en campos de búsqueda frecuente
 - tracking=True en campos de auditoría
-- Usar @api.depends correctamente (no mezclar store y no-store)
-- Batch operations donde sea posible (create multi, write multi)
-- Odoo 19: usar models.Constraint() en vez de \_sql_constraints
-- Odoo 19: usar \_rec_names_search en vez de name_search override
-
-# ROADMAP ACTIVO
-
-Estamos en RELEASE V2.0 — ESTABILIZACIÓN.
-Etapa actual: 2.0.1 (eliminar duplicados Python)
-Ver CLAUDE.md para roadmap completo.
+- Odoo 19: models.Constraint() en vez de _sql_constraints
+- Odoo 19: _rec_names_search en vez de name_search override
+- Odoo 19: t-out en vez de t-esc en QWeb
+- Odoo 19: <list> en vez de <tree>
+- Odoo 19: invisible= en vez de attrs=
+- Odoo 19: view_mode usa "list" nunca "tree"

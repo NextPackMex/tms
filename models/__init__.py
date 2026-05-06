@@ -42,6 +42,7 @@ from . import tms_fleet_vehicle       # Extensión de fleet.vehicle
 from . import tms_destination         # Destinos/Rutas
 from . import tms_waybill             # Modelo Maestro (Viajes)
 from . import tms_tracking_event      # Bitácora GPS
+from . import tms_evidence            # Evidencia Fotográfica (V2.4b)
 
 from . import tms_fuel_history
 from . import tms_route_stats         # Estadísticas de rentabilidad por ruta (V2.4)

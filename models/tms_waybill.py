@@ -1191,6 +1191,40 @@ class TmsWaybill(models.Model):
         for rec in self:
             rec.tracking_count = len(rec.tracking_event_ids)
 
+    # ============================================================
+    # EVIDENCIA FOTOGRÁFICA (V2.4b)
+    # ============================================================
+
+    evidence_ids = fields.One2many(
+        'tms.evidence.photo',
+        'waybill_id',
+        string='Evidencias Fotográficas',
+        help='Fotografías de salida, carga, entrega, odómetro e incidentes'
+    )
+
+    evidence_count = fields.Integer(
+        string='Evidencias',
+        compute='_compute_evidence_count',
+        store=True,
+        help='Número total de fotografías documentadas en este viaje'
+    )
+
+    @api.depends('evidence_ids')
+    def _compute_evidence_count(self):
+        """Cuenta las evidencias fotográficas para mostrar en el smart button."""
+        for rec in self:
+            rec.evidence_count = len(rec.evidence_ids)
+
+    def action_view_evidences(self):
+        """Abre la vista lista de evidencias fotográficas del viaje."""
+        action = self.env.ref('tms.action_tms_evidence_photo_view').read()[0]
+        action['domain'] = [('waybill_id', '=', self.id)]
+        action['context'] = {
+            'default_waybill_id': self.id,
+            'search_default_waybill_id': self.id,
+        }
+        return action
+
     # Text: motivo de rechazo desde el portal
     # Se captura cuando el cliente rechaza la cotización desde el portal
     rejection_reason = fields.Text(
