@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-04-29 — V2.4.3 Rendimiento por vehículo completado
+# Última actualización: 2026-05-06 — V2.4.3 y V2.5.1 mergeados a main
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -749,8 +749,8 @@ Explicar brevemente los conceptos clave del código generado para que Mois apren
 ---
 
 ## Próxima etapa
-**V2.4.3 — Rendimiento por Vehículo + Cobrado vs Por Cobrar**
-Pendiente definir SDD.
+**V2.4b — Evidencia Fotográfica** o **V2.8 — SaaS (Primer Cliente)**
+Mois decide la siguiente etapa.
 
 ---
 
