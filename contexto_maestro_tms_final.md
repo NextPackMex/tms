@@ -2,7 +2,7 @@
 
 # Archivo único para Proyecto TMS en Claude Web
 
-> Versión módulo: 19.0.2.2 | Actualizado: 2026-03-20
+> Versión módulo: 19.0.2.4.4 | Actualizado: 2026-05-06
 
 ---
 
@@ -255,31 +255,18 @@ line_ids                                # Mercancías completas con Clave SAT
 | 2.1.6  | PDF pre-cotización + email        | ✅ Confirmado 2026-03-19 |
 
 ### ✅ V2.2 — Carta Porte 3.1 + Timbrado (COMPLETO)
+### ✅ V2.3 — Facturación Real (COMPLETO — 2026-04-15)
+### ✅ V2.4 — KPIs, Analytics y Rendimiento (COMPLETO — 2026-04-29)
+### ✅ V2.4b — Evidencia Fotográfica (COMPLETO — 2026-05-06)
+### ✅ V2.5 — Limpieza y Tours (COMPLETO — 2026-05-04)
 
-| Sub-etapa     | Nombre                                           | Estado                                        |
-| ------------- | ------------------------------------------------ | --------------------------------------------- |
-| 2.2 core      | Timbrado CFDI 4.0 + CP 3.1 Formas Digitales      | ✅ UUID: 97367659-43B7-40E2-9AEB-731A014F9D46 |
-| 2.2.1         | PDF Carta Porte timbrada (7 secciones + QR SAT)  | ✅ Confirmado 2026-03-19                      |
-| 2.2 migración | tms_regimen_fiscal → tms.sat.regimen.fiscal      | ✅ PR #10 2026-03-20                          |
-| FIX-A         | Auditoría SAT xml_builder (5 helpers, 11 campos) | ✅ PR #9 2026-03-19                           |
-| FIX-B         | Auto-sustitución fiscal en pruebas               | ✅ Ya existía en \_get_datos_fiscales()       |
-| FIX-C         | Waybill readonly post-timbrado (doble capa)      | ✅ Ya existía                                 |
-| FIX-D         | Onboarding sincroniza company.partner_id         | ✅ PR #9 2026-03-19                           |
-| FIX-D2        | CP en onboarding Paso 1                          | ✅ PR #9 2026-03-19                           |
-| FIX-D3        | Dirección fiscal en reporte cotización           | ✅ PR #9 2026-03-19                           |
-
-> **Nota 2026-03-19:** Auditoría completa confirmó que V2.2.1, 2.1.5, 2.1.6
-> y fixes B/C ya estaban implementados. El proyecto estaba más avanzado
-> de lo que el roadmap indicaba. Versión real en main: 19.0.2.2
-
-### 📋 Pendientes — en orden de prioridad
-
-| Etapa | Nombre                              | Herramienta                   | Complejidad |
-| ----- | ----------------------------------- | ----------------------------- | ----------- |
-| V2.3  | Facturación real (account.move)     | Claude Code CLI + Orquestador | Muy alta    |
-| V2.4  | KPIs y reportes / Portal aprobación | Antigravity Planning+Low      | Media       |
-| V2.5  | Limpieza final "Modo Hombre Camión" | Claude Web + Antigravity      | Baja        |
-| V3.0  | App Flutter chofer + SaaS           | Arquitectura separada         | Muy alta    |
+| Etapa | Nombre | Estado |
+|---|---|---|
+| V2.2 | Carta Porte 3.1 + Timbrado | ✅ |
+| V2.3 | Facturación Real (account.move) | ✅ |
+| V2.4 | Rendimiento y Analytics | ✅ |
+| V2.4b | Evidencia Fotográfica | ✅ |
+| V2.5 | Limpieza y Tours | ✅ |
 
 ---
 
