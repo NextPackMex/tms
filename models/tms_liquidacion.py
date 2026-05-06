@@ -44,7 +44,6 @@ class TmsLiquidacion(models.Model):
         required=True,
         ondelete='cascade',
         check_company=True,
-        tracking=True,
         help='Viaje asociado a esta liquidación'
     )
 
@@ -86,18 +85,8 @@ class TmsLiquidacion(models.Model):
     # ============================================================
 
     waybill_state = fields.Selection(
-        [
-            ('cotizado', 'Cotizado'),
-            ('aprobado', 'Aprobado'),
-            ('waybill', 'Carta Porte'),
-            ('in_transit', 'En Tránsito'),
-            ('arrived', 'En Destino'),
-            ('closed', 'Facturado'),
-            ('cancel', 'Cancelado'),
-            ('rejected', 'Rechazado'),
-        ],
-        string='Estado del Viaje',
         related='waybill_id.state',
+        string='Estado del Viaje',
         store=True,
         readonly=True
     )
@@ -187,7 +176,6 @@ class TmsLiquidacion(models.Model):
         ],
         string='Estado Liquidación',
         default='borrador',
-        tracking=True,
         help='Ciclo de vida de la liquidación'
     )
 

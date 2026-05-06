@@ -26,8 +26,7 @@ class TmsDriverAdvance(models.Model):
         string='Viaje',
         required=True,
         ondelete='cascade',
-        check_company=True,
-        tracking=True
+        check_company=True
     )
 
     company_id = fields.Many2one(
@@ -42,7 +41,6 @@ class TmsDriverAdvance(models.Model):
         'hr.employee',
         string='Chofer',
         required=True,
-        tracking=True,
         help='Chofer beneficiario del anticipo'
     )
 
@@ -53,15 +51,13 @@ class TmsDriverAdvance(models.Model):
     date = fields.Date(
         string='Fecha Anticipo',
         default=fields.Date.today,
-        required=True,
-        tracking=True
+        required=True
     )
 
     amount = fields.Monetary(
         string='Monto',
         required=True,
         currency_field='currency_id',
-        tracking=True,
         help='Cantidad otorgada en anticipo'
     )
 
@@ -99,7 +95,6 @@ class TmsDriverAdvance(models.Model):
         ],
         string='Estado',
         default='pendiente',
-        tracking=True,
         help='Flujo: Pendiente → Entregado → Liquidado'
     )
 

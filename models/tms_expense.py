@@ -154,7 +154,7 @@ class TmsExpense(models.Model):
             if record.amount <= 0:
                 raise UserError(_('El monto debe ser mayor a $0.'))
 
-    @api.constrains('expense_type', 'date', 'waybill_id')
+    @api.constrains('expense_type_id', 'date', 'waybill_id')
     def _check_not_closed_waybill(self):
         """Valida que el waybill no esté cerrado."""
         for record in self:

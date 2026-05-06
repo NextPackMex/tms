@@ -1519,14 +1519,14 @@ class TmsWaybill(models.Model):
     @api.depends('expense_ids.amount', 'expense_ids.state')
     def _compute_cost_real_total(self):
         """
-        Suma los gastos en cualquier estado (draft, approved, paid).
-        Incluye borradores, aprobados y pagados en el cálculo.
+        Suma los gastos aprobados y pagados.
+        Solo gastos aprobados y pagados — consistente con tms.liquidacion.
         """
         for record in self:
             total = sum(
                 expense.amount
                 for expense in record.expense_ids
-                if expense.state in ['draft', 'approved', 'paid']
+                if expense.state in ['approved', 'paid']
             )
             record.cost_real_total = total
 
