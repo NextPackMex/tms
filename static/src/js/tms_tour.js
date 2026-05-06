@@ -24,9 +24,15 @@ registry.category("web_tour.tours").add("tms_tour_carta_porte", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: 'button[data-menu-xmlid="tms.menu_tms_nueva_cotizacion"]',
-            content: _t("¡Bienvenido! Vamos a crear tu primer viaje. Haz clic en 'Nueva Cotización'."),
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_operations"]',
+            content: _t("¡Bienvenido! Abre el menú de Operaciones para crear tu primer viaje."),
             tooltipPosition: 'bottom',
+            run: "click",
+        },
+        {
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_nueva_cotizacion"]',
+            content: _t("Haz clic en 'Nueva Cotización'."),
+            tooltipPosition: 'right',
             run: "click",
         },
         {
@@ -83,13 +89,13 @@ registry.category("web_tour.tours").add("tms_micro_empresa", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre el menú de Configuración."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_my_company"]',
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_my_company"]',
             content: _t("Haz clic en 'Mi Empresa' para configurar tu RFC y datos fiscales."),
             tooltipPosition: 'right',
             run: "click",
@@ -111,20 +117,14 @@ registry.category("web_tour.tours").add("tms_micro_csd", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_config"]',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_config"]',
             content: _t("Abre Configuración."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_config_settings"]',
-            content: _t("Haz clic en 'Ajustes TMS'."),
-            tooltipPosition: 'right',
-            run: "click",
-        },
-        {
-            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_my_company"]',
-            content: _t("Aquí está 'Mi Empresa'. Abre el formulario para ver los campos de CSD."),
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_my_company"]',
+            content: _t("Haz clic en 'Mi Empresa' para ver los campos de CSD."),
             tooltipPosition: 'right',
             run: "click",
         },
@@ -145,13 +145,13 @@ registry.category("web_tour.tours").add("tms_micro_vehiculos", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_vehicles"]',
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_vehicles"]',
             content: _t("Haz clic en 'Vehículos' para registrar tus unidades."),
             tooltipPosition: 'right',
             run: "click",
@@ -173,13 +173,13 @@ registry.category("web_tour.tours").add("tms_micro_choferes", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: 'button.o-dropdown[data-menu-xmlid="tms.menu_tms_operations"]',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_operations"]',
             content: _t("Abre el menú de Operaciones."),
             tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: '.o-dropdown--item[data-menu-xmlid="tms.menu_tms_drivers"]',
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_drivers"]',
             content: _t("Haz clic en 'Operadores' para registrar tus choferes."),
             tooltipPosition: 'right',
             run: "click",
@@ -201,13 +201,13 @@ registry.category("web_tour.tours").add("tms_micro_cotizacion", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
-            content: _t("Estás en el Tablero de Viajes. Este es tu centro de operaciones."),
-            tooltipPosition: 'bottom',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_operations"]',
+            content: _t("Abre el menú de Operaciones."),
+            tooltipPosition: 'right',
             run: "click",
         },
         {
-            trigger: 'button[data-menu-xmlid="tms.menu_tms_nueva_cotizacion"]',
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_nueva_cotizacion"]',
             content: _t("Siempre crea cotizaciones desde aquí. Nunca desde el formulario de viaje."),
             tooltipPosition: 'right',
             run: "click",
@@ -234,9 +234,15 @@ registry.category("web_tour.tours").add("tms_micro_factura", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
-            content: _t("Estamos en el Tablero."),
-            tooltipPosition: 'bottom',
+            trigger: 'button[data-menu-xmlid="tms.menu_tms_operations"]',
+            content: _t("Abre el menú de Operaciones."),
+            tooltipPosition: 'right',
+            run: "click",
+        },
+        {
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_waybill"]',
+            content: _t("Haz clic en 'Viajes' para ver la lista de viajes."),
+            tooltipPosition: 'right',
             run: "click",
         },
         {
@@ -248,11 +254,6 @@ registry.category("web_tour.tours").add("tms_micro_factura", {
         {
             trigger: 'button[name="action_create_invoice"]',
             content: _t("Este botón crea la factura CFDI Ingreso consolidando uno o más viajes."),
-            tooltipPosition: 'right',
-        },
-        {
-            trigger: '.o_field_widget[name="cfdi_uuid"]',
-            content: _t("Aquí aparece el UUID (Folio Fiscal) una vez timbrada la factura en el SAT."),
             tooltipPosition: 'right',
         },
     ]
@@ -267,8 +268,8 @@ registry.category("web_tour.tours").add("tms_micro_dashboard", {
     url: "/odoo/action-452",
     steps: () => [
         {
-            trigger: '.o_app[data-menu-xmlid="tms.menu_tms_root"]',
-            content: _t("En la parte superior del Tablero ves los KPIs principales de tu operación."),
+            trigger: 'a[data-menu-xmlid="tms.menu_tms_dashboard"]',
+            content: _t("Abre el Tablero de Control para ver los KPIs principales de tu operación."),
             tooltipPosition: 'bottom',
             run: "click",
         },
