@@ -155,6 +155,35 @@
                             </div>
                         </setting>
                     </block>
+
+                    <!-- ══════════════════════════════════════════════════════════
+                         Tours Interactivos — Guías paso a paso para usuarios nuevos
+                         ══════════════════════════════════════════════════════════ -->
+                    <block title="Tours de Ayuda" name="tms_tours_setting_container">
+                        <setting string="Guías interactivas"
+                                 help="Inicia un tour guiado para aprender el sistema paso a paso.">
+                            <div class="row mt16">
+                                <div class="col-12">
+                                    <button class="btn btn-outline-primary me-2"
+                                            onclick="odoo.startTour('tms_micro_empresa', {mode: 'manual'})">
+                                        Tour 1: Configuración
+                                    </button>
+                                    <button class="btn btn-outline-primary me-2"
+                                            onclick="odoo.startTour('tms_micro_cotizacion', {mode: 'manual'})">
+                                        Tour 2: Cotización
+                                    </button>
+                                    <button class="btn btn-outline-primary me-2"
+                                            onclick="odoo.startTour('tms_tour_carta_porte', {mode: 'manual'})">
+                                        Tour 3: Carta Porte
+                                    </button>
+                                    <button class="btn btn-outline-primary"
+                                            onclick="odoo.startTour('tms_micro_dashboard', {mode: 'manual'})">
+                                        Tour 4: Dashboard
+                                    </button>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>

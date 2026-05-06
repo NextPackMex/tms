@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve" xmlns:t="http://www.w3.org/1999/XSL/Transform">
+
+    <!-- Template para el Panel Flotante de Ayuda -->
+    <t t-name="tms_help_panel" owl="1">
+        <!-- Contenedor principal del panel -->
+        <div class="tms-help-panel-container">
+            <!-- Botón flotante ❓ -->
+            <button class="tms-help-btn" t-on-click="togglePanel" title="¿En qué necesitas ayuda?">
+                ❓
+            </button>
+
+            <!-- Panel desplegable (visible solo si isOpen = true) -->
+            <div class="tms-help-panel" t-if="state.isOpen">
+                <!-- Header del panel -->
+                <div class="tms-help-panel-header">
+                    <h3>❓ ¿En qué necesitas ayuda?</h3>
+                    <button class="tms-help-close" t-on-click="togglePanel" title="Cerrar">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Lista de preguntas -->
+                <div class="tms-help-panel-body">
+                    <div class="tms-help-item" t-foreach="helpTours" t-as="tour" t-key="tour.tour"
+                         t-on-click="() => launchTour(tour.tour)">
+                        <span class="tms-help-emoji" t-esc="tour.emoji"></span>
+                        <span class="tms-help-question" t-esc="tour.question"></span>
+                        <span class="tms-help-arrow">→</span>
+                    </div>
+                </div>
+
+                <!-- Footer con mensaje -->
+                <div class="tms-help-panel-footer">
+                    <small>Haz clic en cualquier pregunta para un tour guiado</small>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

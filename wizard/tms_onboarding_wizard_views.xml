@@ -23,6 +23,10 @@
 
                 <!-- ===== PASO 1 — EMPRESA ===== -->
                 <group invisible="step != 1" string="Datos de tu Empresa">
+                    <div class="alert alert-info" role="status" colspan="2">
+                        <strong>📌 Importante:</strong> Tu RFC, razón social y código postal fiscal son obligatorios.
+                        Van en todas tus facturas y Cartas Porte. Verifica que sean exactos según tu CSD (Certificado del SAT).
+                    </div>
                     <group>
                         <field name="company_name" placeholder="Ej: Transportes García SA de CV"/>
                         <field name="company_rfc" placeholder="Ej: TGA200101ABC"/>
@@ -39,9 +43,10 @@
                     </group>
                     <separator string="Certificado de Sello Digital (CSD)"/>
                     <div class="alert alert-warning" role="status" colspan="2">
-                        <strong>💡 Tip:</strong> El CSD lo descargas del portal del SAT.
-                        Lo necesitas para timbrar tus Cartas Porte. Si no lo tienes aún,
-                        puedes saltarte este paso y aggregarlo después en Configuración.
+                        <strong>⚠️ Obligatorio para timbrar:</strong> Necesitas el archivo .cer (certificado) y .key (clave privada)
+                        más la contraseña. Los obtienes en <strong>sat.gob.mx → CertiSAT Web</strong>.
+                        Sin ellos no puedes generar Cartas Porte ni facturas. Si aún no los tienes,
+                        puedes agregarlo después en Configuración.
                     </div>
                     <group>
                         <field name="csd_cer_file" filename="csd_cer_filename"/>
@@ -54,6 +59,10 @@
 
                 <!-- ===== PASO 2 — VEHÍCULO ===== -->
                 <group invisible="step != 2" string="Tu Vehículo Principal">
+                    <div class="alert alert-info" role="status" colspan="2">
+                        <strong>📋 Datos obligatorios:</strong> Placa, Configuración SAT (ej. T3S2 para tractocamión)
+                        y póliza vigente de seguro. La Carta Porte 3.1 requiere estos datos completos.
+                    </div>
                     <group>
                         <field name="vehicle_name" placeholder="Ej: Kenworth T680 2022"/>
                         <field name="vehicle_plate" placeholder="Ej: ABC-123-A"/>
@@ -112,6 +121,10 @@
 
                 <!-- ===== PASO 4 — CHOFER ===== -->
                 <group invisible="step != 4" string="Datos de tu Chofer">
+                    <div class="alert alert-info" role="status" colspan="2">
+                        <strong>📌 Obligatorio:</strong> RFC, CURP y número de Licencia Federal vigente.
+                        El chofer debe tener estos datos para poder timbrar Cartas Porte en tu operación.
+                    </div>
                     <group>
                         <field name="driver_name" placeholder="Ej: Juan Pérez López"/>
                         <field name="driver_rfc" placeholder="Ej: PELJ850101ABC"/>
@@ -126,6 +139,10 @@
 
                 <!-- ===== PASO 5 — PRIMER CLIENTE ===== -->
                 <group invisible="step != 5" string="Tu Primer Cliente">
+                    <div class="alert alert-info" role="status" colspan="2">
+                        <strong>📋 Datos fiscales obligatorios:</strong> RFC (va en cada factura), régimen fiscal
+                        y uso CFDI. Estos datos son esenciales para la facturación electrónica válida ante el SAT.
+                    </div>
                     <group>
                         <field name="client_name" placeholder="Ej: Industrias ABC SA de CV"/>
                         <field name="client_rfc" placeholder="Ej: IAB200101XYZ"/>

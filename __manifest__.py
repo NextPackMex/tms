@@ -168,10 +168,13 @@
         'web.assets_backend': [
             'tms/static/src/js/tms_portal_link_handler.js',
             'tms/static/src/js/tms_tour.js',
+            'tms/static/src/js/tms_help_panel.js',
             'tms/static/src/js/tms_command.js',
             'tms/static/src/js/tms_dimensions_widget.js',
             'tms/static/src/js/tms_dashboard.js',
+            'tms/static/src/xml/tms_help_panel.xml',
             'tms/static/src/xml/tms_dashboard.xml',
+            'tms/static/src/css/tms_help_panel.css',
         ],
         # Assets para portal: JS y CSS para vista moderna estilo Sales
         'web.assets_frontend': [

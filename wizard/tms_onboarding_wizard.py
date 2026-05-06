@@ -529,12 +529,26 @@ class TmsOnboardingWizard(models.TransientModel):
         return self.action_next_step()
 
     def action_create_first_trip(self):
-        """Cierra el onboarding y abre el wizard de cotización para crear el primer viaje."""
+        """
+        Cierra el onboarding y lanza el tour interactivo 'tms_tour_carta_porte'.
+
+        Verifica si el tour ya fue completado antes (por company_id) para no repetirlo.
+        Guarda un flag en ir.config_parameter para rastrear que el usuario pasó el onboarding.
+        Retorna ir.actions.client con tag 'tms_launch_tour' para que JS ejecute odoo.startTour().
+        """
         self.ensure_one()
+        param_key = f'tms.onboarding_completed_{self.company_id.id}'
+
+        # Verificar si el tour ya fue visto
+        ya_visto = self.env['ir.config_parameter'].sudo().get_param(param_key)
+
+        if not ya_visto:
+            # Guardar flag de completado
+            self.env['ir.config_parameter'].sudo().set_param(param_key, '1')
+
+        # Retornar acción client que lanzará el tour
         return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'tms.cotizacion.wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'name': '¡Crea tu primer viaje!',
+            'type': 'ir.actions.client',
+            'tag': 'tms_launch_tour',
+            'params': {'tour_name': 'tms_tour_carta_porte'},
         }
