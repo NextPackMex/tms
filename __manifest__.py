@@ -60,7 +60,7 @@
     'category': 'Logistics',
 
     # Versión
-    'version': '19.0.2.4.3',
+    'version': '19.0.2.4.4',
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)

@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-05-06 — V2.4.3 y V2.5.1 mergeados a main
+# Última actualización: 2026-05-06 — V2.4.3, V2.5.1 y V2.4b mergeados a main
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -50,8 +50,8 @@ claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
 **Versión Odoo:** 19 Community Edition
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
-**Versión módulo:** 19.0.2.4.3
-**Progreso actual:** ~80% — V2.4.3 completado (rendimiento por vehículo)
+**Versión módulo:** 19.0.2.4.4
+**Progreso actual:** ~85% — V2.4b completado (evidencia fotográfica)
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -333,9 +333,9 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 - 📋 `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
 - 📋 Alerta automática si rendimiento baja más del 15%
 
-### 📋 V2.4b 🆕 — Evidencia Fotográfica
-- `tms.evidence.photo`: 14 tipos de foto con GPS + timestamp inmutable
-- Odómetro verificado con foto, alerta si distancia real difiere >20% vs TollGuru
+### ✅ V2.4b 🆕 — Evidencia Fotográfica (COMPLETADO — 2026-05-06)
+- ✅ `tms.evidence.photo`: 14 tipos de foto con GPS + timestamp inmutable
+- ✅ Odómetro verificado con foto, alerta si distancia real difiere >20% vs TollGuru
 
 ### 📋 V2.4c 🆕 — Firma Digital Simple (`tms_signature/`)
 - Canvas firma con dedo, SHA-256 del documento, verificación SMS opcional
