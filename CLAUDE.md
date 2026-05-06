@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-05-06 — V2.4.3, V2.5.1 y V2.4b mergeados a main
+# Última actualización: 2026-05-06 — V2.4b Evidencia Fotográfica completado
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -25,6 +25,7 @@
 | Fix puntual, un solo archivo, campo simple | `claude-sonnet-4-6` |
 | Ajuste de vista XML, label, color, fix una línea | `claude-sonnet-4-6` |
 | Verificaciones, limpieza, comentarios | `claude-sonnet-4-6` |
+| Commits, documentación, chores | `claude-haiku-4-5` |
 
 ```bash
 # Tarea grande (etapa completa, orquestador, API)
@@ -32,6 +33,9 @@ claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta etapa X.X.X..."
 
 # Fix rápido (un archivo, vista, campo)
 claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
+
+# Commit / chore
+claude --model claude-haiku-4-5 "git add -A && git commit -m '...'"
 ```
 
 > ⚠️ Ya NO se usa Antigravity. Ejecutor: **Claude Code terminal**.
@@ -168,76 +172,28 @@ Fundamento: Art. 1-A LIVA + Art. 3 RLIVA
 - `tms_is_trailer = True` → remolques/dollys
 - Domain vehicle_id: `[('tms_is_trailer', '=', False)]`
 
-### Hook al cerrar viaje (sembrar en V2.3)
-```python
-def write(self, vals):
-    res = super().write(vals)
-    if vals.get('state') == 'closed':
-        self.env['tms.route.stats']._update_from_waybill(self)
-    return res
-```
-
 ---
 
 ## 5. Estructura de Archivos — Completa
 
 ```
-tms/                                    # Módulo principal
-├── __init__.py
-├── __manifest__.py
-├── CLAUDE.md                           # ESTE ARCHIVO
-├── contexto_maestro_tms_final.md       # Contexto estratégico completo
-├── AGENTS.md                           # Reglas del agente IA
-├── ORCHESTRATOR.md                     # Orquestador multi-agente
+tms/
 ├── models/
 │   ├── tms_waybill.py                  # MODELO MAESTRO
-│   ├── tms_destination.py              # Rutas (caché TollGuru)
-│   ├── tms_fleet_vehicle.py            # _inherit fleet.vehicle
-│   ├── tms_vehicle_type.py             # Catálogo tipos vehículo
-│   ├── tms_fuel_history.py             # Historial diesel (legacy)
-│   ├── tms_tracking_event.py           # Bitácora GPS
-│   ├── tms_evidence.py                 # Evidencia fotográfica (V2.4b) 🆕
-│   ├── hr_employee.py                  # _inherit chofer
-│   ├── res_partner_tms.py              # _inherit contactos SAT
-│   ├── res_company.py                  # _inherit empresa
-│   ├── res_config_settings.py          # _inherit APIs + seguros
-│   ├── account_move_tms.py             # _inherit account.move (CFDI Ingreso V2.3)
-│   ├── tms_sat_zona_especial.py        # Catálogo ZEDE IVA 0% (V2.3)
+│   ├── tms_evidence.py                 # Evidencia fotográfica ✅ V2.4b
+│   ├── tms_route_stats.py              # Rentabilidad por ruta ✅ V2.4.1
+│   ├── tms_vehicle_performance.py      # Rendimiento vehículo ✅ V2.4.3
+│   ├── account_move_tms.py             # CFDI Ingreso ✅ V2.3
 │   └── sat_*.py                        # 12 catálogos SAT
 ├── views/
 │   ├── tms_waybill_views.xml
-│   ├── tms_fleet_vehicle_views.xml
-│   ├── tms_destination_views.xml
-│   ├── account_move_tms_views.xml      # Pestaña TMS + botones en factura (V2.3)
-│   └── res_config_settings_views.xml
-├── reports/
-│   ├── tms_waybill_report.xml
-│   ├── tms_cotizacion_report.xml
-│   ├── tms_cotizacion_report_template.xml
-│   ├── tms_carta_porte_report.xml          # Acción reporte PDF CP timbrada (V2.2.1)
-│   ├── tms_carta_porte_report_template.xml # Template QWeb PDF CP timbrada (V2.2.1)
-│   └── tms_invoice_report.xml              # PDF Factura CFDI Ingreso (V2.3)
-├── wizard/
-│   ├── tms_cotizacion_wizard.py        # Wizard cotización 2 pasos
-│   ├── tms_invoice_wizard.py           # Wizard facturación 4 pasos (V2.3)
-│   ├── tms_cancel_invoice_wizard.py    # Wizard cancelación CFDI motivos 01/02/03 (V2.3)
-│   └── tms_cotizacion_wizard_views.xml
-├── security/
-│   ├── tms_security.xml
-│   └── ir.model.access.csv
-├── tests/
-│   └── test_tms_waybill.py
-└── docs/
-    └── etapa-X.X.X.md                  # SDDs de cada etapa
-
-tms_fuel/                               # Combustible y rendimiento (V2.4) 🆕
-tms_signature/                          # Firma digital simple (V2.4c) 🆕
-tms_settlement/                         # Liquidación de choferes (V2.4d) 🆕
-tms_maintenance/                        # Mantenimiento de unidades (V2.5) 🆕
-tms_saas/                               # Multi-tenant + cobro (V2.8)
-tms_marketplace/                        # Marketplace de cargas (Fase 2)
-tms_api/                                # API REST pública (Fase 2)
-tms_analytics/                          # Datos de mercado (Fase 3)
+│   ├── tms_evidence_views.xml          # ✅ V2.4b
+│   └── ...
+├── static/src/js/
+│   ├── tms_tour.js                     # ✅ V2.5.1
+│   ├── tms_help_panel.js               # ✅ V2.5.1
+│   └── tms_dashboard.js               # ✅ V2.4.2
+└── ...
 ```
 
 ---
@@ -249,511 +205,104 @@ tms_analytics/                          # Datos de mercado (Fase 3)
 | Usuario TMS | `group_tms_user` | CRUD operaciones (sin delete waybill) |
 | Manager TMS | `group_tms_manager` | CRUD completo + configuración |
 | Chofer TMS | `group_tms_driver` | Solo lectura waybill + escritura tracking |
-| Fuel Manager | `group_tms_fuel_mgr` | Ver rendimiento todos los vehículos |
-| Settlement Mgr | `group_tms_settle_mgr` | Crear y aprobar liquidaciones |
-| Maint. Manager | `group_tms_maint_mgr` | Gestionar órdenes mantenimiento |
 
 ---
 
 ## 7. Estado del Proyecto
 
-### ✅ V1.0 — Base Funcional (COMPLETADO)
-
-### ✅ V2.0 — Estabilización (COMPLETADO — 9/9 etapas)
-
-| Etapa | Nombre | Estado |
-|---|---|---|
-| 2.0.1 | Eliminar duplicados Python | ✅ |
-| 2.0.2 | Fix estados + Dolly + TollGuru | ✅ |
-| 2.0.3 | Campos SAT + ACL regímenes | ✅ |
-| 2.0.4 | Fix partner + multi-empresa | ✅ |
-| 2.0.5 | Fix domain vehículo + amount_untaxed | ✅ |
-| 2.0.6 | Unificar cp_type/waybill_type | ✅ |
-| 2.0.7 | Limpiar constraints | ✅ |
-| 2.0.8 | Auditar manifest + fix UI remolques | ✅ |
-| 2.0.9 | QA BD limpia + datos demo + E2E | ✅ |
-
 ### ✅ V2.1 — Pulido UX (COMPLETADO)
+### ✅ V2.2 — Carta Porte 3.1 + Timbrado (COMPLETADO)
+### ✅ V2.3 — Facturación Real (COMPLETADO — 2026-04-15)
+### ✅ V2.3.2 — Cancelación CFDI Traslado (COMPLETADO — 2026-04-22)
 
+### ✅ V2.4 — Analytics y Rendimiento
 | Etapa | Nombre | Estado |
 |---|---|---|
-| 2.1.1 | Formulario por estado | ✅ |
-| 2.1.2 | Smart buttons | ✅ |
-| 2.1.3 | Kanban polish | ✅ |
-| 2.1.4a | Wizard cotización base 2 pasos | ✅ |
-| 2.1.4b | Rediseño UX 3 columnas propuestas | ✅ |
-| 2.1.4c | Estados cotizado+aprobado | ✅ |
-| 2.1.4d | Mercancías simplificadas Paso 1 | ✅ |
-| 2.1.4e | Wizard desde lista, no desde form | ✅ |
-| 2.1.4f | Fix direcciones + botón form | ✅ 2026-03-13 |
-| 2.1.5 | Onboarding wizard 6 pasos | ✅ |
-| 2.1.6 | PDF pre-cotización + email | ✅ |
+| V2.4.1 | Rentabilidad por ruta (`tms.route.stats`) | ✅ 2026-04-22 |
+| V2.4.2 | Dashboard operativo + KPIs | ✅ 2026-04-23 |
+| V2.4.3 | Rendimiento por vehículo | ✅ 2026-05-06 |
+| **V2.4b** | **Evidencia fotográfica (`tms.evidence.photo`)** | **✅ 2026-05-06** |
+| V2.4c | Firma digital simple (`tms_signature/`) | 📋 Pendiente |
+| V2.4d | Liquidación de choferes (`tms_settlement/`) | 📋 Pendiente |
 
-### ✅ V2.2 — Carta Porte 3.1 + Timbrado Formas Digitales (COMPLETADO)
-**PAC:** Formas Digitales (forsedi.facturacfdi.mx) + SW Sapien (respaldo)
-**Hitos técnicos:**
-- ✅ Core: Timbrado CFDI 4.0 + CP 3.1 (UUID: 97367659-43B7-40E2-9AEC-731A014F9D46)
-- ✅ V2.2.1: PDF Carta Porte timbrada (7 secciones + QR SAT)
-- ✅ V2.2.2: Refuerzo flujo timbrado + wizard validación (2026-03-23)
-- ✅ Migración: `tms_regimen_fiscal` → `tms.sat.regimen.fiscal` (PR #10)
-- ✅ Servicios: xml_builder, xml_signer, pac_manager (dual PAC)
-- ✅ Semilla: Modelo `tms.route.analytics` creado
-- ✅ Fix: PDF pre-cotización oculta `toll_cost` — solo Distancia (50%) y Tiempo (50%) (2026-03-24)
-- ✅ Fix: Labels de estados visibles en español en statusbar y PDF (2026-03-24)
-- ✅ Fix: Portal card "Unidad Asignada" invisible cuando no hay vehículo/chofer/remolque (2026-03-24)
-- ✅ Fix 3: Eliminar botón "Confirmar Pedido" (2026-03-24)
-  - action_confirm_order eliminado del modelo
-  - _validate_before_confirm eliminado (código muerto)
-  - Botón eliminado de tms_waybill_views.xml
-  - 5 validaciones migradas al wizard V2.2.2: val_receptor_regimen, val_receptor_uso_cfdi, val_distancia, val_uom_sat, val_material_peligroso
-  - Wizard ampliado a 20 checks en 7 secciones
-  - Banner rojo/verde en formulario waybill (tms_stamp_ready)
-  - decoration-danger en product_sat_id y uom_sat_id
-- ✅ chore: comentarios históricos draft/en_pedido/assigned limpiados en tms_waybill.py (2026-03-24)
+### ✅ V2.5 — Limpieza (COMPLETADO — 2026-04-28)
+### ✅ V2.5.1 — Tours Interactivos (COMPLETADO — 2026-05-06)
 
-### ✅ V2.3 — Facturación Real (COMPLETADO — 2026-04-15)
-**Hitos técnicos:**
-- ✅ `account.move` extendido: 12 campos `tms_*`, timbrado CFDI Ingreso, cancelación, helpers PDF
-- ✅ Wizard 4 pasos: modo (simple/consolidado), cliente+viajes, datos fiscales, resultado+UUID
-- ✅ Cancelación motivos 01/02/03: liberación automática waybills en 02/03, sustituta en 01
-- ✅ `xml_builder.py` dispatch: `build(waybill_or_move, tipo='T'|'I')` — retrocompatible
-- ✅ CFDI Ingreso: N pares OR/DE, N conceptos, IVA 16%, Retención 4% condicional, ZEDE IVA 0%
-- ✅ Catálogo `tms.sat.zona.especial` (Istmo Tehuantepec — 8 zonas ZEDE)
-- ✅ PDF 7 secciones: header, receptor, conceptos, totales, detalles viajes, cadena TFD, QR SAT
-- ✅ Botón Facturar desde estado `aprobado` en adelante
-- ✅ Estado `closed` solo cuando `tms_cfdi_status='timbrada'` (compute, no write directo)
-- ✅ Botón "Volver a facturar" en facturas canceladas (motivo 02/03)
-- ✅ Hook `waybill.closed → _update_from_waybill()` activo
-- ✅ V2.3.2: Wizard cancelación CFDI Traslado con motivos SAT 01/02/03, re-timbrado post-cancelación (2026-04-22)
-
-### ✅ V2.4 🆕 — Combustible, Rendimiento y Analytics
-- ✅ V2.4.1: Rentabilidad por ruta (`tms.route.stats`) con nombres de ciudad, ingresos y costos acumulados (2026-04-22)
-- ✅ V2.4.2: Dashboard operativo con KPIs reales, comparativo mes anterior, pendientes de acción y alertas de licencia (2026-04-23)
-- ✅ V2.4.3: Rendimiento por vehículo — modelo `tms.vehicle.performance` con KPIs acumulados, cobrado vs por cobrar (2026-04-29)
-- 📋 `tms.fuel.log`: registro por carga de diesel con foto ticket, odómetro, rendimiento real
-- 📋 Alerta automática si rendimiento baja más del 15%
-
-### ✅ V2.4b 🆕 — Evidencia Fotográfica (COMPLETADO — 2026-05-06)
-- ✅ `tms.evidence.photo`: 14 tipos de foto con GPS + timestamp inmutable
-- ✅ Odómetro verificado con foto, alerta si distancia real difiere >20% vs TollGuru
-
-### 📋 V2.4c 🆕 — Firma Digital Simple (`tms_signature/`)
-- Canvas firma con dedo, SHA-256 del documento, verificación SMS opcional
-- QR público `nextpack.mx/verify/{token}`, PDF con firma incrustada
-- 6 tipos: anticipo, checklist salida, carga origen, entrega, liquidación, incidente
-
-### 📋 V2.4d 🆕 — Liquidación de Choferes (`tms_settlement/`)
-- `tms.driver.settlement`: flete × % chofer + reembolsos − anticipos − deducciones
-- Comprobante PDF firmado digitalmente, saldo arrastrado entre viajes
-
-### ✅ V2.5 — Limpieza y Data Integrity (COMPLETADO — 2026-04-28)
-- ✅ Estados simplificados a 6 (ciclo vital Hombre Camión)
-- ✅ Normalización t-esc → t-out (tracking events)
-- ✅ Badges Kanban dinámicos por estado y urgencia
-- ✅ **Ocultar menús irrelevantes para group_tms_user** (2026-04-28)
-  - Menús ocultos (14): Fleet, Sales, Project, Website, Mass Mailing, Survey, UTM, Apps, Setup, Administración, HR, Dashboards, Project To-do, Discuss
-  - Implementación: `data/tms_menu_cleanup.xml` (patrón `<function>` para actualizar menús existentes)
-  - Fix Fleet: `models/res_users_tms.py` + `__init_hooks__.py` quita `fleet_group_user` automáticamente (post_init_hook)
-  - Solo visibles para `group_tms_manager` + `base.group_system`
-  - Limpieza manual: SQL ejecutado para eliminar `fleet_group_user` de usuarios TMS existentes
-- ❌ PENDIENTE: current_zip (fleet.vehicle) — Matching geográfico Fase 2
-- ❌ PENDIENTE: vehicle_status (fleet.vehicle) — Bloquear vehículo en falla ⚠️ RIESGO: Referenciado en comentario action_confirm_order (tms_waybill.py) — si se convierte en código real sin implementar el campo → crash inmediato.
-- ❌ PENDIENTE: is_tms_carrier (res.partner) — Filtrar transportistas marketplace
-
-### ✅ V2.5.1 — Tours Interactivos (2026-05-04)
-- ✅ `tms_tour.js` reescrito: 4 tours separados (configuración, cotización, carta porte, dashboard)
-- ✅ Tour 1 `tms_tour_1_configuracion`: 9 pasos (app, configuración, operadores, vehículos)
-- ✅ Tour 2 `tms_tour_2_cotizacion`: 10 pasos (nueva cotización, CPs, propuestas, cliente, mercancías)
-- ✅ Tour 3 `tms_tour_3_carta_porte`: 10 pasos (aprobación, vehículo, chofer, mercancías, timbrado, UUID)
-- ✅ Tour 4 `tms_tour_4_dashboard`: 8 pasos (KPIs, viajes activos, facturación, rendimiento, alertas)
-- ✅ Botones activadores en `res_config_settings_views.xml` (bloque "Tours de Ayuda")
-- ✅ API `odoo.startTour(tourName, {mode: 'manual'})` verificada en Odoo 19
-- ✅ Sin referencias a acciones obsoletas (action_set_en_pedido, action_confirm_order)
-- ✅ Todos los textos en español con `_t()`
-
-### 📋 V2.6 — KPIs, Reportes y Portal Web
-- Dashboard ingresos, rentabilidad por vehículo, rendimiento diesel
-- Portal cliente: ver estado de su envío + botón aprobación
-
-### 📋 V2.7 — Limpieza Final "Modo Hombre Camión"
-- 0 warnings en logs, 0 métodos huérfanos, menú simplificado
-- QA: usuario nuevo < 10 min primera Carta Porte
-- Verificar todas las semillas Fase 2 funcionando
-
-### 📋 V2.8 🎯 — SaaS Multi-tenant + Cobro (`tms_saas/`)
-- Planes: free ($0) / pro ($990 MXN) / flota ($2,990 MXN)
-- MercadoPago webhook, arquitectura PostgreSQL cluster + Redis
-- **HITO: PRIMER CLIENTE PAGA AQUÍ**
-
-### 📋 Fase 2 — Marketplace de Cargas (Sep–Dic 2026)
-Ver `contexto_maestro_tms_final.md` sección 9 para detalle completo.
-- M2.1 Modelos marketplace · M2.2 Matching engine
-- M2.3 API REST · M2.4 App Flutter · M2.5 Portal embarcador · M2.6 Notificaciones
-
-### 📋 Fase 3 — Datos, Confianza y Escala (2027)
-Ver `contexto_maestro_tms_final.md` sección 9 para detalle completo.
-- F3.1 Verificaciones/badges · F3.2 Analytics de mercado
-- F3.3 Matching ML · F3.4 API brokers
+### 📋 Pendiente — en orden de prioridad
+| Versión | Nombre | Modelo |
+|---------|--------|--------|
+| V2.4c | Firma digital | `claude-opus-4-7` |
+| V2.4d | Liquidación choferes | `claude-sonnet-4-6` |
+| V2.6 | KPIs/Portal Web | `claude-opus-4-7` |
+| V2.7 | Limpieza final + QA | `claude-sonnet-4-6` |
+| **V2.8** | **SaaS — PRIMER CLIENTE** 🎯 | `claude-opus-4-7` |
+| Fase 2 | Marketplace de cargas | Sep-Dic 2026 |
 
 ---
 
-## 8. Wizard Cotización (V2.1.4) — Arquitectura
+## 8. Issues Conocidos
 
-### Modelo: tms.cotizacion.wizard (TransientModel)
-- Paso 1: CP origen/destino + variables → calcular → 3 propuestas
-- Paso 2: Datos completos (solo si aprueba) → crear waybill
-
-### Paso 1 campos:
-```python
-partner_invoice_id          # Cliente (required)
-origin_zip, dest_zip        # CPs para TollGuru
-num_axles
-diesel_price, fuel_performance
-driver_salary, maneuvers, other_costs, commission
-price_per_km, margin_percent
-direct_price
-distance_km, duration_hours, toll_cost
-proposal_km_total, proposal_trip_total
-selected_proposal
-```
-
-### Paso 2 campos:
-```python
-partner_origin_id, partner_dest_id
-vehicle_id, trailer1_id, dolly_id, trailer2_id
-driver_id
-line_ids → tms.cotizacion.wizard.line  # Mercancías completas con Clave SAT
-```
-
-### Flujo UI:
-1. Botón "Nueva Cotización" en vista LISTA (no en formulario)
-2. Wizard crea waybill en estado `cotizado`
-3. Waybill cotizado muestra solo: cliente + precio
-4. Botón "Aprobar Cotización" → estado `aprobado`
-5. Estado aprobado → formulario completo visible
-6. "Confirmar Pedido" → estado `waybill` (vía `action_approve_cp`)
+| ID | Descripción | Estado |
+|---|---|---|
+| FIX-01 al FIX-H | Ver historial en commits anteriores | ✅ Todos resueltos |
 
 ---
 
-## 9. Issues Conocidos
-
-| ID | Severidad | Descripción | Estado |
-|---|---|---|---|
-| FIX-01 | ✅ | widget monetary sin currency_field en wizard | Resuelto |
-| FIX-02 | ✅ | is_dangerous no definido en wizard.line | Resuelto |
-| FIX-03 | ✅ | Direcciones origen/destino no llegaban al waybill | Resuelto 2026-03-13 |
-| FIX-04 | ✅ | Retención 4% no considera is_company | Resuelto |
-| FIX-A | ✅ | Normalización SAT xml_builder (5 helpers, 11 campos) | Resuelto |
-| FIX-B | ✅ | Auto-sustitución fiscal en pruebas | Resuelto |
-| FIX-C | ✅ | Waybill readonly post-timbrado | Resuelto |
-| FIX-D | ✅ | Onboarding sincroniza company.partner_id | Resuelto |
-| FIX-E | ✅ | PDF pre-cotización mostraba casetas (toll_cost) | Resuelto 2026-03-24 |
-| FIX-F | ✅ | Labels de estados en español en statusbar y vista | Resuelto 2026-03-24 |
-| FIX-G | ✅ | Portal card "Unidad Asignada" visible sin datos asignados | Resuelto 2026-03-24 |
-| FIX-H | ✅ | Eliminar botón "Confirmar Pedido" (Flujo simplificado) | Resuelto 2026-03-24 |
-
-## 10. Deuda Técnica Conocida
-
-### Semillas V2.5 — campos pendientes de implementar
-Estos campos están documentados en el roadmap pero NO existen en el código. No bloquean V2.3 ni V2.4.
-
-| Campo | Modelo | Para qué | Prioridad |
-|---|---|---|---|
-| current_zip | fleet.vehicle | Matching geográfico futuro (Fase 2) | Baja |
-| vehicle_status | fleet.vehicle | Bloquear wizard si vehículo en falla | Media ⚠️ |
-| is_tms_carrier | res.partner | Marketplace: filtrar transportistas | Baja |
-
-Implementar antes de V2.7 / Fase 2.
-
----
-
-## 11. Problemas Históricos (NUNCA Repetir)
+## 9. Problemas Históricos (NUNCA Repetir)
 
 1. **Código duplicado** — Python usa la última definición silenciosamente
 2. **Estados desalineados** — Selection vs métodos → ValueError
 3. **Campos fantasma** — onchange referencia campos inexistentes → AttributeError
 4. **required=True en modelos heredados** — Rompe registros del sistema
 5. **compute store=False escribiendo store=True** — No persiste en BD
-6. **_fetch_tollguru_api duplicada** — Verificar con grep antes de agregar
-7. **Leer mal JSON TollGuru** — Usar `routes[0]`, no `route` ni `metric`
-8. **widget monetary sin currency_field** — OWL error en Odoo 19
-9. **column_invisible con campo inexistente** — EvalError en OWL
-10. **on_create en kanban agrupado** — No funciona en Odoo 19 con group_by activo
-11. **Métodos RPC desde OWL no pueden empezar con `_`** — Odoo 19 bloquea métodos privados en `odoo/service/model.py` antes de ejecutarlos. El error se captura silenciosamente en el catch del componente OWL y devuelve vacío/ceros sin traceback visible. Solución: siempre usar nombre público. `get_dashboard_data()` NO `_get_dashboard_data()`
+6. **Leer mal JSON TollGuru** — Usar `routes[0]`, no `route` ni `metric`
+7. **widget monetary sin currency_field** — OWL error en Odoo 19
+8. **Métodos RPC privados desde OWL** — Usar nombre público, nunca `_metodo()`
+9. **Kanban sin t-name="card"** — Odoo 19 requiere `card`, no `kanban-box`
+10. **kanban_image() no existe** — Usar `widget="image"` en field
+11. **view_mode con "tree"** — Usar `"list"` en ir.actions.act_window
+12. **`<tree>` en vistas** — Usar `<list>`
+13. **`attrs=`** — Usar `invisible=`
 
 ---
 
-## 12. Reglas Absolutas de Código
+## 10. Reglas Absolutas de Código
 
-1. SIEMPRE comentar cada función con docstring en **español**
-2. SIEMPRE comentar líneas no obvias dentro de los métodos
-3. NUNCA definir el mismo campo/método dos veces → `grep -rn "def nombre" models/`
-4. NUNCA `required=True` en campos heredados (`res.partner`, `fleet.vehicle`)
-5. NUNCA escribir en campos `store=True` desde `compute store=False`
-6. NUNCA crear modelo nuevo si puedes extender con `_inherit`
-7. NUNCA `company_id` en catálogos SAT (son globales)
-8. SIEMPRE `company_id` en modelos operativos
-9. SIEMPRE `check_company=True` en Many2one a modelos con `company_id`
-10. SIEMPRE `models.Constraint()` — NO `_sql_constraints`
-11. SIEMPRE `_rec_names_search` — NO `name_search` override
-12. NO crear `verify_*.py` / `fix_*.py` en la raíz del repo
-13. NO push directo a `main` — siempre rama + PR
-14. Vistas: `<list>` (NO `<tree>`), `invisible=` (NO `attrs=`)
+1. SIEMPRE docstring en español en cada función
+2. SIEMPRE comentar líneas no obvias
+3. NUNCA definir campo/método dos veces → grep antes
+4. NUNCA `required=True` en campos heredados
+5. NUNCA `company_id` en catálogos SAT
+6. SIEMPRE `company_id` en modelos operativos
+7. SIEMPRE `check_company=True` en Many2one con `company_id`
+8. SIEMPRE `models.Constraint()` — NO `_sql_constraints`
+9. SIEMPRE `_rec_names_search` — NO `name_search` override
+10. NO push directo a `main` — siempre rama + PR
+11. Vistas: `<list>` NO `<tree>`, `invisible=` NO `attrs=`
+12. view_mode: `"list"` NO `"tree"`
+13. Kanban Odoo 19: `t-name="card"` NO `"kanban-box"`
+14. Imágenes kanban: `widget="image"` NO `kanban_image()`
 
 ---
 
-## 13. Dev Workflow Git
+## 11. Dev Workflow Git
 
 ```bash
-# Inicio de cada etapa
 git checkout main && git pull origin main
 git checkout -b feat/etapa-X.X.X-nombre
-
-# Validar antes de commit
-python3 -m py_compile models/archivo.py
-grep -n "WARNING\|ERROR" odoo.log | tail -20
-
-# Update + reinicio Odoo
-python3 odoo-bin -c odoo.conf -u tms -d tms_v2 --stop-after-init
-python3 odoo-bin -c odoo.conf
-
-# Commit (sin push hasta que Mois lo indique)
+# ... implementar ...
 git add -A
 git commit -m "feat(X.X.X): descripción en español"
-
-# Push y PR
 git push origin feat/etapa-X.X.X-nombre
-# → abrir PR en GitHub → merge vía PR — NUNCA push directo a main
+# → PR en GitHub → merge — NUNCA push directo a main
 ```
-
-### Convención de commits:
-```
-feat(X.X.X): descripción    ← nueva funcionalidad
-fix(X.X.X): descripción     ← corrección de bug
-chore: descripción           ← mantenimiento
-```
-
-### GitHub — reglas activas:
-- ✅ Branch protection en `main`
-- ✅ Solo merge vía Pull Request
-- ✅ Block force pushes
-- ✅ Nunca push directo a `main`
 
 ---
 
-## 14. Reglas de Trabajo por Herramienta
-
-### Claude Code Terminal (ejecutor principal)
-- Lee `CLAUDE.md` automáticamente al iniciar
-- Usar `--model claude-opus-4-7` para etapas completas y tareas complejas
-- Usar `--model claude-sonnet-4-6` para fixes rápidos y cambios de un archivo
-- NO hacer commit hasta que Mois lo apruebe explícitamente
-
-### Claude Web (claude.ai)
-- Generación de SDDs, planificación, revisión de roadmap
-- Consultas de arquitectura y decisiones técnicas
-
-### Gemini Flash
-- Imágenes, íconos, diseño visual
-
-### Tabla de modelos por versión:
-| Versión | Modelo Claude Code | Tipo de tarea |
-|---|---|---|
-| 2.4 (tms_fuel/) | `claude-opus-4-7` | Módulo nuevo |
-| 2.4b (evidencias) | `claude-sonnet-4-6` | Modelo + vista media |
-| 2.4c (firma digital) | `claude-opus-4-7` | Módulo nuevo + crypto |
-| 2.4d (liquidación) | `claude-sonnet-4-6` | Modelo + cálculos |
-| 2.5 (limpieza) | `claude-sonnet-4-6` | Fixes y semillas |
-| 2.6 (KPIs/portal) | `claude-opus-4-7` | Dashboard + portal |
-| 2.7 (limpieza final) | `claude-sonnet-4-6` | Limpieza y QA |
-| 2.8 (SaaS) | `claude-opus-4-7` | Multi-tenant + cobro |
+## 12. Próxima etapa
+**V2.4c — Firma Digital** o **V2.8 — SaaS (Primer Cliente)**
+Mois decide.
 
 ---
 
-## 15. Formato SDD Obligatorio
-
-> ⚠️ Todo SDD generado para este proyecto debe incluir las siguientes secciones
-> en este orden exacto. Sin excepciones. Aplica para Claude, Gemini CLI, Antigravity y Claude Code.
-
-Cada etapa debe tener un SDD en `docs/etapa-X.X.X.md` antes de arrancar.
-
-### Encabezado
-
-```markdown
-# SDD — Etapa X.X.X: Nombre
-Módulo:   tms
-Fecha:    YYYY-MM-DD
-Branch:   feat/etapa-X.X.X-nombre
-Estado:   Draft | En progreso | Completado
-```
-
-### Sección 1 — GIT (solo primer prompt de etapa)
-```bash
-git checkout main && git pull origin main
-git checkout -b feat/etapa-X.X.X-nombre
-```
-
-### Sección 2 — Problema
-Descripción funcional del problema o necesidad en lenguaje de negocio.
-
-### Sección 3 — Solución
-Descripción de la solución técnica propuesta.
-
-### Sección 4 — Modelos afectados
-| Modelo | Acción | Archivo |
-|--------|--------|---------|
-| tms.waybill | _inherit | models/tms_waybill.py |
-| tms.nuevo.modelo | Create | models/tms_nuevo_modelo.py |
-
-### Sección 5 — File Manifest
-| Archivo | Acción | Descripción |
-|---------|--------|-------------|
-| models/tms_waybill.py | Modify | Agregar campo X |
-| views/tms_waybill_views.xml | Modify | Agregar campo en form |
-| security/ir.model.access.csv | Modify | Nuevos grupos si aplica |
-
-### Sección 6 — Campos nuevos
-| Nombre | Tipo | Descripción | Requerido |
-|--------|------|-------------|-----------|
-| campo_nuevo | Char | Descripción clara | Sí/No |
-
-### Sección 7 — Flujo funcional
-Pasos numerados desde el punto de vista del usuario final.
-
-### Sección 8 — Criterios de aceptación
-- [ ] AC-01: criterio verificable
-- [ ] AC-02: criterio verificable
-(mínimo 5 ACs)
-
-### Sección 9 — Tests requeridos ← NIVEL 4
-Mínimo 5 tests. Formato: `test_nombre → qué valida`
-- [ ] test_waybill_state_flow → estados cotizado→aprobado→waybill funcionan
-- [ ] test_proposal_calculation → las 3 propuestas calculan valores positivos
-- [ ] test_retention_only_company → retención 4% solo si is_company=True
-- [ ] test_sat_catalog_global → catálogos SAT no tienen company_id
-- [ ] test_tollguru_cache → segunda llamada usa tms.destination en caché
-
-### Sección 10 — Definition of Done ← NIVEL 4
-- [ ] Todos los tests pasan sin error
-- [ ] Sin errores ni warnings en log de Odoo al instalar
-- [ ] Vista XML carga correctamente (list, form, search según aplique)
-- [ ] access.csv actualizado con todos los grupos necesarios
-- [ ] Estados del waybill NO alterados (solo los 7 válidos existen)
-- [ ] No hay campos/métodos duplicados (verificar con grep)
-- [ ] CLAUDE.md actualizado: fecha, versión, tabla de etapas
-
-### Sección 11 — Restricciones ← NIVEL 4
-- NO modificar modelos nativos de Odoo — siempre `_inherit`
-- Compatible exclusivamente con Odoo 19 Community Edition
-- Vistas: `<list>` NO `<tree>`, `invisible=` NO `attrs=`
-- Catálogos SAT NUNCA llevan `company_id`
-- Modelos operativos SIEMPRE llevan `company_id` + `check_company=True`
-- NUNCA `required=True` en campos de modelos heredados
-- Estados válidos del waybill: SOLO los 7 documentados en sección 4
-- [restricciones específicas del stage]
-
-### Sección 12 — Para Claude Code Terminal ← NIVEL 4
-```
-MODELO RECOMENDADO:
-  - Etapa completa / módulo nuevo / API / orquestador → claude-opus-4-7
-  - Fix puntual / un archivo / vista / campo           → claude-sonnet-4-6
-
-COMANDO DE ARRANQUE:
-  claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta este SDD: etapa X.X.X"
-
-INPUT:  Este SDD + archivos actuales en /tms
-OUTPUT:
-  - [lista exacta de archivos a CREAR]
-  - [lista exacta de archivos a MODIFICAR]
-VALIDACIÓN:
-  - Correr: python3 odoo-bin -c odoo.conf -u tms --test-enable --stop-after-init -d tms_v2
-  - Confirmar que TODOS los tests pasan antes de reportar listo
-  - grep -n "WARNING\|ERROR" odoo.log | tail -20 → debe estar limpio
-  - Verificar que estados del waybill no fueron alterados
-```
-
-### Sección 13 — Upgrade command
-```bash
-python3 odoo-bin -c odoo.conf -u tms -d tms_v2 --stop-after-init
-```
-
-### Sección 14 — 🛠 Context Blueprint para Gemini
-```
-_name: [nombre exacto del modelo principal]
-
-File Manifest:
-| Archivo | Create/Modify |
-|---------|---------------|
-| path/archivo.py | Create/Modify |
-
-Decorators + fields explícitos:
-  _name = 'tms.xxx'
-  _description = '...'
-  _order = '...'
-  campo1 = fields.Tipo(string='...', required=True/False, company_dependent=True/False)
-  campo2 = fields.Tipo(string='...')
-
-Security:
-  access.csv: model_tms_xxx,tms.xxx,tms.group_tms_user,1,1,1,0
-  groups: tms.group_tms_user / tms.group_tms_manager
-
-Manifest Update:
-  'depends': [agregar si requiere módulo externo]
-  'data': [agregar rutas de nuevos XML/CSV]
-```
-
-### Reglas adicionales de SDDs
-- Tasks, walkthrough, thoughts e implementation plan → siempre en **español**
-- Comentarios en código generado → siempre en **español**
-- Cada función/método → docstring en español explicando qué hace
-- Si el stage toca el wizard de cotización → documentar impacto en los 2 pasos
-- Si el stage toca XML/timbrado → documentar impacto en xml_builder y pac_manager
-- Al finalizar cada etapa → explicar brevemente los conceptos clave del código generado
-
----
-
-## 16. Qué Actualizar al Terminar Cada Etapa
-
-### En CLAUDE.md (obligatorio antes del commit):
-1. Fecha en el encabezado → fecha actual
-2. Versión del módulo → nueva versión
-3. Tabla de etapas → marcar como ✅
-4. Issues Conocidos → marcar resueltos
-5. Problemas Históricos → agregar si se descubrió algo nuevo
-
-### En contexto_maestro_tms_final.md:
-1. Sección 9 roadmap → actualizar estado de la etapa completada
-2. Sección 10 semillas → marcar las que se sembraron
-
-### Verificar con:
-```bash
-grep -n "✅\|🚧\|📋\|Última actualización" CLAUDE.md | head -20
-```
-
-### Al finalizar cada etapa:
-Explicar brevemente los conceptos clave del código generado para que Mois aprenda.
-
----
-
-## 17. Semillas Entre Fases (No Olvidar)
-
-| Cuándo | Qué | Para qué |
-|---|---|---|
-| V2.2 | Modelo `tms.route.stats` vacío | Datos de ruta desde el primer viaje |
-| V2.3 | Hook `waybill.closed → _update_from_waybill()` | Alimenta matching engine |
-| V2.5 | `fleet.vehicle.current_zip` | Matching engine: proximidad |
-| V2.5 | `res.partner.is_tms_carrier` | Marketplace: filtrar transportistas |
-| V2.5 | `fleet.vehicle.vehicle_status` bloquea wizard | Sin vehículos con falla |
-| V2.7 | Verificar TODAS las semillas | Base lista para Fase 2 |
-
----
-
-## Próxima etapa
-**V2.4b — Evidencia Fotográfica** o **V2.8 — SaaS (Primer Cliente)**
-Mois decide la siguiente etapa.
-
----
-
-_Este archivo es el contexto técnico del proyecto._
-_Para el contexto estratégico completo (roadmap, fases, ingresos): ver `contexto_maestro_tms_final.md`_
 _Actualizar después de cada etapa completada._
