@@ -423,6 +423,81 @@
                                 </div>
                             </t>
 
+                            <!--
+                                ================================================================
+                                SECCIÓN: LÍNEA DE TIEMPO DE TRACKING
+                                Solo visible cuando el viaje está en tránsito, en destino o cerrado
+                                ================================================================
+                            -->
+                            <t t-if="waybill.state in ('in_transit', 'arrived', 'closed') and waybill.tracking_event_ids">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fa fa-map"/> Estado de Entrega</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="timeline-vertical">
+                                            <t t-foreach="waybill.tracking_event_ids.sorted('date', reverse=True)" t-as="event">
+                                                <div class="timeline-item mb-4">
+                                                    <div class="d-flex">
+                                                        <!-- Ícono según tipo de evento -->
+                                                        <div class="me-3" style="min-width: 40px;">
+                                                            <t t-if="event.name == 't-start'">
+                                                                <span class="badge bg-success rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-play"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-location'">
+                                                                <span class="badge bg-info rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-map-marker"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-destination'">
+                                                                <span class="badge bg-success rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-flag-checkered"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-issue'">
+                                                                <span class="badge bg-warning rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-warning"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span class="badge bg-secondary rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-info-circle"/>
+                                                                </span>
+                                                            </t>
+                                                        </div>
+
+                                                        <!-- Contenido del evento -->
+                                                        <div class="flex-grow-1">
+                                                            <!-- Hora y tipo -->
+                                                            <div class="d-flex justify-content-between mb-1">
+                                                                <strong t-esc="event.name"/>
+                                                                <small class="text-muted" t-esc="event.date.strftime('%d/%m/%Y %H:%M')"/>
+                                                            </div>
+
+                                                            <!-- Descripción / notas -->
+                                                            <t t-if="event.note">
+                                                                <p class="mb-2 text-muted" t-esc="event.note"/>
+                                                            </t>
+
+                                                            <!-- Enlace a Google Maps si hay coordenadas -->
+                                                            <t t-if="event.latitude and event.longitude">
+                                                                <a t-attf-href="https://maps.google.com/maps?q={{ event.latitude }},{{ event.longitude }}"
+                                                                   target="_blank"
+                                                                   class="text-decoration-none small">
+                                                                    <i class="fa fa-external-link"/> Ver en mapa
+                                                                </a>
+                                                            </t>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+
                             <!-- Historial y Comunicación (Chatter del Portal) -->
                             <div class="mt-4">
                                 <h5><i class="fa fa-comments"/> Comunicación</h5>
@@ -522,6 +597,16 @@
                                            target="_blank">
                                             <i class="fa fa-download"/> Descargar PDF
                                         </a>
+
+                                        <!--
+                                            Botón: Descargar XML CFDI (solo si existe factura timbrada)
+                                        -->
+                                        <t t-if="waybill_has_cfdi_ingreso">
+                                            <a t-attf-href="/my/waybills/{{ waybill.id }}/xml?access_token={{ token }}"
+                                               class="btn btn-outline-secondary w-100 mt-2">
+                                                <i class="fa fa-file-code-o"/> Descargar XML CFDI
+                                            </a>
+                                        </t>
                                     </div>
                                 </div>
                             </div>
@@ -690,6 +775,218 @@
                                 </div>
                             </form>
                         </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!--
+        ================================================================
+        PLANTILLA: LISTA DE VIAJES EN EL PORTAL (PAGINADA)
+        ================================================================
+    -->
+    <template id="portal_my_waybills_list" name="My Waybills List">
+        <t t-name="tms.portal_my_waybills_list">
+            <t t-call="portal.portal_layout">
+                <div class="container mt-4">
+                    <!--
+                        Encabezado: Título y subtítulo
+                    -->
+                    <div class="mb-4">
+                        <h2 class="mb-2">Mis Viajes</h2>
+                        <p class="text-muted mb-3">
+                            Historial de tus cotizaciones, viajes y entregas
+                        </p>
+                    </div>
+
+                    <!--
+                        ================================================================
+                        SECCIÓN: FILTROS Y BÚSQUEDA
+                        ================================================================
+                    -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <form method="get" action="/my/waybills" class="row g-3">
+                                <!--
+                                    Filtro por Estado (Select)
+                                -->
+                                <div class="col-md-6">
+                                    <label for="state_filter" class="form-label">
+                                        <i class="fa fa-filter"/> Estado
+                                    </label>
+                                    <select class="form-select" id="state_filter" name="state">
+                                        <t t-foreach="states" t-as="s">
+                                            <option t-att-value="s[0]"
+                                                    t-att-selected="'selected' if s[0] == state_filter else None"
+                                                    t-esc="s[1]"/>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!--
+                                    Búsqueda por Folio (Text input)
+                                -->
+                                <div class="col-md-6">
+                                    <label for="search_folio" class="form-label">
+                                        <i class="fa fa-search"/> Buscar por Folio
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="search_folio"
+                                           name="search"
+                                           t-att-value="search"
+                                           placeholder="Ej: VJ/00001"/>
+                                </div>
+
+                                <!--
+                                    Botones de Acción
+                                -->
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-search"/> Buscar
+                                    </button>
+                                    <a href="/my/waybills" class="btn btn-outline-secondary">
+                                        <i class="fa fa-refresh"/> Limpiar Filtros
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!--
+                        ================================================================
+                        SECCIÓN: TABLA DE VIAJES
+                        ================================================================
+                    -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fa fa-list"/> Tus Viajes
+                                <span class="badge bg-secondary ms-2" t-esc="page_count"/>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <t t-if="waybills">
+                                <!--
+                                    Tabla responsiva de viajes
+                                -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th><i class="fa fa-file-text-o"/> Folio</th>
+                                                <th><i class="fa fa-map"/> Ruta</th>
+                                                <th><i class="fa fa-tag"/> Estado</th>
+                                                <th><i class="fa fa-calendar"/> Fecha</th>
+                                                <th class="text-end"><i class="fa fa-money"/> Total</th>
+                                                <th class="text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="waybills" t-as="wb">
+                                                <tr>
+                                                    <!-- Folio -->
+                                                    <td>
+                                                        <strong t-esc="wb.name"/>
+                                                    </td>
+
+                                                    <!-- Ruta (Origen → Destino) -->
+                                                    <td>
+                                                        <t t-if="wb.route_name">
+                                                            <span t-esc="wb.route_name"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <t t-if="wb.origin_city_name and wb.dest_city_name">
+                                                                <span t-esc="wb.origin_city_name"/> → <span t-esc="wb.dest_city_name"/>
+                                                            </t>
+                                                        </t>
+                                                    </td>
+
+                                                    <!-- Estado con badge de color -->
+                                                    <td>
+                                                        <t t-if="wb.state == 'cotizado'">
+                                                            <span class="badge bg-secondary">Cotización</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'aprobado'">
+                                                            <span class="badge bg-warning text-dark">Aprobada</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'waybill'">
+                                                            <span class="badge bg-primary">Carta Porte</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'in_transit'">
+                                                            <span class="badge bg-info text-dark">En Tránsito</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'arrived'">
+                                                            <span class="badge bg-success">En Destino</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'closed'">
+                                                            <span class="badge bg-success">Facturado</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'cancel'">
+                                                            <span class="badge bg-danger">Cancelado</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'rejected'">
+                                                            <span class="badge bg-danger">Rechazado</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge bg-secondary" t-esc="wb.state"/>
+                                                        </t>
+                                                    </td>
+
+                                                    <!-- Fecha (creación) -->
+                                                    <td>
+                                                        <small t-esc="wb.date_created.strftime('%d/%m/%Y')"/>
+                                                    </td>
+
+                                                    <!-- Total alineado a la derecha -->
+                                                    <td class="text-end">
+                                                        <strong t-esc="wb.amount_total"
+                                                                t-options='{"widget": "monetary", "display_currency": wb.currency_id}'/>
+                                                    </td>
+
+                                                    <!-- Botón Ver Detalle -->
+                                                    <td class="text-center">
+                                                        <a t-attf-href="/my/waybills/{{ wb.id }}"
+                                                           class="btn btn-sm btn-outline-primary"
+                                                           title="Ver detalles">
+                                                            <i class="fa fa-eye"/>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!--
+                                    Paginador estándar de Odoo
+                                -->
+                                <div class="mt-4">
+                                    <t t-call="portal.pager">
+                                        <t t-set="pager" t-value="pager"/>
+                                    </t>
+                                </div>
+                            </t>
+
+                            <!--
+                                Mensaje vacío si no hay viajes
+                            -->
+                            <t t-else="">
+                                <div class="alert alert-info text-center" role="alert">
+                                    <i class="fa fa-inbox"/> No tienes viajes registrados
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!--
+                        Link para volver al home del portal
+                    -->
+                    <div class="mt-4 text-center">
+                        <a href="/my" class="btn btn-outline-secondary">
+                            <i class="fa fa-arrow-left"/> Volver al Portal
+                        </a>
                     </div>
                 </div>
             </t>
