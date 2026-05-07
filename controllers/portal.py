@@ -3,7 +3,9 @@ from odoo import http, _, fields
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.exceptions import AccessError, MissingError, ValidationError
+from werkzeug.wrappers import Response
 import logging
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -13,24 +15,22 @@ class TMSCustomerPortal(CustomerPortal):
         """
         Prepara valores para el home del portal (contador de waybills).
 
-        Valida que solo se cuenten waybills visibles para el usuario/cliente del portal:
-        - Filtra por partner_invoice_id (commercial_partner_id)
-        - Filtra por company_id en las empresas del usuario
-        - Sin usar sudo() innecesario (usa permisos base.group_portal)
+        Sigue el patrón exacto de sale/controllers/portal.py:
+        Solo calcula el contador si 'waybill_count' está en counters.
+        Odoo llama este método con los placeholder_count registrados en el template;
+        si no está en counters, no calculamos para no gastar queries.
         """
         values = super()._prepare_home_portal_values(counters)
         if 'waybill_count' in counters:
             # Usar commercial_partner_id para manejar contactos hijos correctamente
             partner = request.env.user.partner_id.commercial_partner_id
-            # Dominio para contar solo waybills visibles para el usuario/cliente del portal
-            # Filtramos por partner y por empresas del usuario (sin sudo, usando permisos de portal)
             domain = [
                 ('partner_invoice_id', '=', partner.id),
                 ('company_id', 'in', request.env.user.company_ids.ids)
             ]
-            # Usar el usuario del request directamente (tiene permisos base.group_portal)
-            # Evitar sudo() innecesario - el ACL base.group_portal permite lectura
-            values['waybill_count'] = request.env['tms.waybill'].search_count(domain)
+            # sudo() porque el usuario portal puede no tener permisos directos sobre tms.waybill
+            # El dominio garantiza que solo se cuentan sus propios viajes
+            values['waybill_count'] = request.env['tms.waybill'].sudo().search_count(domain)
         return values
 
     def _check_waybill_access_and_company(self, waybill_id, access_token=None):
@@ -68,6 +68,83 @@ class TMSCustomerPortal(CustomerPortal):
 
         return waybill_sudo
 
+    @http.route(['/my/waybills', '/my/waybills/page/<int:page>'], type='http', auth='user', website=True)
+    def portal_my_waybills_list(self, page=1, state=None, search=None, **kw):
+        """
+        Lista paginada de viajes del cliente en el portal.
+
+        Filtra por partner_invoice_id del usuario logueado.
+        Soporta filtro por estado y búsqueda por folio.
+
+        Args:
+            page: Número de página (default 1)
+            state: Estado para filtrar (optional)
+            search: Texto de búsqueda por folio (optional)
+        """
+        partner = request.env.user.partner_id.commercial_partner_id
+        TmsWaybill = request.env['tms.waybill']
+
+        # Construir dominio base
+        domain = [
+            ('partner_invoice_id', '=', partner.id),
+            ('company_id', 'in', request.env.user.company_ids.ids)
+        ]
+
+        # Agregar filtro de estado si se proporciona
+        if state and state != 'todos':
+            domain.append(('state', '=', state))
+
+        # Agregar búsqueda por folio si se proporciona
+        if search:
+            domain.append(('name', 'ilike', search))
+
+        # Obtener total de registros
+        total_records = TmsWaybill.sudo().search_count(domain)
+
+        # Paginar: 10 registros por página
+        records_per_page = 10
+        page_count = (total_records + records_per_page - 1) // records_per_page
+        offset = (page - 1) * records_per_page
+
+        # Obtener registros de la página actual
+        waybills = TmsWaybill.sudo().search(domain, offset=offset, limit=records_per_page, order='date_created desc')
+
+        # Preparar paginador estándar de Odoo
+        pager = request.website.pager(
+            url='/my/waybills',
+            total=total_records,
+            page=page,
+            step=records_per_page,
+            url_args={
+                'state': state or '',
+                'search': search or '',
+            }
+        )
+
+        # Lista de estados disponibles para el filtro
+        states = [
+            ('todos', 'Todos'),
+            ('cotizado', 'Cotizaciones'),
+            ('aprobado', 'Aprobadas'),
+            ('waybill', 'Carta Porte'),
+            ('in_transit', 'En Tránsito'),
+            ('arrived', 'En Destino'),
+            ('closed', 'Facturados'),
+            ('cancel', 'Cancelados'),
+            ('rejected', 'Rechazados'),
+        ]
+
+        values = {
+            'waybills': waybills,
+            'pager': pager,
+            'page_count': page_count,
+            'state_filter': state or 'todos',
+            'search': search or '',
+            'states': states,
+            'page_name': 'my_waybills_list',
+        }
+        return request.render("tms.portal_my_waybills_list", values)
+
     @http.route(['/my/waybills/<int:waybill_id>'], type='http', auth="public", website=True)
     def portal_my_waybill(self, waybill_id, access_token=None, report_type=None, download=False, **kw):
         """
@@ -99,12 +176,19 @@ class TMSCustomerPortal(CustomerPortal):
                 download=download
             )
 
+        # Buscar factura TMS timbrada vinculada al waybill
+        invoice = waybill_sudo.invoice_ids.filtered(
+            lambda m: m.tms_cfdi_status == 'timbrada'
+        ).sorted('id', reverse=True)[:1]
+        has_cfdi_ingreso = bool(invoice and invoice.tms_cfdi_xml)
+
         # Preparar valores para la plantilla
         values = {
             'waybill': waybill_sudo,
             'token': access_token,
             'page_name': 'waybill',
             'report_type': 'html',
+            'waybill_has_cfdi_ingreso': has_cfdi_ingreso,
         }
         return request.render("tms.portal_my_waybill", values)
 
@@ -247,4 +331,45 @@ class TMSCustomerPortal(CustomerPortal):
             report_type='pdf',
             report_ref='tms.action_report_tms_waybill',
             download=download
+        )
+
+    @http.route(['/my/waybills/<int:waybill_id>/xml'], type='http', auth="public", website=True)
+    def portal_waybill_xml(self, waybill_id, access_token=None, **kw):
+        """
+        Descarga el XML del CFDI Ingreso vinculado al waybill.
+
+        Valida acceso + empresa. Solo disponible si existe factura timbrada.
+        Retorna el archivo con Content-Disposition: attachment.
+        Nombre del archivo: {folio}-cfdi.xml
+
+        Args:
+            waybill_id: ID del waybill
+            access_token: Token de acceso del portal
+        """
+        try:
+            # Validar acceso y empresa (multiempresa SaaS)
+            waybill_sudo = self._check_waybill_access_and_company(waybill_id, access_token=access_token)
+        except (AccessError, MissingError):
+            # Retornar 404 si no tiene acceso (seguridad)
+            return request.not_found()
+
+        # Buscar factura timbrada vinculada
+        invoice = waybill_sudo.invoice_ids.filtered(
+            lambda m: m.tms_cfdi_status == 'timbrada'
+        ).sorted('id', reverse=True)[:1]
+
+        # Validar que existe factura timbrada con XML
+        if not invoice or not invoice.tms_cfdi_xml:
+            return request.not_found()
+
+        # Decodificar XML de base64 y retornar como archivo
+        xml_bytes = base64.b64decode(invoice.tms_cfdi_xml)
+        filename = f"{waybill_sudo.name}-cfdi.xml"
+
+        return Response(
+            xml_bytes,
+            mimetype='application/xml',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"'
+            }
         )

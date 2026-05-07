@@ -2,7 +2,7 @@
 
 # ══════════════════════════════════════════════════════════════
 # CONTEXTO PARA CLAUDE CODE TERMINAL / CLAUDE WEB
-# Última actualización: 2026-05-06 — V2.4b Evidencia Fotográfica completado
+# Última actualización: 2026-05-07 — V2.6 Portal Web Cliente completado
 # ══════════════════════════════════════════════════════════════
 
 ## 0. 🤖 Modelos de IA — Cuándo usar cuál
@@ -17,6 +17,13 @@
 > según el esfuerzo de la tarea usando la tabla siguiente, SIN esperar instrucción explícita del usuario.
 > Si la tarea es ambigua, elegir el modelo más capaz (Opus 4.7).
 
+> 📌 **REGLA — Cuándo leer CLAUDE.md:**
+> Leer CLAUDE.md SOLO en estos dos casos:
+> 1. Al INICIO de una sesión nueva (primera vez que arranca Claude Code)
+> 2. Después de `/compact` (el contexto se comprimió)
+> NO leer CLAUDE.md en prompts de fix o tareas dentro de una sesión activa —
+> es gasto innecesario de tokens. El contexto ya está cargado.
+
 | Situación | Modelo |
 |-----------|--------|
 | Módulo nuevo, etapa completa, orquestador multi-agente | `claude-opus-4-7` |
@@ -29,7 +36,7 @@
 
 ```bash
 # Tarea grande (etapa completa, orquestador, API)
-claude --model claude-opus-4-7 "Lee CLAUDE.md y ejecuta etapa X.X.X..."
+claude --model claude-opus-4-7 "ejecuta etapa X.X.X..."
 
 # Fix rápido (un archivo, vista, campo)
 claude --model claude-sonnet-4-6 "Corrige el label del campo X en archivo Y"
@@ -55,7 +62,7 @@ claude --model claude-haiku-4-5 "git add -A && git commit -m '...'"
 **Autor:** NextPack (nextpack.mx)
 **Licencia:** LGPL-3
 **Versión módulo:** 19.0.2.4.4
-**Progreso actual:** ~85% — V2.4b completado (evidencia fotográfica)
+**Progreso actual:** ~90% — V2.6 Portal Web Cliente completado
 
 **Qué es:** Módulo vertical completo para gestión de transporte de carga en México.
 Cubre desde cotización hasta facturación, con cumplimiento fiscal (Carta Porte 3.1 / CFDI 4.0).
@@ -76,9 +83,10 @@ nunca por intermediar dinero entre partes. Sin factoraje, sin seguros intermedia
 - **APIs externas:** TollGuru API v2 (activa), Google Routes API (disponible)
 - **PAC:** Formas Digitales (forsedi.facturacfdi.mx — contrato activo) — para V2.2
 - **Fiscal:** SAT Carta Porte 3.1, CFDI 4.0
-- **Python binary:** `odoo-19.0/.venv/bin/python odoo-19.0/odoo-bin`
-- **Config:** `proyectos/tms/odoo.conf`
-- **Addons path:** `/proyectos/theme` (MUK) + `/proyectos/tms`
+- **Python binary:** `/Users/macbookpro/odoo/odoo19ce/odoo-19.0/.venv/bin/python /Users/macbookpro/odoo/odoo19ce/odoo-19.0/odoo-bin`
+- **Config:** `/Users/macbookpro/odoo/odoo19ce/proyectos/tms/odoo.conf`
+- **Upgrade:** `cd /Users/macbookpro/odoo/odoo19ce/odoo-19.0 && /Users/macbookpro/odoo/odoo19ce/odoo-19.0/.venv/bin/python odoo-bin -c /Users/macbookpro/odoo/odoo19ce/proyectos/tms/odoo.conf -u tms -d tms_v2 --stop-after-init`
+- **Start:** `cd /Users/macbookpro/odoo/odoo19ce/odoo-19.0 && /Users/macbookpro/odoo/odoo19ce/odoo-19.0/.venv/bin/python odoo-bin -c /Users/macbookpro/odoo/odoo19ce/proyectos/tms/odoo.conf`
 
 ---
 
@@ -188,7 +196,10 @@ tms/
 ├── views/
 │   ├── tms_waybill_views.xml
 │   ├── tms_evidence_views.xml          # ✅ V2.4b
+│   ├── tms_portal_templates.xml        # ✅ V2.6
 │   └── ...
+├── controllers/
+│   └── portal.py                       # ✅ V2.6
 ├── static/src/js/
 │   ├── tms_tour.js                     # ✅ V2.5.1
 │   ├── tms_help_panel.js               # ✅ V2.5.1
@@ -221,21 +232,24 @@ tms/
 | V2.4.1 | Rentabilidad por ruta (`tms.route.stats`) | ✅ 2026-04-22 |
 | V2.4.2 | Dashboard operativo + KPIs | ✅ 2026-04-23 |
 | V2.4.3 | Rendimiento por vehículo | ✅ 2026-05-06 |
-| **V2.4b** | **Evidencia fotográfica (`tms.evidence.photo`)** | **✅ 2026-05-06** |
-| V2.4c | Firma digital simple (`tms_signature/`) | ✅ Completado (ya existía 2026-05-06) |
-| V2.4d | Liquidación de choferes (`tms_settlement/`) | 📋 Pendiente |
+| V2.4b | Evidencia fotográfica (`tms.evidence.photo`) | ✅ 2026-05-06 |
+| V2.4c | Firma digital simple | ✅ 2026-05-06 (ya existía) |
+| V2.4d | Liquidación de choferes | ✅ 2026-05-06 (ya existía) |
 
 ### ✅ V2.5 — Limpieza (COMPLETADO — 2026-04-28)
 ### ✅ V2.5.1 — Tours Interactivos (COMPLETADO — 2026-05-06)
+### ✅ V2.6 — Portal Web Cliente (COMPLETADO — 2026-05-07)
+- Lista `/my/waybills` paginada con filtros y búsqueda
+- Timeline de tracking en detalle del waybill
+- Descarga XML CFDI Ingreso desde portal
+- Tile "Mis Viajes" en home del portal
 
 ### 📋 Pendiente — en orden de prioridad
 | Versión | Nombre | Modelo |
 |---------|--------|--------|
-| V2.4c | Firma digital | `claude-opus-4-7` |
-| V2.4d | Liquidación choferes | `claude-sonnet-4-6` |
-| V2.6 | KPIs/Portal Web | `claude-opus-4-7` |
 | V2.7 | Limpieza final + QA | `claude-sonnet-4-6` |
 | **V2.8** | **SaaS — PRIMER CLIENTE** 🎯 | `claude-opus-4-7` |
+| V3.0 | App Flutter Chofer | Flutter/Dart |
 | Fase 2 | Marketplace de cargas | Sep-Dic 2026 |
 
 ---
@@ -245,10 +259,20 @@ tms/
 | ID | Descripción | Estado |
 |---|---|---|
 | FIX-01 al FIX-H | Ver historial en commits anteriores | ✅ Todos resueltos |
+| FIX-portal-counters | KeyError portal_counters en tile /my | ✅ 2026-05-07 — usar solo `waybill_count` |
 
 ---
 
 ## 9. Problemas Históricos (NUNCA Repetir)
+
+> 📌 **REGLA PORTAL/FRONTEND:** Si un tile, template o componente del portal/website
+> no cuadra visualmente o no funciona, **IR DIRECTO a leer el patrón en Odoo core**
+> antes de intentar cualquier fix. Rutas de referencia:
+> - `odoo-19.0/addons/{módulo}/views/*portal*.xml`
+> - `odoo-19.0/addons/{módulo}/controllers/portal.py`
+> **Nunca inventar HTML/Bootstrap custom** cuando Odoo ya tiene el patrón correcto.
+> Ejemplo: `portal_docs_entry`, `placeholder_count`, `portal_client_category_enable`.
+> Esta regla aplica a cualquier componente frontend, no solo al portal.
 
 1. **Código duplicado** — Python usa la última definición silenciosamente
 2. **Estados desalineados** — Selection vs métodos → ValueError
@@ -263,6 +287,8 @@ tms/
 11. **view_mode con "tree"** — Usar `"list"` en ir.actions.act_window
 12. **`<tree>` en vistas** — Usar `<list>`
 13. **`attrs=`** — Usar `invisible=`
+14. **`portal_counters` no existe en Odoo 19 CE** — En templates QWeb del portal NO usar `portal_counters.get(...)`. Solo usar variables pasadas directamente por el controlador (ej. `waybill_count`). Causa 500 KeyError en `/my`.
+15. **TransactionCase no detecta errores QWeb** — Para tests de rutas HTTP (portal, website, controllers) usar `HttpCase`, NO `TransactionCase`. TransactionCase no levanta servidor y no atrapa KeyError en templates ni errores de renderizado.
 
 ---
 
@@ -285,7 +311,51 @@ tms/
 
 ---
 
-## 11. Dev Workflow Git
+## 11. Tests — Reglas por Tipo
+
+### TransactionCase — para lógica de modelos
+Usar cuando el test valida cálculos, campos, métodos Python, workflows de estado.
+No levanta servidor HTTP. No detecta errores QWeb.
+
+```python
+from odoo.tests import TransactionCase, tagged
+
+@tagged('post_install', '-at_install', 'tms')
+class TestTmsWaybill(TransactionCase):
+    def test_calculo_propuesta_km(self):
+        ...
+```
+
+### HttpCase — OBLIGATORIO para portal y controllers
+Usar cuando el test valida rutas HTTP, templates QWeb, portal, website.
+Levanta servidor real. Atrapa 500, KeyError en templates, errores de renderizado.
+
+```python
+from odoo.tests import HttpCase, tagged
+
+@tagged('post_install', '-at_install', 'tms')
+class TestPortalTms(HttpCase):
+    def test_portal_home_sin_500(self):
+        """Verifica que /my carga sin error para usuario portal."""
+        self.authenticate('portal_user', 'portal_user')
+        res = self.url_open('/my')
+        self.assertEqual(res.status_code, 200)
+
+    def test_portal_waybills_list(self):
+        """Verifica que /my/waybills carga correctamente."""
+        self.authenticate('portal_user', 'portal_user')
+        res = self.url_open('/my/waybills')
+        self.assertEqual(res.status_code, 200)
+```
+
+### Comando para correr tests
+```bash
+python3 odoo-bin -c odoo.conf --test-enable --test-tags /tms -d tms_v2 --stop-after-init
+```
+
+---
+
+## 12. Dev Workflow Git
 
 ```bash
 git checkout main && git pull origin main
@@ -299,9 +369,8 @@ git push origin feat/etapa-X.X.X-nombre
 
 ---
 
-## 12. Próxima etapa
-**V2.4c — Firma Digital** o **V2.8 — SaaS (Primer Cliente)**
-Mois decide.
+## 13. Próxima etapa
+**V2.7 — Limpieza Final + QA** → **V2.8 — SaaS Primer Cliente**
 
 ---
 

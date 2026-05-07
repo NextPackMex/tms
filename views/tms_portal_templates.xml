@@ -47,9 +47,9 @@
                                 ENCABEZADO: Título y fecha
                             -->
                             <div class="mb-4">
-                                <h2 class="mb-2">Cotización <span t-esc="waybill.name"/></h2>
+                                <h2 class="mb-2">Cotización <span t-out="waybill.name"/></h2>
                                 <p class="text-muted mb-3">
-                                    <i class="fa fa-calendar"/> Fecha: <span t-esc="waybill.date_created"/>
+                                    <i class="fa fa-calendar"/> Fecha: <span t-out="waybill.date_created"/>
                                 </p>
 
                                 <!--
@@ -81,7 +81,7 @@
                                         <span class="badge bg-danger">Rechazado</span>
                                     </t>
                                     <t t-else="">
-                                        <span class="badge bg-secondary" t-esc="waybill.state"/>
+                                        <span class="badge bg-secondary" t-out="waybill.state"/>
                                     </t>
                                 </div>
 
@@ -102,7 +102,7 @@
                                 </t>
                                 <t t-if="request and request.params and request.params.get('error')">
                                     <div class="alert alert-danger alert-dismissible" role="alert">
-                                        <strong>Error:</strong> <span t-esc="request.params.get('error')"/>
+                                        <strong>Error:</strong> <span t-out="request.params.get('error')"/>
                                         <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                                     </div>
                                 </t>
@@ -145,12 +145,12 @@
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <strong>Cliente:</strong><br/>
-                                            <span t-esc="waybill.partner_invoice_id.name"/>
+                                            <span t-out="waybill.partner_invoice_id.name"/>
                                         </div>
                                         <t t-if="waybill.invoice_rfc">
                                             <div class="col-md-6 mb-3">
                                                 <strong>RFC:</strong><br/>
-                                                <span t-esc="waybill.invoice_rfc"/>
+                                                <span t-out="waybill.invoice_rfc"/>
                                             </div>
                                         </t>
                                     </div>
@@ -158,7 +158,7 @@
                                         <div class="row">
                                             <div class="col-12">
                                                 <strong>Dirección:</strong><br/>
-                                                <span t-esc="waybill.invoice_address"/>
+                                                <span t-out="waybill.invoice_address"/>
                                             </div>
                                         </div>
                                     </t>
@@ -181,27 +181,27 @@
                                             <!-- Fallback: CP + ciudad cuando no hay partner -->
                                             <t t-if="not waybill.partner_origin_id and waybill.origin_zip">
                                                 <div class="p-2">
-                                                    <span class="badge text-bg-success">CP <t t-esc="waybill.origin_zip"/></span>
-                                                    <span class="text-muted ms-1" t-if="waybill.origin_city_name" t-esc="waybill.origin_city_name"/>
+                                                    <span class="badge text-bg-success">CP <t t-out="waybill.origin_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.origin_city_name" t-out="waybill.origin_city_name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.partner_origin_id">
                                                 <p class="mb-2">
                                                     <strong>Remitente:</strong><br/>
-                                                    <span t-esc="waybill.partner_origin_id.name"/>
+                                                    <span t-out="waybill.partner_origin_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.origin_city_name"/>
+                                                    <span t-out="waybill.origin_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
-                                                    <span t-esc="waybill.origin_address"/>
-                                                    <t t-if="waybill.origin_zip">, CP <span t-esc="waybill.origin_zip"/></t>
+                                                    <span t-out="waybill.origin_address"/>
+                                                    <t t-if="waybill.origin_zip">, CP <span t-out="waybill.origin_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
@@ -218,27 +218,27 @@
                                             <!-- Fallback: CP + ciudad cuando no hay partner -->
                                             <t t-if="not waybill.partner_dest_id and waybill.dest_zip">
                                                 <div class="p-2">
-                                                    <span class="badge text-bg-danger">CP <t t-esc="waybill.dest_zip"/></span>
-                                                    <span class="text-muted ms-1" t-if="waybill.dest_city_name" t-esc="waybill.dest_city_name"/>
+                                                    <span class="badge text-bg-danger">CP <t t-out="waybill.dest_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.dest_city_name" t-out="waybill.dest_city_name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.partner_dest_id">
                                                 <p class="mb-2">
                                                     <strong>Destinatario:</strong><br/>
-                                                    <span t-esc="waybill.partner_dest_id.name"/>
+                                                    <span t-out="waybill.partner_dest_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.dest_city_name"/>
+                                                    <span t-out="waybill.dest_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
-                                                    <span t-esc="waybill.dest_address"/>
-                                                    <t t-if="waybill.dest_zip">, CP <span t-esc="waybill.dest_zip"/></t>
+                                                    <span t-out="waybill.dest_address"/>
+                                                    <t t-if="waybill.dest_zip">, CP <span t-out="waybill.dest_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
@@ -271,21 +271,21 @@
                                                     <t t-foreach="waybill.line_ids" t-as="line">
                                                         <tr>
                                                             <td>
-                                                                <strong t-esc="line.description or ''"/>
+                                                                <strong t-out="line.description or ''"/>
                                                                 <t t-if="line.product_sat_id">
-                                                                    <br/><small class="text-muted" t-esc="line.product_sat_id.name or ''"/>
+                                                                    <br/><small class="text-muted" t-out="line.product_sat_id.name or ''"/>
                                                                 </t>
                                                             </td>
-                                                            <td class="text-end" t-esc="line.quantity or 0"/>
+                                                            <td class="text-end" t-out="line.quantity or 0"/>
                                                             <td>
                                                                 <t t-if="line.uom_sat_id">
-                                                                    <span t-esc="line.uom_sat_id.name or ''"/>
+                                                                    <span t-out="line.uom_sat_id.name or ''"/>
                                                                 </t>
                                                                 <t t-else="">
                                                                     <span class="text-muted">—</span>
                                                                 </t>
                                                             </td>
-                                                            <td class="text-end" t-esc="line.weight_kg or 0"/>
+                                                            <td class="text-end" t-out="line.weight_kg or 0"/>
                                                         </tr>
                                                     </t>
                                                 </tbody>
@@ -312,19 +312,19 @@
                                         <t t-if="waybill.distance_km">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Distancia:</strong><br/>
-                                                <span t-esc="waybill.distance_km"/> km
+                                                <span t-out="waybill.distance_km"/> km
                                             </div>
                                         </t>
                                         <t t-if="waybill.duration_hours">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Duración Estimada:</strong><br/>
-                                                <span t-esc="waybill.duration_hours"/> horas
+                                                <span t-out="waybill.duration_hours"/> horas
                                             </div>
                                         </t>
                                         <t t-if="waybill.route_name">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Ruta:</strong><br/>
-                                                <span t-esc="waybill.route_name"/>
+                                                <span t-out="waybill.route_name"/>
                                             </div>
                                         </t>
                                     </div>
@@ -346,13 +346,13 @@
                                             <t t-if="waybill.vehicle_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Vehículo (Tractor):</strong><br/>
-                                                    <span t-esc="waybill.vehicle_id.license_plate"/> - <span t-esc="waybill.vehicle_id.model_id.name"/>
+                                                    <span t-out="waybill.vehicle_id.license_plate"/> - <span t-out="waybill.vehicle_id.model_id.name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.driver_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Chofer:</strong><br/>
-                                                    <span t-esc="waybill.driver_id.name"/>
+                                                    <span t-out="waybill.driver_id.name"/>
                                                 </div>
                                             </t>
                                         </div>
@@ -360,15 +360,15 @@
                                             <t t-if="waybill.trailer1_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Remolque 1:</strong><br/>
-                                                    <span t-esc="waybill.trailer1_id.license_plate"/>
-                                                    <t t-if="waybill.trailer1_id.model_id"> - <span t-esc="waybill.trailer1_id.model_id.name"/></t>
+                                                    <span t-out="waybill.trailer1_id.license_plate"/>
+                                                    <t t-if="waybill.trailer1_id.model_id"> - <span t-out="waybill.trailer1_id.model_id.name"/></t>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.trailer2_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Remolque 2:</strong><br/>
-                                                    <span t-esc="waybill.trailer2_id.license_plate"/>
-                                                    <t t-if="waybill.trailer2_id.model_id"> - <span t-esc="waybill.trailer2_id.model_id.name"/></t>
+                                                    <span t-out="waybill.trailer2_id.license_plate"/>
+                                                    <t t-if="waybill.trailer2_id.model_id"> - <span t-out="waybill.trailer2_id.model_id.name"/></t>
                                                 </div>
                                             </t>
                                         </div>
@@ -397,10 +397,10 @@
                                             </div>
                                         </t>
                                         <t t-if="waybill.signed_by">
-                                            <p class="mb-1"><strong>Firmado por:</strong> <span t-esc="waybill.signed_by"/></p>
+                                            <p class="mb-1"><strong>Firmado por:</strong> <span t-out="waybill.signed_by"/></p>
                                         </t>
                                         <t t-if="waybill.signed_on">
-                                            <p class="mb-0"><strong>Fecha y hora:</strong> <span t-esc="waybill.signed_on"/></p>
+                                            <p class="mb-0"><strong>Fecha y hora:</strong> <span t-out="waybill.signed_on"/></p>
                                         </t>
                                     </div>
                                 </div>
@@ -418,7 +418,82 @@
                                     </div>
                                     <div class="card-body">
                                         <p class="mb-0"><strong>Motivo del rechazo:</strong></p>
-                                        <p class="text-muted" t-esc="waybill.rejection_reason"/>
+                                        <p class="text-muted" t-out="waybill.rejection_reason"/>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!--
+                                ================================================================
+                                SECCIÓN: LÍNEA DE TIEMPO DE TRACKING
+                                Solo visible cuando el viaje está en tránsito, en destino o cerrado
+                                ================================================================
+                            -->
+                            <t t-if="waybill.state in ('in_transit', 'arrived', 'closed') and waybill.tracking_event_ids">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fa fa-map"/> Estado de Entrega</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="timeline-vertical">
+                                            <t t-foreach="waybill.tracking_event_ids.sorted('date', reverse=True)" t-as="event">
+                                                <div class="timeline-item mb-4">
+                                                    <div class="d-flex">
+                                                        <!-- Ícono según tipo de evento -->
+                                                        <div class="me-3" style="min-width: 40px;">
+                                                            <t t-if="event.name == 't-start'">
+                                                                <span class="badge bg-success rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-play"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-location'">
+                                                                <span class="badge bg-info rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-map-marker"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-destination'">
+                                                                <span class="badge bg-success rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-flag-checkered"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-elif="event.name == 't-issue'">
+                                                                <span class="badge bg-warning rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-warning"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-else="">
+                                                                <span class="badge bg-secondary rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                                                    <i class="fa fa-info-circle"/>
+                                                                </span>
+                                                            </t>
+                                                        </div>
+
+                                                        <!-- Contenido del evento -->
+                                                        <div class="flex-grow-1">
+                                                            <!-- Hora y tipo -->
+                                                            <div class="d-flex justify-content-between mb-1">
+                                                                <strong t-out="event.name"/>
+                                                                <small class="text-muted" t-out="event.date.strftime('%d/%m/%Y %H:%M')"/>
+                                                            </div>
+
+                                                            <!-- Descripción / notas -->
+                                                            <t t-if="event.note">
+                                                                <p class="mb-2 text-muted" t-out="event.note"/>
+                                                            </t>
+
+                                                            <!-- Enlace a Google Maps si hay coordenadas -->
+                                                            <t t-if="event.latitude and event.longitude">
+                                                                <a t-attf-href="https://maps.google.com/maps?q={{ event.latitude }},{{ event.longitude }}"
+                                                                   target="_blank"
+                                                                   class="text-decoration-none small">
+                                                                    <i class="fa fa-external-link"/> Ver en mapa
+                                                                </a>
+                                                            </t>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </t>
+                                        </div>
                                     </div>
                                 </div>
                             </t>
@@ -460,21 +535,21 @@
                                             <div class="d-flex justify-content-between mb-1">
                                                 <span class="text-muted">Subtotal:</span>
                                                 <strong>
-                                                    <span t-esc="waybill.amount_untaxed" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_untaxed" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <!-- IVA -->
                                             <div class="d-flex justify-content-between mb-1">
                                                 <span class="text-muted">IVA (16%):</span>
                                                 <strong>
-                                                    <span t-esc="waybill.amount_tax" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_tax" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <!-- Retención -->
                                              <div class="d-flex justify-content-between mb-2 text-danger">
                                                 <span>Retención (4%):</span>
                                                 <strong>
-                                                    - <span t-esc="waybill.amount_retention" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    - <span t-out="waybill.amount_retention" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <hr/>
@@ -482,7 +557,7 @@
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="h5 mb-0">Total:</span>
                                                 <h3 class="mb-0 text-primary">
-                                                    <span t-esc="waybill.amount_total" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_total" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </h3>
                                             </div>
                                         </div>
@@ -522,6 +597,16 @@
                                            target="_blank">
                                             <i class="fa fa-download"/> Descargar PDF
                                         </a>
+
+                                        <!--
+                                            Botón: Descargar XML CFDI (solo si existe factura timbrada)
+                                        -->
+                                        <t t-if="waybill_has_cfdi_ingreso">
+                                            <a t-attf-href="/my/waybills/{{ waybill.id }}/xml?access_token={{ token }}"
+                                               class="btn btn-outline-secondary w-100 mt-2">
+                                                <i class="fa fa-file-code-o"/> Descargar XML CFDI
+                                            </a>
+                                        </t>
                                     </div>
                                 </div>
                             </div>
@@ -694,5 +779,248 @@
                 </div>
             </t>
         </t>
+    </template>
+
+    <!--
+        ================================================================
+        PLANTILLA: LISTA DE VIAJES EN EL PORTAL (PAGINADA)
+        ================================================================
+    -->
+    <template id="portal_my_waybills_list" name="My Waybills List">
+        <t t-name="tms.portal_my_waybills_list">
+            <t t-call="portal.portal_layout">
+                <div class="container mt-4">
+                    <!--
+                        Encabezado: Título y subtítulo
+                    -->
+                    <div class="mb-4">
+                        <h2 class="mb-2">Mis Viajes</h2>
+                        <p class="text-muted mb-3">
+                            Historial de tus cotizaciones, viajes y entregas
+                        </p>
+                    </div>
+
+                    <!--
+                        ================================================================
+                        SECCIÓN: FILTROS Y BÚSQUEDA
+                        ================================================================
+                    -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <form method="get" action="/my/waybills" class="row g-3">
+                                <!--
+                                    Filtro por Estado (Select)
+                                -->
+                                <div class="col-md-6">
+                                    <label for="state_filter" class="form-label">
+                                        <i class="fa fa-filter"/> Estado
+                                    </label>
+                                    <select class="form-select" id="state_filter" name="state">
+                                        <t t-foreach="states" t-as="s">
+                                            <option t-att-value="s[0]"
+                                                    t-att-selected="'selected' if s[0] == state_filter else None"
+                                                    t-out="s[1]"/>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!--
+                                    Búsqueda por Folio (Text input)
+                                -->
+                                <div class="col-md-6">
+                                    <label for="search_folio" class="form-label">
+                                        <i class="fa fa-search"/> Buscar por Folio
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="search_folio"
+                                           name="search"
+                                           t-att-value="search"
+                                           placeholder="Ej: VJ/00001"/>
+                                </div>
+
+                                <!--
+                                    Botones de Acción
+                                -->
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-search"/> Buscar
+                                    </button>
+                                    <a href="/my/waybills" class="btn btn-outline-secondary">
+                                        <i class="fa fa-refresh"/> Limpiar Filtros
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!--
+                        ================================================================
+                        SECCIÓN: TABLA DE VIAJES
+                        ================================================================
+                    -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fa fa-list"/> Tus Viajes
+                                <span class="badge bg-secondary ms-2" t-out="page_count"/>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <t t-if="waybills">
+                                <!--
+                                    Tabla responsiva de viajes
+                                -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th><i class="fa fa-file-text-o"/> Folio</th>
+                                                <th><i class="fa fa-map"/> Ruta</th>
+                                                <th><i class="fa fa-tag"/> Estado</th>
+                                                <th><i class="fa fa-calendar"/> Fecha</th>
+                                                <th class="text-end"><i class="fa fa-money"/> Total</th>
+                                                <th class="text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="waybills" t-as="wb">
+                                                <tr>
+                                                    <!-- Folio -->
+                                                    <td>
+                                                        <strong t-out="wb.name"/>
+                                                    </td>
+
+                                                    <!-- Ruta (Origen → Destino) -->
+                                                    <td>
+                                                        <t t-if="wb.route_name">
+                                                            <span t-out="wb.route_name"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <t t-if="wb.origin_city_name and wb.dest_city_name">
+                                                                <span t-out="wb.origin_city_name"/> → <span t-out="wb.dest_city_name"/>
+                                                            </t>
+                                                        </t>
+                                                    </td>
+
+                                                    <!-- Estado con badge de color -->
+                                                    <td>
+                                                        <t t-if="wb.state == 'cotizado'">
+                                                            <span class="badge bg-secondary">Cotización</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'aprobado'">
+                                                            <span class="badge bg-warning text-dark">Aprobada</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'waybill'">
+                                                            <span class="badge bg-primary">Carta Porte</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'in_transit'">
+                                                            <span class="badge bg-info text-dark">En Tránsito</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'arrived'">
+                                                            <span class="badge bg-success">En Destino</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'closed'">
+                                                            <span class="badge bg-success">Facturado</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'cancel'">
+                                                            <span class="badge bg-danger">Cancelado</span>
+                                                        </t>
+                                                        <t t-elif="wb.state == 'rejected'">
+                                                            <span class="badge bg-danger">Rechazado</span>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="badge bg-secondary" t-out="wb.state"/>
+                                                        </t>
+                                                    </td>
+
+                                                    <!-- Fecha (creación) -->
+                                                    <td>
+                                                        <small t-out="wb.date_created.strftime('%d/%m/%Y')"/>
+                                                    </td>
+
+                                                    <!-- Total alineado a la derecha -->
+                                                    <td class="text-end">
+                                                        <strong t-out="wb.amount_total"
+                                                                t-options='{"widget": "monetary", "display_currency": wb.currency_id}'/>
+                                                    </td>
+
+                                                    <!-- Botón Ver Detalle -->
+                                                    <td class="text-center">
+                                                        <a t-attf-href="/my/waybills/{{ wb.id }}"
+                                                           class="btn btn-sm btn-outline-primary"
+                                                           title="Ver detalles">
+                                                            <i class="fa fa-eye"/>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!--
+                                    Paginador estándar de Odoo
+                                -->
+                                <div class="mt-4">
+                                    <t t-call="portal.pager">
+                                        <t t-set="pager" t-value="pager"/>
+                                    </t>
+                                </div>
+                            </t>
+
+                            <!--
+                                Mensaje vacío si no hay viajes
+                            -->
+                            <t t-else="">
+                                <div class="alert alert-info text-center" role="alert">
+                                    <i class="fa fa-inbox"/> No tienes viajes registrados
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!--
+                        Link para volver al home del portal
+                    -->
+                    <div class="mt-4 text-center">
+                        <a href="/my" class="btn btn-outline-secondary">
+                            <i class="fa fa-arrow-left"/> Volver al Portal
+                        </a>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!--
+        ================================================================
+        TILE DEL PORTAL: MIS VIAJES
+        ================================================================
+        Sigue el patrón exacto de sale/views/sale_portal_templates.xml:
+        1. Activar portal_client_category_enable = True ANTES de o_portal_docs
+        2. Insertar tile dentro de portal_client_category con position=inside
+        3. Usar placeholder_count para lazy load (igual que Sus órdenes)
+           → esto hace que el spinner desaparezca correctamente
+        4. El ícono SVG es opcional; sin él Odoo usa el layout de texto
+
+        SIN este patrón:
+        - El spinner queda activo infinitamente
+        - El tile no cuadra visualmente con los otros tiles nativos
+    -->
+    <template id="portal_my_home_tms_waybills" inherit_id="portal.portal_my_home" name="TMS Waybills Home Tile">
+        <!-- Paso 1: activar la categoría de cliente (igual que hace sale) -->
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_client_category_enable" t-value="True"/>
+        </xpath>
+        <!-- Paso 2: insertar el tile dentro del div portal_client_category -->
+        <div id="portal_client_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Mis Viajes</t>
+                <t t-set="text">Ver historial de cotizaciones y entregas</t>
+                <t t-set="url" t-value="'/my/waybills'"/>
+                <t t-set="placeholder_count" t-value="'waybill_count'"/>
+            </t>
+        </div>
     </template>
 </odoo>

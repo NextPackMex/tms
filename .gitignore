@@ -18,3 +18,4 @@ odoo.conf
 .vscode/
 .idea/
 *.swp
+odoo.log

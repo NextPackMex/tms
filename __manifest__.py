@@ -4,50 +4,74 @@
     'name': "TMS & Carta Porte 3.1 (SaaS Multi-Empresa)",
 
     # Resumen corto
-    'summary': """
-        Base de datos completa de catálogos oficiales del SAT para Carta Porte 3.1
-        11 catálogos + Wizard de importación Excel
-    """,
+    'summary': "Sistema de Gestión de Transporte (TMS) con Carta Porte 3.1 y CFDI 4.0 para México",
 
     # Descripción detallada
     'description': """
-        TMS - Base de Catálogos SAT (Carta Porte 3.1)
-        ==============================================
+        TMS "Hombre Camión" — Sistema Integral de Transporte
+        =====================================================
 
-        Módulo independiente con TODOS los catálogos oficiales del SAT
-        necesarios para Carta Porte 3.1.
+        Solución vertical completa para cotización, operación y facturación de servicios
+        de transporte de carga en México, con cumplimiento fiscal y SaaS multi-empresa.
 
-        📦 CATÁLOGOS INCLUIDOS (11):
+        🚚 FUNCIONALIDADES PRINCIPALES:
 
-        Productos y Mercancías:
-        • c_ClaveProdServCP - Clave Producto/Servicio
-        • c_ClaveUnidad - Unidades de Medida
-        • c_TipoEmbalaje - Tipos de Embalaje
-        • c_MaterialPeligroso - Materiales Peligrosos
+        1. COTIZACIÓN INTELIGENTE
+           • 3 propuestas (por km, por viaje con costos, precio directo)
+           • Integración TollGuru API: distancia, duración, casetas en tiempo real
+           • Caché de rutas para optimizar consultas
 
-        Ubicaciones Geográficas:
-        • c_CodigoPostal - Códigos Postales
-        • c_Colonia - Colonias
-        • c_Localidad - Localidades
-        • c_Municipio - Municipios
+        2. CARTA PORTE 3.1 + TIMBRADO
+           • Validación automática de cumplimiento CP 3.1
+           • Timbrado via PAC Formas Digitales (contrato activo)
+           • UUID obtenido, PDF de 7 secciones + QR SAT
 
-        Configuración de Transporte:
-        • c_ConfigAutotransporte - Configuración Vehicular
-        • c_TipoPermiso - Tipos de Permiso SCT
-        • c_FiguraTransporte - Figuras de Transporte
+        3. FACTURACIÓN REAL (CFDI INGRESO)
+           • Consolidación de N waybills en una factura
+           • IVA 16% + Retención 4% (si is_company=True)
+           • Zonas de Exportación Temporal (ZEDE) con IVA 0%
+           • Cancelación con motivos 01/02/03 SAT, re-timbrado automático
 
-        🚀 CARACTERÍSTICAS:
-        - Importación masiva desde Excel (.xlsx)
-        - Wizard universal con dropdown de 11 catálogos
-        - Batch create optimizado (1,000 registros/lote)
-        - Índices en BD para búsquedas ultra-rápidas
-        - Catálogos globales (sin company_id)
-        - Búsqueda avanzada por código y descripción
+        4. PORTAL WEB CLIENTE
+           • Lista paginada de viajes con filtros y búsqueda
+           • Timeline de tracking con eventos GPS y maps
+           • Descarga XML CFDI Ingreso timbrado
+           • Firma digital para aceptación de cotizaciones
+           • Seguridad multiempresa SaaS
 
-        💡 USO:
-        1. Descargar catálogos del SAT
-        2. Usar wizard de importación
-        3. Listo para usar en Carta Porte
+        5. DASHBOARD OPERATIVO + KPIs
+           • Viajes activos, facturación del mes, por facturar
+           • Rentabilidad por ruta (tms.route.stats)
+           • Rendimiento por vehículo (km/litro real)
+           • Alertas automáticas (licencias vencidas, CFDIs pendientes)
+
+        6. TOURS INTERACTIVOS
+           • Onboarding para nuevos usuarios
+           • 8 micro-tours temáticos + panel ❓
+           • Documentación integrada en UI
+
+        7. ARQUITECTURA SAAS MULTI-EMPRESA
+           • Catálogos SAT globales (sin company_id)
+           • Datos operativos privados por empresa
+           • Record rules para aislamiento total
+           • Preparada para monetización en V2.8
+
+        🎯 CASOS DE USO:
+        - Transportistas pequeños/medianos: cotización + operación integral
+        - Embarcadores: transparencia en flete + trazabilidad
+        - Plataformas SaaS: modelo white-label con multi-tenancy
+
+        📋 CATÁLOGOS INCLUIDOS: 12 catálogos SAT completos
+        (Productos, Unidades, Embalaje, Materiales Peligrosos, Geografía, Configuración Vehicular)
+
+        ⚙️ INTEGRACIONES:
+        - TollGuru API v2: rutas y casetas
+        - PAC Formas Digitales: timbrado CFDI
+        - PostgreSQL 16+: BD de producción
+        - OWL + QWeb: UI moderna Odoo 19 CE
+
+        📌 VERSIÓN: 2.7 (Limpieza Final + QA)
+        🏁 SIGUIENTE: V2.8 (SaaS — Primer Cliente Paga)
     """,
 
     # Autor
@@ -60,7 +84,7 @@
     'category': 'Logistics',
 
     # Versión
-    'version': '19.0.2.4.4',
+    'version': '19.0.2.7.0',
 
     # Dependencias para Fase 2: Flota y Dashboard
     # sale_management: Para reutilizar estética de portal de Sales (sin convertir waybill en sale.order)
