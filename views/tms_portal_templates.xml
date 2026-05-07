@@ -992,4 +992,35 @@
             </t>
         </t>
     </template>
+
+    <!--
+        ================================================================
+        TILE DEL PORTAL: MIS VIAJES
+        ================================================================
+        Sigue el patrón exacto de sale/views/sale_portal_templates.xml:
+        1. Activar portal_client_category_enable = True ANTES de o_portal_docs
+        2. Insertar tile dentro de portal_client_category con position=inside
+        3. Usar placeholder_count para lazy load (igual que Sus órdenes)
+           → esto hace que el spinner desaparezca correctamente
+        4. El ícono SVG es opcional; sin él Odoo usa el layout de texto
+
+        SIN este patrón:
+        - El spinner queda activo infinitamente
+        - El tile no cuadra visualmente con los otros tiles nativos
+    -->
+    <template id="portal_my_home_tms_waybills" inherit_id="portal.portal_my_home" name="TMS Waybills Home Tile">
+        <!-- Paso 1: activar la categoría de cliente (igual que hace sale) -->
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-set="portal_client_category_enable" t-value="True"/>
+        </xpath>
+        <!-- Paso 2: insertar el tile dentro del div portal_client_category -->
+        <div id="portal_client_category" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="title">Mis Viajes</t>
+                <t t-set="text">Ver historial de cotizaciones y entregas</t>
+                <t t-set="url" t-value="'/my/waybills'"/>
+                <t t-set="placeholder_count" t-value="'waybill_count'"/>
+            </t>
+        </div>
+    </template>
 </odoo>

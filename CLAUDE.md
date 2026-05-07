@@ -265,6 +265,15 @@ tms/
 
 ## 9. Problemas Históricos (NUNCA Repetir)
 
+> 📌 **REGLA PORTAL/FRONTEND:** Si un tile, template o componente del portal/website
+> no cuadra visualmente o no funciona, **IR DIRECTO a leer el patrón en Odoo core**
+> antes de intentar cualquier fix. Rutas de referencia:
+> - `odoo-19.0/addons/{módulo}/views/*portal*.xml`
+> - `odoo-19.0/addons/{módulo}/controllers/portal.py`
+> **Nunca inventar HTML/Bootstrap custom** cuando Odoo ya tiene el patrón correcto.
+> Ejemplo: `portal_docs_entry`, `placeholder_count`, `portal_client_category_enable`.
+> Esta regla aplica a cualquier componente frontend, no solo al portal.
+
 1. **Código duplicado** — Python usa la última definición silenciosamente
 2. **Estados desalineados** — Selection vs métodos → ValueError
 3. **Campos fantasma** — onchange referencia campos inexistentes → AttributeError

@@ -15,24 +15,22 @@ class TMSCustomerPortal(CustomerPortal):
         """
         Prepara valores para el home del portal (contador de waybills).
 
-        Valida que solo se cuenten waybills visibles para el usuario/cliente del portal:
-        - Filtra por partner_invoice_id (commercial_partner_id)
-        - Filtra por company_id en las empresas del usuario
-        - Sin usar sudo() innecesario (usa permisos base.group_portal)
+        Sigue el patrón exacto de sale/controllers/portal.py:
+        Solo calcula el contador si 'waybill_count' está en counters.
+        Odoo llama este método con los placeholder_count registrados en el template;
+        si no está en counters, no calculamos para no gastar queries.
         """
         values = super()._prepare_home_portal_values(counters)
         if 'waybill_count' in counters:
             # Usar commercial_partner_id para manejar contactos hijos correctamente
             partner = request.env.user.partner_id.commercial_partner_id
-            # Dominio para contar solo waybills visibles para el usuario/cliente del portal
-            # Filtramos por partner y por empresas del usuario (sin sudo, usando permisos de portal)
             domain = [
                 ('partner_invoice_id', '=', partner.id),
                 ('company_id', 'in', request.env.user.company_ids.ids)
             ]
-            # Usar el usuario del request directamente (tiene permisos base.group_portal)
-            # Evitar sudo() innecesario - el ACL base.group_portal permite lectura
-            values['waybill_count'] = request.env['tms.waybill'].search_count(domain)
+            # sudo() porque el usuario portal puede no tener permisos directos sobre tms.waybill
+            # El dominio garantiza que solo se cuentan sus propios viajes
+            values['waybill_count'] = request.env['tms.waybill'].sudo().search_count(domain)
         return values
 
     def _check_waybill_access_and_company(self, waybill_id, access_token=None):

@@ -220,6 +220,27 @@ Impuestos: IVA 16%, Retención 4% solo si receptor is_company=True.
 3. Revisar logs: grep -n "WARNING\|ERROR" proyectos/tms/odoo.log | tail -20
 4. Cambios solo JS/XML: usar --dev reload,qweb,xml,assets
 
+# ══════════════════════════════════════════════════════════════
+# REGLA PORTAL / FRONTEND — LEER ODOO CORE PRIMERO
+# ══════════════════════════════════════════════════════════════
+
+Si un tile, template o componente del portal/website no cuadra visualmente
+o no funciona correctamente, IR DIRECTO a leer el patrón en Odoo core
+antes de intentar cualquier fix. NO inventar HTML o Bootstrap custom.
+
+Rutas de referencia:
+  odoo-19.0/addons/{módulo}/views/*portal*.xml
+  odoo-19.0/addons/{módulo}/controllers/portal.py
+
+Ejemplos de patrones nativos que Odoo ya tiene resueltos:
+  - portal_docs_entry     → tiles del home /my
+  - placeholder_count     → lazy load de contadores (evita spinner infinito)
+  - portal_client_category_enable → activa la sección de tiles del cliente
+  - portal.portal_layout  → layout base del portal
+  - portal.portal_table   → tabla paginada estándar
+
+Esta regla aplica a cualquier componente frontend, no solo al portal.
+
 # CONVENCIONES DE CÓDIGO
 
 - Docstrings y comentarios en ESPAÑOL

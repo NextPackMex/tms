@@ -331,6 +331,13 @@ claude "Lee ORCHESTRATOR.md y docs/etapa-X.X.X.md y ejecuta el flujo multi-agent
 
 ## 10. REGLAS ABSOLUTAS — NUNCA ROMPER
 
+> 📌 **REGLA PORTAL/FRONTEND — Leer Odoo core primero:**
+> Si un tile, template o componente del portal/website no cuadra visualmente
+> o no funciona en el primer intento, **ir directo a leer el patrón en Odoo core**
+> antes de iterar. Rutas: `odoo-19.0/addons/{módulo}/views/*portal*.xml` y
+> `controllers/portal.py`. Nunca inventar HTML/Bootstrap custom.
+> Patrones clave: `portal_docs_entry`, `placeholder_count`, `portal_client_category_enable`.
+
 1. SIEMPRE comentar cada función con docstring en **español**
 2. SIEMPRE comentar líneas no obvias dentro de los métodos
 3. NUNCA definir el mismo campo/método dos veces → `grep -rn "def nombre" models/`
