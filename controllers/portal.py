@@ -99,7 +99,7 @@ class TMSCustomerPortal(CustomerPortal):
             domain.append(('name', 'ilike', search))
 
         # Obtener total de registros
-        total_records = TmsWaybill.search_count(domain)
+        total_records = TmsWaybill.sudo().search_count(domain)
 
         # Paginar: 10 registros por página
         records_per_page = 10
@@ -107,7 +107,7 @@ class TMSCustomerPortal(CustomerPortal):
         offset = (page - 1) * records_per_page
 
         # Obtener registros de la página actual
-        waybills = TmsWaybill.search(domain, offset=offset, limit=records_per_page, order='date_created desc')
+        waybills = TmsWaybill.sudo().search(domain, offset=offset, limit=records_per_page, order='date_created desc')
 
         # Preparar paginador estándar de Odoo
         pager = request.website.pager(

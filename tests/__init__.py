@@ -2,3 +2,4 @@
 # Módulo de pruebas para TMS
 from . import test_tms_waybill
 from . import test_onboarding_wizard
+from . import test_portal_tms

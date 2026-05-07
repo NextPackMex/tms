@@ -47,9 +47,9 @@
                                 ENCABEZADO: Título y fecha
                             -->
                             <div class="mb-4">
-                                <h2 class="mb-2">Cotización <span t-esc="waybill.name"/></h2>
+                                <h2 class="mb-2">Cotización <span t-out="waybill.name"/></h2>
                                 <p class="text-muted mb-3">
-                                    <i class="fa fa-calendar"/> Fecha: <span t-esc="waybill.date_created"/>
+                                    <i class="fa fa-calendar"/> Fecha: <span t-out="waybill.date_created"/>
                                 </p>
 
                                 <!--
@@ -81,7 +81,7 @@
                                         <span class="badge bg-danger">Rechazado</span>
                                     </t>
                                     <t t-else="">
-                                        <span class="badge bg-secondary" t-esc="waybill.state"/>
+                                        <span class="badge bg-secondary" t-out="waybill.state"/>
                                     </t>
                                 </div>
 
@@ -102,7 +102,7 @@
                                 </t>
                                 <t t-if="request and request.params and request.params.get('error')">
                                     <div class="alert alert-danger alert-dismissible" role="alert">
-                                        <strong>Error:</strong> <span t-esc="request.params.get('error')"/>
+                                        <strong>Error:</strong> <span t-out="request.params.get('error')"/>
                                         <button type="button" class="btn-close" data-bs-dismiss="alert"/>
                                     </div>
                                 </t>
@@ -145,12 +145,12 @@
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <strong>Cliente:</strong><br/>
-                                            <span t-esc="waybill.partner_invoice_id.name"/>
+                                            <span t-out="waybill.partner_invoice_id.name"/>
                                         </div>
                                         <t t-if="waybill.invoice_rfc">
                                             <div class="col-md-6 mb-3">
                                                 <strong>RFC:</strong><br/>
-                                                <span t-esc="waybill.invoice_rfc"/>
+                                                <span t-out="waybill.invoice_rfc"/>
                                             </div>
                                         </t>
                                     </div>
@@ -158,7 +158,7 @@
                                         <div class="row">
                                             <div class="col-12">
                                                 <strong>Dirección:</strong><br/>
-                                                <span t-esc="waybill.invoice_address"/>
+                                                <span t-out="waybill.invoice_address"/>
                                             </div>
                                         </div>
                                     </t>
@@ -181,27 +181,27 @@
                                             <!-- Fallback: CP + ciudad cuando no hay partner -->
                                             <t t-if="not waybill.partner_origin_id and waybill.origin_zip">
                                                 <div class="p-2">
-                                                    <span class="badge text-bg-success">CP <t t-esc="waybill.origin_zip"/></span>
-                                                    <span class="text-muted ms-1" t-if="waybill.origin_city_name" t-esc="waybill.origin_city_name"/>
+                                                    <span class="badge text-bg-success">CP <t t-out="waybill.origin_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.origin_city_name" t-out="waybill.origin_city_name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.partner_origin_id">
                                                 <p class="mb-2">
                                                     <strong>Remitente:</strong><br/>
-                                                    <span t-esc="waybill.partner_origin_id.name"/>
+                                                    <span t-out="waybill.partner_origin_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.origin_city_name"/>
+                                                    <span t-out="waybill.origin_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.origin_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
-                                                    <span t-esc="waybill.origin_address"/>
-                                                    <t t-if="waybill.origin_zip">, CP <span t-esc="waybill.origin_zip"/></t>
+                                                    <span t-out="waybill.origin_address"/>
+                                                    <t t-if="waybill.origin_zip">, CP <span t-out="waybill.origin_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
@@ -218,27 +218,27 @@
                                             <!-- Fallback: CP + ciudad cuando no hay partner -->
                                             <t t-if="not waybill.partner_dest_id and waybill.dest_zip">
                                                 <div class="p-2">
-                                                    <span class="badge text-bg-danger">CP <t t-esc="waybill.dest_zip"/></span>
-                                                    <span class="text-muted ms-1" t-if="waybill.dest_city_name" t-esc="waybill.dest_city_name"/>
+                                                    <span class="badge text-bg-danger">CP <t t-out="waybill.dest_zip"/></span>
+                                                    <span class="text-muted ms-1" t-if="waybill.dest_city_name" t-out="waybill.dest_city_name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.partner_dest_id">
                                                 <p class="mb-2">
                                                     <strong>Destinatario:</strong><br/>
-                                                    <span t-esc="waybill.partner_dest_id.name"/>
+                                                    <span t-out="waybill.partner_dest_id.name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_city_name">
                                                 <p class="mb-2">
                                                     <strong>Ciudad:</strong><br/>
-                                                    <span t-esc="waybill.dest_city_name"/>
+                                                    <span t-out="waybill.dest_city_name"/>
                                                 </p>
                                             </t>
                                             <t t-if="waybill.dest_address">
                                                 <p class="mb-0">
                                                     <strong>Dirección:</strong><br/>
-                                                    <span t-esc="waybill.dest_address"/>
-                                                    <t t-if="waybill.dest_zip">, CP <span t-esc="waybill.dest_zip"/></t>
+                                                    <span t-out="waybill.dest_address"/>
+                                                    <t t-if="waybill.dest_zip">, CP <span t-out="waybill.dest_zip"/></t>
                                                 </p>
                                             </t>
                                         </div>
@@ -271,21 +271,21 @@
                                                     <t t-foreach="waybill.line_ids" t-as="line">
                                                         <tr>
                                                             <td>
-                                                                <strong t-esc="line.description or ''"/>
+                                                                <strong t-out="line.description or ''"/>
                                                                 <t t-if="line.product_sat_id">
-                                                                    <br/><small class="text-muted" t-esc="line.product_sat_id.name or ''"/>
+                                                                    <br/><small class="text-muted" t-out="line.product_sat_id.name or ''"/>
                                                                 </t>
                                                             </td>
-                                                            <td class="text-end" t-esc="line.quantity or 0"/>
+                                                            <td class="text-end" t-out="line.quantity or 0"/>
                                                             <td>
                                                                 <t t-if="line.uom_sat_id">
-                                                                    <span t-esc="line.uom_sat_id.name or ''"/>
+                                                                    <span t-out="line.uom_sat_id.name or ''"/>
                                                                 </t>
                                                                 <t t-else="">
                                                                     <span class="text-muted">—</span>
                                                                 </t>
                                                             </td>
-                                                            <td class="text-end" t-esc="line.weight_kg or 0"/>
+                                                            <td class="text-end" t-out="line.weight_kg or 0"/>
                                                         </tr>
                                                     </t>
                                                 </tbody>
@@ -312,19 +312,19 @@
                                         <t t-if="waybill.distance_km">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Distancia:</strong><br/>
-                                                <span t-esc="waybill.distance_km"/> km
+                                                <span t-out="waybill.distance_km"/> km
                                             </div>
                                         </t>
                                         <t t-if="waybill.duration_hours">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Duración Estimada:</strong><br/>
-                                                <span t-esc="waybill.duration_hours"/> horas
+                                                <span t-out="waybill.duration_hours"/> horas
                                             </div>
                                         </t>
                                         <t t-if="waybill.route_name">
                                             <div class="col-md-4 mb-3">
                                                 <strong>Ruta:</strong><br/>
-                                                <span t-esc="waybill.route_name"/>
+                                                <span t-out="waybill.route_name"/>
                                             </div>
                                         </t>
                                     </div>
@@ -346,13 +346,13 @@
                                             <t t-if="waybill.vehicle_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Vehículo (Tractor):</strong><br/>
-                                                    <span t-esc="waybill.vehicle_id.license_plate"/> - <span t-esc="waybill.vehicle_id.model_id.name"/>
+                                                    <span t-out="waybill.vehicle_id.license_plate"/> - <span t-out="waybill.vehicle_id.model_id.name"/>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.driver_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Chofer:</strong><br/>
-                                                    <span t-esc="waybill.driver_id.name"/>
+                                                    <span t-out="waybill.driver_id.name"/>
                                                 </div>
                                             </t>
                                         </div>
@@ -360,15 +360,15 @@
                                             <t t-if="waybill.trailer1_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Remolque 1:</strong><br/>
-                                                    <span t-esc="waybill.trailer1_id.license_plate"/>
-                                                    <t t-if="waybill.trailer1_id.model_id"> - <span t-esc="waybill.trailer1_id.model_id.name"/></t>
+                                                    <span t-out="waybill.trailer1_id.license_plate"/>
+                                                    <t t-if="waybill.trailer1_id.model_id"> - <span t-out="waybill.trailer1_id.model_id.name"/></t>
                                                 </div>
                                             </t>
                                             <t t-if="waybill.trailer2_id">
                                                 <div class="col-md-6 mb-3">
                                                     <strong>Remolque 2:</strong><br/>
-                                                    <span t-esc="waybill.trailer2_id.license_plate"/>
-                                                    <t t-if="waybill.trailer2_id.model_id"> - <span t-esc="waybill.trailer2_id.model_id.name"/></t>
+                                                    <span t-out="waybill.trailer2_id.license_plate"/>
+                                                    <t t-if="waybill.trailer2_id.model_id"> - <span t-out="waybill.trailer2_id.model_id.name"/></t>
                                                 </div>
                                             </t>
                                         </div>
@@ -397,10 +397,10 @@
                                             </div>
                                         </t>
                                         <t t-if="waybill.signed_by">
-                                            <p class="mb-1"><strong>Firmado por:</strong> <span t-esc="waybill.signed_by"/></p>
+                                            <p class="mb-1"><strong>Firmado por:</strong> <span t-out="waybill.signed_by"/></p>
                                         </t>
                                         <t t-if="waybill.signed_on">
-                                            <p class="mb-0"><strong>Fecha y hora:</strong> <span t-esc="waybill.signed_on"/></p>
+                                            <p class="mb-0"><strong>Fecha y hora:</strong> <span t-out="waybill.signed_on"/></p>
                                         </t>
                                     </div>
                                 </div>
@@ -418,7 +418,7 @@
                                     </div>
                                     <div class="card-body">
                                         <p class="mb-0"><strong>Motivo del rechazo:</strong></p>
-                                        <p class="text-muted" t-esc="waybill.rejection_reason"/>
+                                        <p class="text-muted" t-out="waybill.rejection_reason"/>
                                     </div>
                                 </div>
                             </t>
@@ -472,13 +472,13 @@
                                                         <div class="flex-grow-1">
                                                             <!-- Hora y tipo -->
                                                             <div class="d-flex justify-content-between mb-1">
-                                                                <strong t-esc="event.name"/>
-                                                                <small class="text-muted" t-esc="event.date.strftime('%d/%m/%Y %H:%M')"/>
+                                                                <strong t-out="event.name"/>
+                                                                <small class="text-muted" t-out="event.date.strftime('%d/%m/%Y %H:%M')"/>
                                                             </div>
 
                                                             <!-- Descripción / notas -->
                                                             <t t-if="event.note">
-                                                                <p class="mb-2 text-muted" t-esc="event.note"/>
+                                                                <p class="mb-2 text-muted" t-out="event.note"/>
                                                             </t>
 
                                                             <!-- Enlace a Google Maps si hay coordenadas -->
@@ -535,21 +535,21 @@
                                             <div class="d-flex justify-content-between mb-1">
                                                 <span class="text-muted">Subtotal:</span>
                                                 <strong>
-                                                    <span t-esc="waybill.amount_untaxed" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_untaxed" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <!-- IVA -->
                                             <div class="d-flex justify-content-between mb-1">
                                                 <span class="text-muted">IVA (16%):</span>
                                                 <strong>
-                                                    <span t-esc="waybill.amount_tax" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_tax" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <!-- Retención -->
                                              <div class="d-flex justify-content-between mb-2 text-danger">
                                                 <span>Retención (4%):</span>
                                                 <strong>
-                                                    - <span t-esc="waybill.amount_retention" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    - <span t-out="waybill.amount_retention" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </strong>
                                             </div>
                                             <hr/>
@@ -557,7 +557,7 @@
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <span class="h5 mb-0">Total:</span>
                                                 <h3 class="mb-0 text-primary">
-                                                    <span t-esc="waybill.amount_total" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
+                                                    <span t-out="waybill.amount_total" t-options='{"widget": "monetary", "display_currency": waybill.currency_id}'/>
                                                 </h3>
                                             </div>
                                         </div>
@@ -819,7 +819,7 @@
                                         <t t-foreach="states" t-as="s">
                                             <option t-att-value="s[0]"
                                                     t-att-selected="'selected' if s[0] == state_filter else None"
-                                                    t-esc="s[1]"/>
+                                                    t-out="s[1]"/>
                                         </t>
                                     </select>
                                 </div>
@@ -863,7 +863,7 @@
                         <div class="card-header">
                             <h5 class="mb-0">
                                 <i class="fa fa-list"/> Tus Viajes
-                                <span class="badge bg-secondary ms-2" t-esc="page_count"/>
+                                <span class="badge bg-secondary ms-2" t-out="page_count"/>
                             </h5>
                         </div>
                         <div class="card-body">
@@ -888,17 +888,17 @@
                                                 <tr>
                                                     <!-- Folio -->
                                                     <td>
-                                                        <strong t-esc="wb.name"/>
+                                                        <strong t-out="wb.name"/>
                                                     </td>
 
                                                     <!-- Ruta (Origen → Destino) -->
                                                     <td>
                                                         <t t-if="wb.route_name">
-                                                            <span t-esc="wb.route_name"/>
+                                                            <span t-out="wb.route_name"/>
                                                         </t>
                                                         <t t-else="">
                                                             <t t-if="wb.origin_city_name and wb.dest_city_name">
-                                                                <span t-esc="wb.origin_city_name"/> → <span t-esc="wb.dest_city_name"/>
+                                                                <span t-out="wb.origin_city_name"/> → <span t-out="wb.dest_city_name"/>
                                                             </t>
                                                         </t>
                                                     </td>
@@ -930,18 +930,18 @@
                                                             <span class="badge bg-danger">Rechazado</span>
                                                         </t>
                                                         <t t-else="">
-                                                            <span class="badge bg-secondary" t-esc="wb.state"/>
+                                                            <span class="badge bg-secondary" t-out="wb.state"/>
                                                         </t>
                                                     </td>
 
                                                     <!-- Fecha (creación) -->
                                                     <td>
-                                                        <small t-esc="wb.date_created.strftime('%d/%m/%Y')"/>
+                                                        <small t-out="wb.date_created.strftime('%d/%m/%Y')"/>
                                                     </td>
 
                                                     <!-- Total alineado a la derecha -->
                                                     <td class="text-end">
-                                                        <strong t-esc="wb.amount_total"
+                                                        <strong t-out="wb.amount_total"
                                                                 t-options='{"widget": "monetary", "display_currency": wb.currency_id}'/>
                                                     </td>
 
