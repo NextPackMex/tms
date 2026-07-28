@@ -2,9 +2,9 @@
 """
 Puente: formulario de contacto del sitio TMS -> CRM del Odoo remoto (nextpack).
 
-Al enviarse el formulario de contacto, además del comportamiento normal, crea un
-crm.lead en el Odoo remoto vía API XML-RPC. Credenciales en ir.config_parameter
-(NO hardcodeadas):
+Al enviarse el formulario de contacto, además del comportamiento normal, crea una
+oportunidad (crm.lead type=opportunity) en el Odoo remoto vía API XML-RPC.
+Credenciales en ir.config_parameter (NO hardcodeadas):
 
     tms_crm_bridge.url       ej. https://app.nextpack.mx
     tms_crm_bridge.db        ej. nextpack
@@ -62,7 +62,7 @@ class WebsiteFormCrmBridge(WebsiteForm):
             'phone': (kwargs.get('Numero Telefonico') or '').strip(),
             'partner_name': (kwargs.get('Empresa') or '').strip(),
             'description': (kwargs.get('Pregunta') or '').strip(),
-            'type': 'lead',
+            'type': 'opportunity',
         }
         team = ICP.get_param('tms_crm_bridge.team_id')
         if team:
@@ -71,4 +71,4 @@ class WebsiteFormCrmBridge(WebsiteForm):
             except (TypeError, ValueError):
                 pass
         lead_id = models.execute_kw(db, uid, pwd, 'crm.lead', 'create', [vals])
-        _logger.info("TMS->CRM: lead remoto creado id=%s (%s)", lead_id, vals['email_from'])
+        _logger.info("TMS->CRM: oportunidad remota creada id=%s (%s)", lead_id, vals['email_from'])
