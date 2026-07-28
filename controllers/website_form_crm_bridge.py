@@ -11,6 +11,7 @@ Credenciales en ir.config_parameter (NO hardcodeadas):
     tms_crm_bridge.user      usuario de Odoo remoto
     tms_crm_bridge.password  contraseña
     tms_crm_bridge.team_id   (opcional) id del equipo de ventas destino
+    tms_crm_bridge.user_id   (opcional) id del usuario responsable (vendedor)
 
 Best-effort: si falta config o la API falla, NO rompe el envío del formulario.
 """
@@ -68,6 +69,12 @@ class WebsiteFormCrmBridge(WebsiteForm):
         if team:
             try:
                 vals['team_id'] = int(team)
+            except (TypeError, ValueError):
+                pass
+        resp = ICP.get_param('tms_crm_bridge.user_id')
+        if resp:
+            try:
+                vals['user_id'] = int(resp)
             except (TypeError, ValueError):
                 pass
         lead_id = models.execute_kw(db, uid, pwd, 'crm.lead', 'create', [vals])
