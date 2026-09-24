@@ -15,6 +15,11 @@ class TmsSatConfigAutotransporte(models.Model):
 
     USO: Se usa en Carta Porte para especificar el tipo exacto de vehículo.
 
+    OJO: este catálogo también almacena las claves de c_SubTipoRem
+    (CTR001…CTR032), que son las que se capturan en un remolque. Ambos
+    catálogos comparten tabla a propósito; el campo sat_config_id de
+    fleet.vehicle guarda uno u otro según el vehículo sea tracto o remolque.
+
     ARQUITECTURA SAAS: Catálogo GLOBAL sin company_id.
     """
 
@@ -26,6 +31,12 @@ class TmsSatConfigAutotransporte(models.Model):
 
     # Campo usado como nombre en búsquedas
     _rec_name = 'code'
+
+    # Campos contra los que busca el widget Many2one.
+    # Sin esto el ORM solo compara contra _rec_name (la clave), de modo que
+    # escribir "Caja" no encuentra "CTR004 - Caja Cerrada" y el usuario tiene
+    # que saberse la clave de memoria.
+    _rec_names_search = ['code', 'name']
 
     # Orden por defecto
     _order = 'code asc'

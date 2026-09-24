@@ -27,6 +27,11 @@ class TmsSatTipoPermiso(models.Model):
     # Campo usado como nombre en búsquedas
     _rec_name = 'code'
 
+    # Campos contra los que busca el widget Many2one.
+    # Sin esto el ORM solo compara contra _rec_name (la clave), de modo que
+    # escribir "materiales peligrosos" no encuentra TPAF03.
+    _rec_names_search = ['code', 'name']
+
     # Orden por defecto
     _order = 'code asc'
 
