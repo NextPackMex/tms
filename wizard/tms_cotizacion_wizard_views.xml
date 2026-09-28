@@ -70,6 +70,18 @@
                         </group>
                         <group>
                             <field name="num_axles" string="Número de Ejes"/>
+                            <!--
+                                El cliente se captura TAMBIÉN aquí, no solo en el paso 2.
+                                _compute_proposals le resta un 4% al factor de margen cuando
+                                el cliente es persona moral (retención de ISR sobre fletes), y
+                                ese cálculo ocurre ANTES de aprobar la propuesta. Si el campo
+                                sólo vive en el paso 2, cuando se calcula la Propuesta B todavía
+                                no hay cliente y la retención nunca se aplica.
+                                Es opcional: dejarlo vacío mantiene la cotización rápida de siempre.
+                            -->
+                            <field name="partner_invoice_id" string="Cliente (opcional)"
+                                   options="{'no_create_edit': True}"
+                                   domain="[('customer_rank', '&gt;', 0)]"/>
                             <field name="force_api_call" string="Forzar consulta API"
                                    invisible="not ruta_calculada"/>
                         </group>
@@ -105,6 +117,10 @@
                         <group>
                             <field name="profit_margin_percent" string="Margen de Utilidad (%)"/>
                         </group>
+                        <p class="text-muted ms-2" colspan="2">
+                            <i class="fa fa-info-circle" title="Info"/>
+ Si capturas el Cliente arriba y es persona moral, la Propuesta B descuenta además la retención de ISR del 4% sobre el flete.
+                        </p>
                     </group>
 
                     <!-- SECCIÓN 4: PRECIO DIRECTO -->
@@ -211,7 +227,7 @@
                     <!-- Cliente Facturación -->
                     <group string="👤 Actores del Viaje">
                         <group>
-                            <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '>', 0)]"/>
+                            <field name="partner_invoice_id" options="{'no_create_edit': True}" domain="[('customer_rank', '&gt;', 0)]"/>
                             <field name="partner_invoice_street" string="Domicilio Fiscal" readonly="1"/>
                         </group>
                     </group>
