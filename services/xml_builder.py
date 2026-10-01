@@ -28,6 +28,44 @@ _TZ_MEXICO = ZoneInfo('America/Mexico_City')
 
 _logger = logging.getLogger(__name__)
 
+
+def _subtipo_remolque(trailer):
+    """
+    Clave c_SubTipoRem del remolque, leida directo de su Configuracion SAT.
+
+    ANTES esto era getattr(trailer, 'tms_subtipo_remolque', None) or 'CTR007':
+    el campo no existia, el getattr devolvia None y TODA Carta Porte declaraba
+    CTR007 (Caja Seca) sin importar lo capturado. Como CTR007 es una clave
+    valida el PAC timbraba sin error y el fallo quedaba invisible hasta una
+    revision de la autoridad. Aqui se lee el campo de frente y, si falta la
+    configuracion, se detiene el timbrado con un mensaje claro en lugar de
+    inventar una clave.
+    """
+    subtipo = trailer.tms_subtipo_remolque
+    if not subtipo:
+        raise UserError(
+            'El remolque %s no tiene Configuracion SAT (clave c_SubTipoRem).\n'
+            'Capturala en la ficha de la unidad antes de timbrar: '
+            'Flota -> Unidades -> %s -> Configuracion SAT.'
+            % (trailer.display_name, trailer.display_name)
+        )
+    return subtipo
+
+
+def _nombre_remitente(waybill, partner):
+    """
+    Nombre para NombreRemitenteDestinatario.
+
+    Si la ubicacion no tiene socio asignado NO se puede emitir el atributo
+    vacio: el XSD lo declara con minLength 1 y el PAC lo rechaza. Se cae al
+    nombre de la empresa emisora, que es coherente con el RFC que se declara
+    en RFCRemitenteDestinatario cuando no hay socio.
+    """
+    nombre = (partner.name or '') if partner else ''
+    if not nombre:
+        nombre = (waybill.company_id.name or '')
+    return nombre.upper()[:254]
+
 # ---------------------------------------------------------------------------
 # Constantes de namespace y esquema
 # ---------------------------------------------------------------------------
@@ -543,7 +581,7 @@ class CartaPorteXmlBuilder:
                        'EKU9003173C9' if es_pruebas else
                        (_normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000'))
             origen.set('NombreRemitenteDestinatario',
-                       (waybill.partner_origin_id.name or '').upper()[:254])
+                       _nombre_remitente(waybill, waybill.partner_origin_id))
             origen.set('FechaHoraSalidaLlegada',
                        datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
             dom_o = etree.SubElement(origen, etree.QName(NS_CP31, 'Domicilio'))
@@ -559,7 +597,7 @@ class CartaPorteXmlBuilder:
                         'EKU9003173C9' if es_pruebas else
                         (_normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000'))
             destino.set('NombreRemitenteDestinatario',
-                        (waybill.partner_dest_id.name or '').upper()[:254])
+                        _nombre_remitente(waybill, waybill.partner_dest_id))
             destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
             destino.set('FechaHoraSalidaLlegada',
                         datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
@@ -577,7 +615,7 @@ class CartaPorteXmlBuilder:
         El peso total es la suma de todas las mercancías de todos los viajes.
         """
         peso_total = sum(
-            (line.weight_kg or 0) * (line.quantity or 1)
+            (line.weight_kg or 0)
             for waybill in waybills
             for line in waybill.line_ids
         )
@@ -598,7 +636,7 @@ class CartaPorteXmlBuilder:
                 merc.set('Cantidad',    '{:.3f}'.format(line.quantity or 1))
                 merc.set('ClaveUnidad',
                          _normalize_sat_code(line.uom_sat_id.code if line.uom_sat_id else 'KGM'))
-                merc.set('PesoEnKg',   '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
+                merc.set('PesoEnKg',   '{:.3f}'.format(line.weight_kg or 0))
                 merc.set('Dimensiones', line.dimensions or '000/000/000cm')
 
         return mercancias
@@ -885,7 +923,7 @@ class CartaPorteXmlBuilder:
                    'EKU9003173C9' if es_pruebas else
                    (_normalize_rfc(waybill.partner_origin_id.vat) or 'XAXX010101000'))
         origen.set('NombreRemitenteDestinatario',
-                   (waybill.partner_origin_id.name or '').upper()[:254])
+                   _nombre_remitente(waybill, waybill.partner_origin_id))
         origen.set('FechaHoraSalidaLlegada',
                    datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
 
@@ -902,7 +940,7 @@ class CartaPorteXmlBuilder:
                     'EKU9003173C9' if es_pruebas else
                     (_normalize_rfc(waybill.partner_dest_id.vat) or 'XAXX010101000'))
         destino.set('NombreRemitenteDestinatario',
-                    (waybill.partner_dest_id.name or '').upper()[:254])
+                    _nombre_remitente(waybill, waybill.partner_dest_id))
         destino.set('DistanciaRecorrida', str(int(waybill.distance_km or 0)))
         destino.set('FechaHoraSalidaLlegada',
                     datetime.now(_TZ_MEXICO).strftime('%Y-%m-%dT%H:%M:%S'))
@@ -941,7 +979,7 @@ class CartaPorteXmlBuilder:
         ClaveUnidad, PesoEnKg, Dimensiones.
         """
         peso_total = sum(
-            (line.weight_kg or 0) * (line.quantity or 1)
+            (line.weight_kg or 0)
             for line in waybill.line_ids
         )
         mercancias = etree.Element(etree.QName(NS_CP31, 'Mercancias'))
@@ -957,7 +995,7 @@ class CartaPorteXmlBuilder:
             merc.set('Cantidad',      '{:.3f}'.format(line.quantity or 1))
             merc.set('ClaveUnidad',
                      _normalize_sat_code(line.uom_sat_id.code if line.uom_sat_id else 'KGM'))
-            merc.set('PesoEnKg',      '{:.3f}'.format((line.weight_kg or 0) * (line.quantity or 1)))
+            merc.set('PesoEnKg',      '{:.3f}'.format(line.weight_kg or 0))
             merc.set('Dimensiones',   line.dimensions or '000/000/000cm')
 
             # MaterialPeligroso SOLO cuando is_dangerous=True Y el catálogo SAT lo permite.
@@ -1049,12 +1087,12 @@ class CartaPorteXmlBuilder:
         if waybill.trailer1_id:
             remolques_node = etree.SubElement(auto, etree.QName(NS_CP31, 'Remolques'))
             rem1 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
-            rem1.set('SubTipoRem', getattr(waybill.trailer1_id, 'tms_subtipo_remolque', None) or 'CTR007')
+            rem1.set('SubTipoRem', _subtipo_remolque(waybill.trailer1_id))
             rem1.set('Placa', _normalize_placa(waybill.trailer1_id.license_plate) or 'SINREM')
 
             if waybill.trailer2_id:
                 rem2 = etree.SubElement(remolques_node, etree.QName(NS_CP31, 'Remolque'))
-                rem2.set('SubTipoRem', getattr(waybill.trailer2_id, 'tms_subtipo_remolque', None) or 'CTR007')
+                rem2.set('SubTipoRem', _subtipo_remolque(waybill.trailer2_id))
                 rem2.set('Placa', _normalize_placa(waybill.trailer2_id.license_plate) or 'SINREM')
 
         return auto
