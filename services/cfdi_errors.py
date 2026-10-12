@@ -105,10 +105,7 @@ ERRORES_SAT = {
     ),
 
     # --- Códigos de error PAC Formas Digitales / SW Sapien ---
-    'CFDI40999': (
-        "El XML tiene un error de estructura. "
-        "Revisa que todos los datos del viaje estén completos."
-    ),
+    # OJO: CFDI40999 NO se traduce por código — ver ERRORES_POR_MENSAJE.
     'CFDI33111': (
         "El RFC del emisor no está en la lista de contribuyentes activos del SAT."
     ),
@@ -164,13 +161,40 @@ ERRORES_SAT = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Mensajes que se reconocen por su TEXTO, no por su código.
+#
+# Formas Digitales usa CFDI40999 como código comodín: lo devuelve tanto para
+# un XML mal formado como para credenciales inválidas. Traducirlo por código
+# mandaba al usuario a revisar los datos del viaje cuando el problema real
+# era el usuario/contraseña del PAC. Estas reglas se evalúan PRIMERO.
+# ---------------------------------------------------------------------------
+ERRORES_POR_MENSAJE = {
+    'Usuario o contraseña incorrecto': (
+        "El PAC rechazó el usuario o la contraseña. "
+        "Captúralos en Ajustes → Empresa → Fiscal TMS → PAC "
+        "(usuario y contraseña de Formas Digitales)."
+    ),
+    'Usuario o password incorrecto': (
+        "El PAC rechazó el usuario o la contraseña. "
+        "Captúralos en Ajustes → Empresa → Fiscal TMS → PAC "
+        "(usuario y contraseña de Formas Digitales)."
+    ),
+    'No active subscription': (
+        "La suscripción del servicio externo no está activa. "
+        "Revisa el plan contratado."
+    ),
+}
+
+
 def traducir_error(mensaje_tecnico: str) -> str:
     """
     Traduce un mensaje técnico del SAT/PAC a lenguaje comprensible
     para el transportista.
 
-    Busca coincidencias parciales de las claves del diccionario dentro
-    del mensaje técnico (orden de prioridad: primero encontrado, primero usado).
+    Primero se buscan los motivos que el propio mensaje dice con claridad
+    (ERRORES_POR_MENSAJE) y después las claves técnicas (ERRORES_SAT), para
+    que un código comodín del PAC no sobreescriba un motivo explícito.
 
     Args:
         mensaje_tecnico: str con el error original del SAT o PAC
@@ -178,6 +202,12 @@ def traducir_error(mensaje_tecnico: str) -> str:
     Returns:
         str: mensaje traducido, o el mensaje original si no hay traducción
     """
+    # Primero las reglas por texto: un código comodín del PAC no debe
+    # sobreescribir un motivo que el propio mensaje ya dice con claridad.
+    for frase, traduccion in ERRORES_POR_MENSAJE.items():
+        if frase.lower() in mensaje_tecnico.lower():
+            return traduccion
+
     for clave, traduccion in ERRORES_SAT.items():
         if clave in mensaje_tecnico:
             return traduccion
