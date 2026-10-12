@@ -136,6 +136,11 @@ class FleetVehicle(models.Model):
 
     # Many2one: configuración vehicular según catálogo SAT
     # Ejemplos: C2, C3, T3S2, T3S3, etc.
+    #
+    # NOTA IMPORTANTE: este campo está SOBRECARGADO a propósito.
+    #   - En un tractocamión guarda la clave c_ConfigAutotransporte (C2, T3S2, ...)
+    #   - En un remolque guarda la clave c_SubTipoRem (CTR004, CTR006, ...)
+    # La vista de remolques lo etiqueta como "SubTipo Remolque SAT".
     sat_config_id = fields.Many2one(
         'tms.sat.config.autotransporte',
         string='Configuración SAT',
@@ -149,6 +154,28 @@ class FleetVehicle(models.Model):
         readonly=True,
         store=True,
         help='Número total de ejes tomado de la configuración SAT'
+    )
+
+    # Char: clave c_SubTipoRem del SAT, para remolques.
+    #
+    # BUGFIX: services/xml_builder.py arma el nodo <Remolque> leyendo
+    #     getattr(trailer, 'tms_subtipo_remolque', None) or 'CTR007'
+    # pero ese campo NO existía en el módulo. Al estar leído con getattr y
+    # un valor por defecto, nunca levantaba excepción: devolvía None y caía
+    # al 'CTR007'. Resultado: TODA Carta Porte declaraba el remolque como
+    # CTR007 (Caja Seca) sin importar lo capturado. Como CTR007 es una clave
+    # válida del catálogo, el CFDI timbraba sin error y el problema pasaba
+    # inadvertido.
+    #
+    # El dato sí se captura: vive en sat_config_id. Este campo lo expone con
+    # el nombre semántico que espera el constructor del XML.
+    tms_subtipo_remolque = fields.Char(
+        string='SubTipo Remolque SAT (clave)',
+        related='sat_config_id.code',
+        readonly=True,
+        store=True,
+        help='Clave c_SubTipoRem que se declara en el nodo Remolque de la '
+             'Carta Porte. Se toma de la Configuración SAT del remolque.'
     )
 
     # Many2one: tipo de permiso SCT
