@@ -31,19 +31,19 @@ class ResUsers(models.Model):
 
         # Usuarios que tienen group_tms_user pero NO group_tms_manager
         users_to_fix = self.env['res.users'].search([
-            ('groups_id', '=', group_tms_user.id),
+            ('group_ids', '=', group_tms_user.id),
         ])
 
         # Filtrar: excluir los que tiene group_tms_manager
         if group_tms_manager:
             users_to_fix = users_to_fix.filtered(
-                lambda u: group_tms_manager not in u.groups_id
+                lambda u: group_tms_manager not in u.group_ids
             )
 
         # Quitar fleet_group_user de esos usuarios
         if users_to_fix:
             users_to_fix.write({
-                'groups_id': [(3, group_fleet_user.id, 0)]  # 3 = remove
+                'group_ids': [(3, group_fleet_user.id, 0)]  # 3 = remove
             })
 
         return True

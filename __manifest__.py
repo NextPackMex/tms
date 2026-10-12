@@ -98,12 +98,12 @@
         # porque el CSV usa los grupos definidos en el XML
         'security/tms_security.xml',          # Define grupos (group_tms_user, group_tms_manager)
         'security/ir.model.access.csv',       # USA los grupos (debe cargar después)
+        'views/tms_menu_skeleton.xml',   # Esqueleto de menus raiz (early, evita forward-refs)
 
         # 2. Datos iniciales (secuencias + catálogos SAT pequeños)
         'data/tms_sequence_data.xml',
         'data/tms_data.xml',
         'data/sat_regimen_fiscal.xml',
-        'data/tms_menu_cleanup.xml',     # Ocultar menús Odoo irrelevantes (V2.5)
         'data/tms_expense_type.xml',     # Catálogo: Tipos de Gasto (V2.3.3)
         'data/tms.sat.zona.especial.csv',
         'data/tms.sat.uso.cfdi.csv',

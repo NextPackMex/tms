@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Esqueleto de menús raíz, definido temprano en el orden de carga para
+         que cualquier archivo pueda usarlos como parent sin depender del orden.
+         tms_menus.xml los completa después (acción, web_icon, etc.). -->
+    <menuitem id="menu_tms_root" name="TMS" sequence="5"/>
+    <menuitem id="menu_tms_operations" name="Operaciones" parent="menu_tms_root" sequence="10"/>
+    <menuitem id="menu_tms_config" name="Configuración" parent="menu_tms_root" sequence="99"/>
+</odoo>
