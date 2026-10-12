@@ -16,6 +16,14 @@
         - Heredamos la vista form de fleet
         - Agregamos nuestros campos en una pestaña nueva
         - Usamos invisible para ocultar campos según tipo (tractor/remolque)
+
+        OJO con sat_config_id: está SOBRECARGADO a propósito. En un tracto
+        guarda la clave c_ConfigAutotransporte (C2, T3S2…) y en un remolque
+        la clave c_SubTipoRem (CTR001…CTR032). Los dos catálogos viven en la
+        misma tabla, así que cada vista filtra por prefijo de clave; sin ese
+        filtro el desplegable de un remolque ofrece configuraciones de tracto
+        (y al revés), y escoger de la lista equivocada hace que el SAT
+        rechace el CFDI.
     -->
 
     <!--
@@ -51,8 +59,11 @@
                             <field name="model_year"/>
                         </group>
                         <group string="Configuración SAT (Carta Porte)">
-                            <field name="sat_config_id" required="1"/>
-                            <field name="sat_permiso_sct_id" required="1"/>
+                            <!-- Solo c_ConfigAutotransporte: excluye las claves CTR* de c_SubTipoRem -->
+                            <field name="sat_config_id" required="1"
+                                   domain="[('code', 'not =like', 'CTR%')]"
+                                   options="{'no_create': True}"/>
+                            <field name="sat_permiso_sct_id" required="1" options="{'no_create': True}"/>
                             <field name="permiso_sct_number" required="1"/>
                         </group>
                     </group>
@@ -112,7 +123,10 @@
                             <field name="model_year"/>
                         </group>
                         <group string="Configuración SAT">
-                            <field name="sat_config_id" string="SubTipo Remolque SAT" required="1"/>
+                            <!-- Solo c_SubTipoRem: las claves del catálogo empiezan con CTR -->
+                            <field name="sat_config_id" string="SubTipo Remolque SAT" required="1"
+                                   domain="[('code', '=like', 'CTR%')]"
+                                   options="{'no_create': True}"/>
                             <field name="tms_gross_vehicle_weight" string="Peso (Ton)"/>
                             <field name="tms_num_axles"/>
                         </group>

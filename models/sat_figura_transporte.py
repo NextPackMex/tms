@@ -28,6 +28,11 @@ class TmsSatFiguraTransporte(models.Model):
     # Campo usado como nombre en búsquedas
     _rec_name = 'code'
 
+    # Campos contra los que busca el widget Many2one.
+    # Aquí importa especialmente: las claves son "01".."05", así que sin esto
+    # escribir "Operador" no encuentra nada y hay que adivinar el número.
+    _rec_names_search = ['code', 'name']
+
     # Orden por defecto
     _order = 'code asc'
 
